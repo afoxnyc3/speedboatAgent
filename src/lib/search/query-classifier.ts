@@ -158,20 +158,9 @@ function applySourceWeights(type: QueryType) {
 }
 
 /**
- * Main query classification function
+ * Validates and normalizes query input
  */
-export async function classifyQuery(
-  query: string,
-  options: ClassificationOptions = {}
-): Promise<QueryClassification> {
-  const startTime = Date.now();
-  const {
-    useCache = true,
-    timeout = 5000,
-    fallbackWeights = true
-  } = options;
-
-  // Input validation
+function validateAndNormalizeQuery(query: string): string {
   if (!query || typeof query !== 'string') {
     throw new Error('Query must be a non-empty string');
   }
@@ -181,30 +170,80 @@ export async function classifyQuery(
     throw new Error('Query cannot be empty');
   }
 
+  return trimmedQuery;
+}
+
+/**
+ * Attempts to retrieve cached classification
+ */
+async function getCachedClassification(
+  cacheKey: string,
+  useCache: boolean
+): Promise<QueryClassification | null> {
+  if (!useCache) {
+    return null;
+  }
+
+  return await cache.get(cacheKey);
+}
+
+/**
+ * Creates classification result from GPT response
+ */
+function createClassificationResult(
+  query: string,
+  gptResponse: any
+): QueryClassification {
+  return {
+    query,
+    type: gptResponse.type,
+    confidence: gptResponse.confidence,
+    weights: applySourceWeights(gptResponse.type),
+    reasoning: gptResponse.reasoning,
+    cached: false
+  };
+}
+
+/**
+ * Creates fallback classification for errors
+ */
+function createFallbackClassification(
+  query: string,
+  error: unknown
+): QueryClassification {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+  return {
+    query,
+    type: 'operational',
+    confidence: 0.0,
+    weights: DEFAULT_WEIGHTS,
+    reasoning: `Fallback classification due to error: ${errorMessage}`,
+    cached: false
+  };
+}
+
+/**
+ * Main query classification function
+ */
+export async function classifyQuery(
+  query: string,
+  options: ClassificationOptions = {}
+): Promise<QueryClassification> {
+  const { useCache = true, timeout = 5000, fallbackWeights = true } = options;
+
+  const trimmedQuery = validateAndNormalizeQuery(query);
   const cacheKey = generateCacheKey(trimmedQuery);
 
-  // Check cache first
-  if (useCache) {
-    const cached = await cache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
+  const cached = await getCachedClassification(cacheKey, useCache);
+  if (cached) {
+    return cached;
   }
 
   try {
-    // Classify with GPT-4
     const gptResponse = await classifyWithGPT(trimmedQuery, timeout);
+    const classification = createClassificationResult(trimmedQuery, gptResponse);
 
-    const classification: QueryClassification = {
-      query: trimmedQuery,
-      type: gptResponse.type,
-      confidence: gptResponse.confidence,
-      weights: applySourceWeights(gptResponse.type),
-      reasoning: gptResponse.reasoning,
-      cached: false
-    };
-
-    // Cache the result
     if (useCache) {
       await cache.set(cacheKey, classification);
     }
@@ -212,18 +251,9 @@ export async function classifyQuery(
     return classification;
 
   } catch (error) {
-    // Fallback handling
     if (fallbackWeights) {
       console.warn('Classification failed, using fallback weights:', error);
-
-      return {
-        query: trimmedQuery,
-        type: 'operational', // Safe default
-        confidence: 0.0,
-        weights: DEFAULT_WEIGHTS,
-        reasoning: `Fallback classification due to error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        cached: false
-      };
+      return createFallbackClassification(trimmedQuery, error);
     }
 
     throw error;
