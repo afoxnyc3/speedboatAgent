@@ -115,6 +115,28 @@ User Query → Query Classifier → Hybrid Search → Rerank → GPT-4 → Strea
 - **Files**: 100 lines max
 - **Classes**: 50 lines max
 
+### Specialized Agent Usage
+**IMPORTANT**: This project includes specialized Claude Code agents that MUST be used for their respective domains:
+
+- **Use `weaviate-expert`** for all Weaviate schema design, hybrid search optimization, vector database operations, and query performance tuning
+- **Use `ingestion-pipeline`** for GitHub webhook processing, LlamaIndex integration, Firecrawl web crawling, and content deduplication
+- **Use `rag-optimizer`** for query classification, response quality improvement, Mem0 memory integration, and feedback system implementation
+- **Use `perf-validator`** for performance testing, metrics validation, load testing, and SLA compliance verification
+
+**Agent Invocation Guidelines**:
+- Agents should be invoked proactively when working on their specialized domains
+- Use parallel agent execution for independent tasks (e.g., `weaviate-expert` + `perf-validator`)
+- Agents have access to project-specific context and enforce coding standards automatically
+- Each agent maintains expertise in their domain's best practices and optimization techniques
+
+**Available Slash Commands**:
+- `/weaviate-setup [env]` - Initialize Weaviate schema with hybrid search
+- `/ingest-github <repo-url> [branch]` - Trigger GitHub ingestion pipeline
+- `/test-rag [test-type] [query]` - Execute RAG pipeline validation
+- `/check-metrics [metric-type] [time-range]` - Validate performance against SLAs
+- `/deploy-webhook <repo-url> [webhook-url]` - Set up GitHub webhook integration
+- `/crawl-docs [domains] [mode]` - Initiate web documentation crawling
+
 ### Security
 - API key rotation via Vercel KV
 - Rate limiting: 100 req/min per IP
@@ -250,16 +272,34 @@ const routeQuery = async (query: string) => {
 Types: feat, fix, chore, docs, refactor, test
 
 ## Launch Checklist
-- [ ] Weaviate schema configured with hybrid search
-- [ ] GitHub webhook integrated and tested
-- [ ] Initial repository content indexed via LlamaIndex
-- [ ] Web crawl targets identified and tested with Firecrawl
-- [ ] Deduplication pipeline validated
-- [ ] Query routing logic deployed
-- [ ] Mem0 memory integration complete
+- [ ] Weaviate schema configured with hybrid search (`/weaviate-setup`)
+- [ ] GitHub webhook integrated and tested (`/deploy-webhook`)
+- [ ] Initial repository content indexed via LlamaIndex (`/ingest-github`)
+- [ ] Web crawl targets identified and tested with Firecrawl (`/crawl-docs`)
+- [ ] Deduplication pipeline validated (use `ingestion-pipeline` agent)
+- [ ] Query routing logic deployed (use `rag-optimizer` agent)
+- [ ] Mem0 memory integration complete (use `rag-optimizer` agent)
 - [ ] Rate limiting enabled
 - [ ] Error tracking active with Sentry
-- [ ] Load testing complete (1000 concurrent users)
+- [ ] Load testing complete (use `perf-validator` agent, `/test-rag performance`)
 - [ ] Security review passed
-- [ ] Cost monitoring dashboards live
-- [ ] Team training completed
+- [ ] Cost monitoring dashboards live (`/check-metrics cost`)
+- [ ] Team training completed on agent usage and slash commands
+
+## Agent Development Workflow
+
+### Phase-Based Agent Usage
+**Week 1 - Foundation**: Primary use of `weaviate-expert` and `ingestion-pipeline` agents
+**Week 2 - Intelligence**: Primary use of `rag-optimizer` agent with `weaviate-expert` support
+**Week 3 - Hybrid Data**: Primary use of `ingestion-pipeline` agent for web crawling
+**Week 4 - Production**: Primary use of `perf-validator` agent with all others as needed
+
+### Task-to-Agent Mapping
+| Task Type | Primary Agent | Supporting Agents | Slash Commands |
+|-----------|---------------|-------------------|----------------|
+| Schema Design | `weaviate-expert` | - | `/weaviate-setup` |
+| Data Ingestion | `ingestion-pipeline` | - | `/ingest-github`, `/crawl-docs` |
+| Query Optimization | `rag-optimizer` | `weaviate-expert` | `/test-rag` |
+| Performance Testing | `perf-validator` | All agents | `/check-metrics`, `/test-rag performance` |
+| Webhook Setup | `ingestion-pipeline` | - | `/deploy-webhook` |
+| System Monitoring | `perf-validator` | - | `/check-metrics` |
