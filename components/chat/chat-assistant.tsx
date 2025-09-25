@@ -1,48 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Conversation,
-  ConversationContent,
-  ConversationEmptyState,
-} from "@/components/ai-elements/conversation";
-import { Message, MessageContent } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputTextarea,
-  PromptInputToolbar,
-  PromptInputSubmit,
-} from "@/components/ai-elements/prompt-input";
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
+import ChatInterface from "./ChatInterface";
+import { mockChatData, mockStreamingMessage } from "./mockData";
+import type { ChatMessage } from "./types";
 
 export default function ChatAssistant() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(mockChatData.messages);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>("");
 
-  const handleSubmit = async (
-    message: { text?: string; files?: any[] },
-    event: React.FormEvent
-  ) => {
-    if (!message.text?.trim() || isLoading) return;
-
+  const handleSendMessage = async (messageText: string) => {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: message.text,
+      content: messageText,
+      timestamp: new Date(),
     };
+
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    setError("");
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: message.text }),
+        body: JSON.stringify({ message: messageText }),
       });
 
       const data = await response.json();
@@ -52,6 +36,8 @@ export default function ChatAssistant() {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content: data.response,
+          timestamp: new Date(),
+          sources: data.sources || [],
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } else {
@@ -62,50 +48,23 @@ export default function ChatAssistant() {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: "Sorry, I encountered an error. Please try again.",
+        timestamp: new Date(),
+        error: true,
       };
       setMessages((prev) => [...prev, errorMessage]);
+      setError("Failed to get response from the server.");
     } finally {
       setIsLoading(false);
     }
-
-    (event.target as HTMLFormElement).reset();
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Conversation className="flex-1">
-        <ConversationContent className="space-y-4">
-          {messages.length === 0 ? (
-            <ConversationEmptyState
-              title="Start a conversation"
-              description="Ask me anything and I'll help you out!"
-            />
-          ) : (
-            messages.map((message) => (
-              <Message key={message.id} from={message.role}>
-                <MessageContent>{message.content}</MessageContent>
-              </Message>
-            ))
-          )}
-          {isLoading && (
-            <Message from="assistant">
-              <MessageContent>Thinking...</MessageContent>
-            </Message>
-          )}
-        </ConversationContent>
-      </Conversation>
-
-      <div className="p-4">
-        <PromptInput onSubmit={handleSubmit}>
-          <PromptInputBody>
-            <PromptInputTextarea placeholder="What would you like to know?" />
-            <PromptInputToolbar>
-              <div />
-              <PromptInputSubmit status={isLoading ? "submitted" : undefined} />
-            </PromptInputToolbar>
-          </PromptInputBody>
-        </PromptInput>
-      </div>
-    </div>
+    <ChatInterface
+      onSendMessage={handleSendMessage}
+      messages={messages}
+      isLoading={isLoading}
+      error={error}
+      showTimestamps={true}
+    />
   );
 }
