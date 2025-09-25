@@ -92,10 +92,16 @@ graph TD
 ### Intelligent Capabilities
 - **Natural Language Q&A** - Query your entire codebase conversationally
 - **Hybrid Data Sources** - Unified search across GitHub repos and web documentation
-- **Real-time Sync** - GitHub webhooks for instant updates (< 30s)
+- **Stealth Mode** - Local repository ingestion with zero production impact
+- **Real-time Sync** - GitHub webhooks for instant updates (optional)
 - **Source Attribution** - Every answer includes clickable source links
 - **Conversation Memory** - Understands context from previous questions
 - **Zero Hallucination** - If we don't know, we say so
+
+### Deployment Options
+- **🕵️ Stealth Mode** - Local repository cloning and processing (current implementation)
+- **🔄 Live Mode** - GitHub webhooks for real-time updates (Week 2+)
+- **🌐 Hybrid Mode** - Combine local repos with web documentation
 
 ### Performance Guarantees
 - Response time: < 2s (p95)
@@ -130,11 +136,13 @@ graph TD
 
 ### Prerequisites
 ```yaml
-Required Services:
+Minimum Required (Week 1):
   - Node.js 20+
-  - Weaviate Cloud account
-  - OpenAI API key ($200-400/month)
-  - GitHub token
+  - Weaviate Cloud account (14-day free trial)
+  - OpenAI API key
+
+Optional Services (Week 2+):
+  - GitHub token (for webhook mode)
   - Upstash Redis instance
   - Mem0 account
   - Firecrawl API key
@@ -151,11 +159,17 @@ cd speedboatAgent
 npm install
 
 # Set up environment variables
-cp .env.example .env.local
-# Edit .env.local with your credentials
+# Create .env.local with your API keys
+
+# Test connections
+npm run test-weaviate
 
 # Initialize Weaviate schema
-npm run setup:weaviate
+npm run setup-weaviate development
+
+# Local ingestion (stealth mode)
+npm run ingest-local /path/to/your/repo --dry-run
+npm run ingest-local /path/to/your/repo
 
 # Run development server
 npm run dev
@@ -164,14 +178,19 @@ npm run dev
 ### Environment Configuration
 
 ```env
-# Core Services (Required)
+# Core Services (Required for Week 1)
 OPENAI_API_KEY=sk-...
 WEAVIATE_HOST=https://your-cluster.weaviate.cloud
 WEAVIATE_API_KEY=...
-GITHUB_TOKEN=ghp_...
-GITHUB_WEBHOOK_SECRET=...
 
-# Infrastructure (Required)
+# Local Ingestion Mode (Stealth)
+LOCAL_REPO_PATH=/path/to/your/repository
+
+# Optional for Week 1
+GITHUB_TOKEN=ghp_...
+# GITHUB_WEBHOOK_SECRET not needed for local mode
+
+# Infrastructure (Week 2+)
 UPSTASH_REDIS_URL=...
 UPSTASH_REDIS_TOKEN=...
 
@@ -257,11 +276,12 @@ VERCEL_ENV=...
 
 ## 🚀 Implementation Timeline
 
-### Week 1: Foundation ✅
-- Weaviate schema with hybrid search
-- GitHub ingestion via LlamaIndex
-- Basic search implementation
-- Redis caching setup
+### Week 1: Foundation ✅ COMPLETE
+- ✅ Weaviate schema with hybrid search (11 properties)
+- ✅ Local ingestion pipeline via LlamaIndex (477 files processed)
+- ✅ Stealth operation mode (zero production impact)
+- ✅ Document processing with rich metadata
+- ✅ OpenAI embeddings integration (text-embedding-3-large)
 
 ### Week 2: Intelligence 🚧
 - Query classification system
@@ -335,15 +355,20 @@ const queryWeights = {
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-npm test
+# Test Weaviate connection
+npm run test-weaviate
 
-# Specific test suites
-npm run test:weaviate     # Vector DB connection
-npm run test:ingestion    # LlamaIndex pipeline
-npm run test:search       # Search accuracy
-npm run test:cache        # Redis operations
-npm run test:e2e          # Full workflow
+# Setup Weaviate schema
+npm run setup-weaviate development
+
+# Test local ingestion (dry run)
+npm run ingest-local /path/to/repo --dry-run --verbose
+
+# Full local ingestion
+npm run ingest-local /path/to/repo
+
+# Run standard tests
+npm test
 ```
 
 ## 📈 Success Metrics

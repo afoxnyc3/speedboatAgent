@@ -47,10 +47,10 @@ User Query → Query Classifier → Hybrid Search → Rerank → GPT-4 → Strea
 
 ## Implementation Timeline
 
-### Week 1: Foundation
-- Weaviate schema design & setup
-- GitHub ingestion pipeline with LlamaIndex
-- Basic hybrid search implementation
+### Week 1: Foundation ✅ COMPLETE
+- ✅ Weaviate schema design & setup (11 properties, hybrid search configured)
+- ✅ Local ingestion pipeline with LlamaIndex (stealth mode, 477 files processed)
+- ✅ Basic hybrid search implementation (schema ready, 75% vector + 25% keyword)
 
 ### Week 2: Intelligence
 - Query classification system
@@ -272,27 +272,30 @@ const routeQuery = async (query: string) => {
 Types: feat, fix, chore, docs, refactor, test
 
 ## Launch Checklist
-- [ ] Weaviate schema configured with hybrid search (`/weaviate-setup`)
-- [ ] GitHub webhook integrated and tested (`/deploy-webhook`)
-- [ ] Initial repository content indexed via LlamaIndex (`/ingest-github`)
-- [ ] Web crawl targets identified and tested with Firecrawl (`/crawl-docs`)
-- [ ] Deduplication pipeline validated (use `ingestion-pipeline` agent)
-- [ ] Query routing logic deployed (use `rag-optimizer` agent)
-- [ ] Mem0 memory integration complete (use `rag-optimizer` agent)
-- [ ] Rate limiting enabled
-- [ ] Error tracking active with Sentry
-- [ ] Load testing complete (use `perf-validator` agent, `/test-rag performance`)
-- [ ] Security review passed
-- [ ] Cost monitoring dashboards live (`/check-metrics cost`)
-- [ ] Team training completed on agent usage and slash commands
+- [x] **Weaviate schema configured with hybrid search** (`npm run setup-weaviate`) ✅
+- [x] **Initial repository content indexed via LlamaIndex** (`npm run ingest-local`) ✅ 477 files
+- [x] **Local ingestion pipeline validated** (stealth mode operational) ✅
+- [ ] Search API endpoint created (`/api/search/route.ts`) - Issue #11
+- [ ] Chat interface with streaming responses - Issue #12
+- [ ] Query classification system - Issue #13
+- [ ] Frontend chat component - Issue #14
+- [ ] GitHub webhook integration (`/deploy-webhook`) - Optional, Issue #7
+- [ ] Web crawl targets identified and tested with Firecrawl (`/crawl-docs`) - Week 3
+- [ ] Mem0 memory integration complete (use `rag-optimizer` agent) - Week 4
+- [ ] Rate limiting enabled - Week 4
+- [ ] Error tracking active with Sentry - Week 4
+- [ ] Load testing complete (use `perf-validator` agent, `/test-rag performance`) - Week 4
+- [ ] Security review passed - Week 4
+- [ ] Cost monitoring dashboards live (`/check-metrics cost`) - Week 4
+- [ ] Team training completed on agent usage and slash commands - Week 4
 
 ## Agent Development Workflow
 
 ### Phase-Based Agent Usage
-**Week 1 - Foundation**: Primary use of `weaviate-expert` and `ingestion-pipeline` agents
-**Week 2 - Intelligence**: Primary use of `rag-optimizer` agent with `weaviate-expert` support
-**Week 3 - Hybrid Data**: Primary use of `ingestion-pipeline` agent for web crawling
-**Week 4 - Production**: Primary use of `perf-validator` agent with all others as needed
+**Week 1 - Foundation** ✅: Primary use of `weaviate-expert` and `ingestion-pipeline` agents - COMPLETE
+**Week 2 - Intelligence** 🚧: Primary use of `rag-optimizer` agent with `weaviate-expert` support - IN PROGRESS
+**Week 3 - Hybrid Data** 📅: Primary use of `ingestion-pipeline` agent for web crawling
+**Week 4 - Production** 📅: Primary use of `perf-validator` agent with all others as needed
 
 ### Task-to-Agent Mapping
 | Task Type | Primary Agent | Supporting Agents | Slash Commands |
