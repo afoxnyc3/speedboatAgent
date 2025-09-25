@@ -9,6 +9,7 @@ import { validateAndProcessRequest } from '../../../src/lib/search/search-valida
 import { createPerformanceHeaders } from '../../../src/lib/search/search-utils';
 import { processSearchError, createErrorResponse } from '../../../src/lib/search/error-handler';
 import { SearchResponse } from '../../../src/types/search';
+import { ValidatedSearchRequest } from '../../../src/lib/search/search-validation';
 import {
   executeSearchWorkflow,
   createHealthResponse,
@@ -18,7 +19,7 @@ import {
 /**
  * Extracts search parameters from validated request
  */
-function extractSearchParams(searchRequest: Record<string, unknown>) {
+function extractSearchParams(searchRequest: ValidatedSearchRequest) {
   return {
     query: searchRequest.query,
     limit: searchRequest.limit ?? 10,
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const searchRequest = await validateAndProcessRequest(request);
-    const params = extractSearchParams(searchRequest as Record<string, unknown>);
+    const params = extractSearchParams(searchRequest);
     const response = await executeSearchWorkflow(params);
     return createSearchResponse(response, startTime);
 
