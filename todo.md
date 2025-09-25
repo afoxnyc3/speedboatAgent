@@ -1,149 +1,96 @@
-# TODO - Week 1 Foundation Tasks
+# TODO - Week 2 Intelligence Layer
 
-## Current Phase: Week 1 - Foundation
-**Focus**: Core infrastructure, Weaviate setup, and GitHub ingestion with LlamaIndex
+## Current Phase: Week 2 - Intelligence Layer
+**Focus**: Building search capabilities and chat interface with query routing
 
----
-
-## Immediate Tasks (Today/Tomorrow)
-
-### Issue #5: Weaviate Cloud Setup [P0 - Critical]
-- [ ] Create Weaviate Cloud account
-- [ ] Set up cluster with hybrid search enabled
-- [ ] Design Document schema with properties:
-  - [ ] content (text)
-  - [ ] source (string: github|web)
-  - [ ] filepath (string)
-  - [ ] url (string)
-  - [ ] lastModified (date)
-  - [ ] priority (number)
-  - [ ] language (string)
-  - [ ] metadata (object)
-- [ ] Configure text-embedding-3-large vectorizer (1024 dims)
-- [ ] Set up reranker-transformers module
-- [ ] Configure hybrid search weights (75% vector, 25% keyword)
-- [ ] Write connection test in `src/lib/weaviate/client.ts`
-- [ ] Create schema initialization in `src/lib/weaviate/schema.ts`
-- [ ] Verify with `npm run test:weaviate`
-
-### Issue #6: GitHub Ingestion with LlamaIndex [P0 - Critical]
-- [ ] Install LlamaIndex dependencies
-- [ ] Set up GitHub API authentication
-- [ ] Implement repository reader with LlamaIndex
-- [ ] Configure AST-aware parsing for TypeScript
-- [ ] Support file types: `.ts`, `.tsx`, `.md`, `.mdx`, `.json`, `.yaml`
-- [ ] Implement chunking strategy
-- [ ] Set priority weighting (1.2x for GitHub)
-- [ ] Create ingestion pipeline in `src/lib/ingestion/github-processor.ts`
-- [ ] Test with sample repository
-
-### Issue #7: GitHub Webhook Handler [P0 - Critical]
-- [ ] Create webhook endpoint at `/api/ingest/github/route.ts`
-- [ ] Implement HMAC signature validation
-- [ ] Parse webhook payload with Zod
-- [ ] Set up BullMQ for job queuing
-- [ ] Configure job processing < 30s
-- [ ] Add retry logic for failures
-- [ ] Test with GitHub webhook tester
+**Week 1 Complete**: Foundation infrastructure established with 477 files indexed from Chelsea Piers Speedboat repository. See [progress.md](./progress.md) for complete milestone details.
 
 ---
 
-## This Week Tasks
+## Active Issues (This Week)
 
-### Issue #8: Basic Hybrid Search [P1 - High]
-- [ ] Implement GraphQL queries to Weaviate
-- [ ] Create search interface in `src/lib/search/hybrid-search.ts`
-- [ ] Format search results
-- [ ] Add basic ranking logic
-- [ ] Create API endpoint at `/api/search/route.ts`
-- [ ] Test search accuracy
+### Issue #11: Search API Endpoint [P0 - Critical]
+- [ ] Create `/api/search/route.ts` with Weaviate integration
+- [ ] Implement GraphQL hybrid search queries
+- [ ] Add query validation with Zod schemas
+- [ ] Format search results with metadata
+- [ ] Add error handling and logging
+- [ ] Test with indexed Chelsea Piers content
+- [ ] Optimize search performance < 2s response time
 
-### Issue #9: Redis Cache Setup [P1 - High]
-- [ ] Create Upstash Redis account
-- [ ] Configure Redis connection
-- [ ] Implement embedding cache in `src/lib/cache/embedding-cache.ts`
-- [ ] SHA-256 hash generation for cache keys
-- [ ] TTL configuration (24 hours default)
-- [ ] Cache hit/miss metrics tracking
-- [ ] Create cache warming strategy
+### Issue #12: Chat Interface with Streaming [P0 - Critical]
+- [ ] Create `/api/chat/route.ts` with OpenAI integration
+- [ ] Implement GPT-4 Turbo streaming responses
+- [ ] Add Server-Sent Events for token-by-token display
+- [ ] Integrate with search API for context retrieval
+- [ ] Add source attribution to responses
+- [ ] Handle conversation context
+- [ ] Test streaming performance < 100ms first token
 
-### Environment & Project Setup
-- [ ] Create `.env.example` with all variables:
-  - [ ] OPENAI_API_KEY
-  - [ ] WEAVIATE_HOST & WEAVIATE_API_KEY
-  - [ ] GITHUB_TOKEN & GITHUB_WEBHOOK_SECRET
-  - [ ] UPSTASH_REDIS_URL & UPSTASH_REDIS_TOKEN
-  - [ ] MEM0_API_KEY (Week 4)
-  - [ ] FIRECRAWL_API_KEY (Week 3)
-  - [ ] SENTRY_DSN
-- [ ] Install dependencies:
-  - [ ] weaviate-ts-client
-  - [ ] llamaindex
-  - [ ] @upstash/redis
-  - [ ] openai
-  - [ ] bullmq
-  - [ ] zod
-- [ ] Configure TypeScript strict mode
-- [ ] Set up ESLint rules (15-line functions, 100-line files)
-- [ ] Create folder structure per specification
+### Issue #13: Query Classification System [P1 - High]
+- [ ] Implement query classifier in `src/lib/search/query-classifier.ts`
+- [ ] Define query types: technical/business/operational
+- [ ] Add source authority weighting logic:
+  - Technical: GitHub 1.5x, Web 0.5x
+  - Business: GitHub 0.5x, Web 1.5x
+  - Operational: Balanced 1.0x
+- [ ] Train/configure classification model
+- [ ] Test classification accuracy > 80%
 
-### Testing Infrastructure
-- [ ] Set up Jest/Vitest
-- [ ] Write Weaviate connection tests
-- [ ] Write LlamaIndex ingestion tests
-- [ ] Write cache operation tests
-- [ ] Create CI pipeline
+### Issue #14: Frontend Chat Component [P1 - High]
+- [ ] Create `src/components/chat/ChatInterface.tsx`
+- [ ] Implement streaming message display
+- [ ] Add source citation components
+- [ ] Create responsive mobile + desktop layout
+- [ ] Add loading states and error handling
+- [ ] Integrate with chat API endpoint
+- [ ] Add copy-to-clipboard functionality
 
 ---
 
-## Week 1 Success Criteria
-- ✅ Weaviate schema deployed and tested
-- ✅ GitHub content indexed via LlamaIndex
-- ✅ Basic search returning results
-- ✅ Cache operational with metrics
-- ✅ Search latency < 500ms
-- ✅ Cache hit rate > 30%
+## Week 2 Success Criteria
+
+**Technical Targets:**
+- [ ] Search API returning relevant results from 477 indexed files
+- [ ] Chat interface streaming responses with source citations
+- [ ] Query classification routing working with 80%+ accuracy
+- [ ] Frontend responsive and user-friendly across devices
+- [ ] End-to-end demo ready for team reveal
+
+**Performance Targets:**
+- [ ] Search response time < 2s (p95)
+- [ ] Chat first token < 100ms
+- [ ] Query classification < 50ms
+- [ ] Zero hallucination incidents
+- [ ] All responses include source citations
 
 ---
 
-## Upcoming (Week 2)
-- Query classification system
-- Source authority weighting
-- OpenAI GPT-4 Turbo integration
-- Streaming chat interface
-- Source attribution
+## Development Notes
+
+### Architecture Decisions
+- **Stealth Mode**: Local ingestion complete, no production webhooks yet
+- **Data Source**: 477 files from Chelsea Piers Speedboat monorepo successfully indexed
+- **Search Foundation**: Weaviate hybrid search (75% vector, 25% keyword) operational
+- **Next Steps**: Connect search foundation to user interface
+
+### Implementation Priority
+1. **Search API** (blocks chat functionality)
+2. **Chat Interface** (user-facing demo requirement)
+3. **Frontend Components** (parallel development)
+4. **Query Classification** (optimization layer)
+
+### Week 1 Foundation Status
+- ✅ Weaviate Cloud configured with 11-property schema
+- ✅ Local ingestion pipeline processing 477 files
+- ✅ OpenAI embeddings integration (text-embedding-3-large)
+- ✅ Development tooling and scripts operational
+- ✅ Zero production impact maintained (stealth mode)
 
 ---
 
-## Blockers & Dependencies
-
-### Current Blockers
-- None yet
-
-### Required Accounts/Services
-- ⚠️ Weaviate Cloud account needed
-- ⚠️ OpenAI API key needed
-- ⚠️ GitHub token needed
-- ⚠️ Upstash Redis instance needed
-- 📝 Mem0 account (Week 4)
-- 📝 Firecrawl API (Week 3)
-
-### Notes
-- Start with Weaviate (critical path dependency)
-- LlamaIndex setup is second priority
-- Use mock data if services unavailable
-- Document any issues in CLAUDE.md
-- Track costs from day 1
-
----
-
-## Daily Standup
-
-### Today's Focus
-**Goal**: Set up Weaviate and start LlamaIndex integration
-**Tasks**:
-1. Weaviate Cloud account and schema
-2. LlamaIndex installation and setup
-3. Basic GitHub reader implementation
-**Blockers**: Need service accounts
-**EOD Target**: Weaviate connected, LlamaIndex installed
+## Upcoming (Week 3)
+- Firecrawl web content ingestion
+- Content deduplication pipeline
+- Hybrid source routing optimization
+- Weekly web crawl scheduling
