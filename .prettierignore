@@ -1,0 +1,17 @@
+# Ignore artifacts:
+build
+coverage
+dist
+.next
+out
+
+# Ignore all files:
+*.min.js
+*.min.css
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Ignore directories:
+node_modules
+.claude/workflow.log
