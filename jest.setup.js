@@ -1,4 +1,29 @@
 import '@testing-library/jest-dom';
+import React from 'react';
+
+// Make React available globally for JSX
+global.React = React;
+
+// Polyfill TransformStream for Node.js environment
+global.TransformStream = class TransformStream {
+  constructor() {
+    this.readable = {
+      getReader() {
+        return {
+          read: () => Promise.resolve({ done: true, value: undefined })
+        };
+      }
+    };
+    this.writable = {
+      getWriter() {
+        return {
+          write: () => Promise.resolve(),
+          close: () => Promise.resolve()
+        };
+      }
+    };
+  }
+};
 
 // Mock environment variables for testing
 process.env.OPENAI_API_KEY = 'test-api-key';

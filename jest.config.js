@@ -1,7 +1,9 @@
 /** @type {import('jest').Config} */
 const config = {
-  testEnvironment: 'node',
-  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': '@swc/jest',
+  },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   moduleNameMapper: {
