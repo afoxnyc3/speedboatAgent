@@ -13,7 +13,10 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "ingest-local": "tsx scripts/ingest-local.ts",
+    "test-weaviate": "tsx scripts/test-connection.ts",
+    "setup-weaviate": "tsx scripts/setup-weaviate.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.30",
@@ -27,10 +30,16 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
+    "@sentry/nextjs": "^10.15.0",
     "ai": "^5.0.44",
+    "bullmq": "^5.58.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.2",
     "embla-carousel-react": "^8.6.0",
+    "glob": "^11.0.3",
+    "graphql": "^16.11.0",
+    "llamaindex": "^0.12.0",
     "lucide-react": "^0.544.0",
     "nanoid": "^5.1.5",
     "next": "15.5.3",
@@ -40,7 +49,10 @@
     "streamdown": "^1.2.0",
     "tailwind-merge": "^3.3.1",
     "tokenlens": "^1.2.1",
-    "use-stick-to-bottom": "^1.1.1"
+    "tsx": "^4.20.5",
+    "use-stick-to-bottom": "^1.1.1",
+    "weaviate-ts-client": "^2.2.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@swc/jest": "^0.2.29",
