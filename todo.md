@@ -10,15 +10,21 @@
 ## Active Issues (This Week)
 
 ### Issue #11: Search API Endpoint [P0 - Critical]
+**Status**: Ready to implement
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/11
+
 - [ ] Create `/api/search/route.ts` with Weaviate integration
 - [ ] Implement GraphQL hybrid search queries
 - [ ] Add query validation with Zod schemas
 - [ ] Format search results with metadata
 - [ ] Add error handling and logging
-- [ ] Test with indexed Chelsea Piers content
+- [ ] Test with indexed Chelsea Piers content (477 files)
 - [ ] Optimize search performance < 2s response time
 
 ### Issue #12: Chat Interface with Streaming [P0 - Critical]
+**Status**: Ready to implement (depends on #11)
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/12
+
 - [ ] Create `/api/chat/route.ts` with OpenAI integration
 - [ ] Implement GPT-4 Turbo streaming responses
 - [ ] Add Server-Sent Events for token-by-token display
@@ -28,6 +34,9 @@
 - [ ] Test streaming performance < 100ms first token
 
 ### Issue #13: Query Classification System [P1 - High]
+**Status**: Ready to implement (depends on #11)
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/13
+
 - [ ] Implement query classifier in `src/lib/search/query-classifier.ts`
 - [ ] Define query types: technical/business/operational
 - [ ] Add source authority weighting logic:
@@ -38,6 +47,9 @@
 - [ ] Test classification accuracy > 80%
 
 ### Issue #14: Frontend Chat Component [P1 - High]
+**Status**: Ready to implement (parallel with backend)
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/14
+
 - [ ] Create `src/components/chat/ChatInterface.tsx`
 - [ ] Implement streaming message display
 - [ ] Add source citation components
@@ -45,6 +57,17 @@
 - [ ] Add loading states and error handling
 - [ ] Integrate with chat API endpoint
 - [ ] Add copy-to-clipboard functionality
+
+### Issue #9: Redis Cache Setup [P1 - Optimization]
+**Status**: Week 2 optimization (after core features)
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/9
+
+- [ ] Create Upstash Redis instance
+- [ ] Implement embedding cache in `src/lib/cache/embedding-cache.ts`
+- [ ] SHA-256 hash generation for cache keys
+- [ ] TTL configuration (24 hours default)
+- [ ] Cache hit rate >70% targeting
+- [ ] Cache warming strategies
 
 ---
 

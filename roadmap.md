@@ -34,31 +34,46 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
 **Goal**: Implement query routing and streaming responses
 
 ### High Priority (P0)
-- [ ] Issue #10: Query classification system
-  - Classify queries: technical/business/operational
-  - Route queries based on type
-  - Implement source boosting logic
+- [ ] Issue #11: Search API endpoint (/api/search)
+  - Connect to Weaviate with hybrid search
+  - Return formatted results with metadata
+  - Response time <2s for typical queries
 
-- [ ] Issue #11: Source authority weighting
-  - GitHub: 1.5x for technical queries
-  - Web: 1.5x for business queries
-  - Balanced for operational queries
-
-- [ ] Issue #12: Streaming chat interface with OpenAI
+- [ ] Issue #12: Chat interface with streaming responses
   - GPT-4 Turbo integration
   - Token-by-token streaming
   - Server-sent events implementation
 
+- [ ] Issue #13: Query classification system
+  - Classify queries: technical/business/operational
+  - Route queries based on type
+  - Implement source boosting logic
+
+- [ ] Issue #14: Frontend chat interface component
+  - React chat component with streaming
+  - Source citation display
+  - Mobile-responsive design
+
 ### Medium Priority (P1)
-- [ ] Issue #13: Source attribution system
+- [ ] Issue #15: Source attribution system
   - Line number references for code
   - Direct links to sources
   - Authority indicators (GitHub vs Web)
 
-- [ ] Issue #14: Response formatting
+- [ ] Issue #16: Response formatting enhancements
   - Code syntax highlighting
   - Collapsible source sections
   - Copy functionality
+
+- [ ] Issue #17: Source authority weighting system
+  - GitHub: 1.5x for technical queries
+  - Web: 1.5x for business queries
+  - Balanced for operational queries
+
+- [ ] Issue #9: Redis cache setup (optimization)
+  - Embedding cache with TTL policies
+  - Cache hit rate >70%
+  - Performance monitoring
 
 ### Deliverables
 - Intelligent query routing active
@@ -78,28 +93,28 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
 **Goal**: Integrate web crawling and deduplication
 
 ### High Priority (P0)
-- [ ] Issue #15: Firecrawl web ingestion setup
+- [ ] Issue #18: Firecrawl web ingestion setup
   - Configure selective crawling
   - Target: `docs.*`, `api.*`, `help.*`
   - Exclude: `/blog/*`, `/careers/*`, `/legal/*`
 
-- [ ] Issue #16: Deduplication pipeline
+- [ ] Issue #19: Deduplication pipeline
   - SHA-256 content hashing
   - GitHub content precedence
   - Canonical URL tracking
 
-- [ ] Issue #17: Source routing optimization
-  - Priority: 0.8x for web content
+- [ ] Issue #20: Source routing optimization
+  - Priority: GitHub 1.2x, Web 0.8x
   - Merge duplicate content
   - Update search weights
 
 ### Medium Priority (P1)
-- [ ] Issue #18: Web crawl scheduling
+- [ ] Issue #21: Web crawl scheduling automation
   - Weekly crawl automation
   - Change detection
   - Incremental updates
 
-- [ ] Issue #19: Content normalization
+- [ ] Issue #22: Content normalization pipeline
   - HTML to markdown conversion
   - Metadata extraction
   - Language detection
@@ -122,33 +137,33 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
 **Goal**: Add memory, feedback, and monitoring
 
 ### High Priority (P0)
-- [ ] Issue #20: Mem0 conversation memory
+- [ ] Issue #23: Mem0 conversation memory integration
   - User session tracking
   - Context preservation
   - Memory retrieval
 
-- [ ] Issue #21: Feedback system implementation
+- [ ] Issue #24: User feedback system implementation
   - Thumbs up/down UI
   - Feedback storage
   - Improvement pipeline
 
-- [ ] Issue #22: Performance optimization
+- [ ] Issue #25: Performance optimization and caching
   - Cache hit rate > 70%
   - Response time < 2s (p95)
   - Query optimization
 
 ### Medium Priority (P1)
-- [ ] Issue #23: Monitoring setup
+- [ ] Issue #26: Monitoring and analytics setup
   - Sentry error tracking
   - Vercel Analytics
   - Performance dashboards
 
-- [ ] Issue #24: Rate limiting
+- [ ] Issue #27: Rate limiting and API security
   - 100 req/min per IP
   - API key rotation
   - Throttling logic
 
-- [ ] Issue #25: Load testing
+- [ ] Issue #28: Load testing and performance benchmarks
   - 1000 concurrent users
   - Stress test all endpoints
   - Performance benchmarks
