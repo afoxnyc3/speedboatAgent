@@ -1,51 +1,57 @@
-# Session Documentation Index
+# RAG Agent Development Sessions
 
-This directory contains detailed documentation for each development work session, providing traceability and context for all implementation work.
-
-## Structure
-
-- **Templates**: Standard templates for consistent session documentation
-- **Planning Sessions**: Pre-work session plans with objectives and implementation strategies
-- **Implementation Sessions**: Post-work summaries with outcomes and artifacts created
+This directory contains session documentation following the CLAUDE.md workflow requirements.
 
 ## Session Index
 
+### Week 3: Hybrid Data Ingestion (Current)
+- [ ] **2025-09-25-week3-hybrid-data-plan.md** - Planning session for Firecrawl integration and deduplication
+- [ ] **2025-09-25-week3-hybrid-data-summary.md** - Implementation results and handoff notes
+
+### Week 2: Intelligence Layer (Complete)
+- ✅ **Week 2 Complete** - Search API, Query Classification, Frontend Chat (see progress.md)
+- ✅ **CI Infrastructure Stabilized** - All GitHub Actions passing
+
 ### Week 1: Foundation (Complete)
-- [Week 1 Foundation Complete](../progress.md#week-1-foundation-completed-2025-09-25) - See progress.md for details
+- ✅ **Week 1 Complete** - Weaviate setup, GitHub ingestion, 477 files indexed
 
-### Week 2: Intelligence Layer (In Progress)
-- [2025-09-26 Week 2 Planning](./2025-09-26-week2-planning.md) - Intelligence Layer implementation plan
+## Session Documentation Standards
 
-### Future Sessions
-- Week 3: Hybrid Data ingestion
-- Week 4: Production readiness
+### Naming Convention
+`YYYY-MM-DD-<week#>-<focus-area>-<plan|summary>.md`
 
-## Usage
+Examples:
+- `2025-09-25-week3-hybrid-data-plan.md`
+- `2025-09-26-week3-deduplication-summary.md`
 
-### Before Starting Work
-1. Copy `templates/session-plan.md` to create new session plan
-2. Fill in objectives, context, and implementation details
-3. Commit plan before beginning work
+### Required Elements (per CLAUDE.md)
+- **Plans**: Objectives, dependencies, implementation plan, success criteria, time allocation
+- **Summaries**: Completed work, artifacts created, metrics achieved, challenges, next steps
+- **Links**: GitHub issue numbers and PR references
+- **Measurements**: Performance metrics and benchmarks
 
-### After Completing Work
-1. Copy `templates/session-summary.md` to create session summary
-2. Document completed work, artifacts, and outcomes
-3. Update progress.md with high-level milestone progress
-4. Commit all documentation with implementation
+### Templates
+- Use `templates/session-plan.md` for pre-work planning
+- Use `templates/session-summary.md` for post-work documentation
+- Reference templates ensure consistency and completeness
 
-## Templates
+## CLAUDE.md Workflow Compliance
 
-- [Session Plan Template](./templates/session-plan.md)
-- [Session Summary Template](./templates/session-summary.md)
+### Before Starting Work Session
+1. Create session plan: `/sessions/YYYY-MM-DD-<topic>-plan.md`
+2. Include: objectives, context, dependencies, implementation plan, success criteria
+3. Reference relevant GitHub issues and dependencies
+4. Commit plan before starting implementation
 
-## Documentation Standards
+### After Completing Work Session
+1. Create session summary: `/sessions/YYYY-MM-DD-<topic>-summary.md`
+2. Include: completed work, artifacts, performance metrics, challenges, solutions
+3. Update `progress.md` with high-level summary
+4. Link documentation for traceability
+5. Commit all documentation with implementation
 
-- **Naming**: `YYYY-MM-DD-<week>-<focus-area>.md`
-- **Links**: Include GitHub issue numbers and links
-- **Outcomes**: Document both planned vs actual results
-- **Handoffs**: Provide clear next steps for subsequent sessions
-- **Traceability**: Link to relevant progress.md sections
-
----
-
-*Last Updated: 2025-09-26*
+## Integration with Project Documentation
+- High-level summaries added to `progress.md`
+- Technical decisions captured in `decision-log.md`
+- Changes documented in `change-log.md`
+- Session references linked for full traceability
