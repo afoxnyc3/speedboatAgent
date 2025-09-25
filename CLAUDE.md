@@ -45,6 +45,56 @@ User Query → Query Classifier → Hybrid Search → Rerank → GPT-4 → Strea
 - Zero hallucination policy
 - Push event processing: < 30s
 
+## Session Documentation Workflow
+
+### Before Starting Work Session
+AI agents must create session documentation before beginning implementation work:
+
+1. **Create Session Plan**: `/sessions/YYYY-MM-DD-<topic>-plan.md`
+   - Session objectives and goals
+   - Current context and dependencies
+   - Detailed implementation plan with task breakdown
+   - Success criteria and performance targets
+   - Time allocation and priority order
+
+2. **Reference Issues**: Link relevant GitHub issues and dependencies
+
+3. **Commit Plan**: Save session plan before starting implementation
+
+### After Completing Work Session
+AI agents must document outcomes after completing work:
+
+1. **Create Session Summary**: `/sessions/YYYY-MM-DD-<topic>-summary.md`
+   - Completed work with specific details
+   - Artifacts created (files, PRs, issues)
+   - Performance metrics and benchmarks achieved
+   - Challenges encountered and solutions implemented
+   - Next session setup and recommendations
+
+2. **Update Progress**: Add high-level summary to `progress.md`
+
+3. **Link Documentation**: Reference session docs from progress.md for traceability
+
+4. **Commit Results**: Save all documentation with implementation
+
+### Session Directory Structure
+```
+/sessions/
+├── README.md                    # Index of all sessions with links
+├── templates/
+│   ├── session-plan.md         # Planning template
+│   └── session-summary.md      # Summary template
+└── YYYY-MM-DD-<topic>.md       # Individual session documents
+```
+
+### Session Documentation Standards
+- Use consistent naming: `YYYY-MM-DD-<week#>-<focus-area>`
+- Include GitHub issue numbers and links
+- Document both planned and actual outcomes
+- Capture technical decisions and rationale
+- Measure progress against success criteria
+- Provide clear handoff notes for next session
+
 ## Implementation Timeline
 
 ### Week 1: Foundation
