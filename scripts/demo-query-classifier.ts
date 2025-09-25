@@ -5,7 +5,7 @@
 import { config } from 'dotenv';
 config();
 
-import { classifyQuery, classifyQueryWithMetrics } from '../src/lib/search/query-classifier';
+// import { classifyQuery, classifyQueryWithMetrics } from '../src/lib/search/query-classifier';
 
 // Sample queries to demonstrate classification
 const sampleQueries = [
@@ -26,6 +26,9 @@ const sampleQueries = [
 ];
 
 async function demonstrateClassification() {
+  console.log('Demo temporarily disabled - waiting for query-classifier implementation');
+  return;
+  /*
   console.log('🤖 Query Classification System Demo\n');
   console.log('Testing with sample queries...\n');
 
@@ -86,6 +89,7 @@ async function demonstrateClassification() {
     }
     console.log('---\n');
   }
+  */
 }
 
 if (require.main === module) {
