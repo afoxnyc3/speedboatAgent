@@ -7,7 +7,7 @@ import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMem0Client } from '../../../src/lib/memory/mem0-client';
-import { executeSearchWorkflow } from '../../../src/lib/search/search-orchestrator';
+import { executeSearchWorkflow } from '../../../src/lib/search/cached-search-orchestrator';
 import {
   createSessionId,
   createUserId,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       chatRequest.message
     );
 
-    // Search for relevant information
+    // Search for relevant information with caching
     const searchResult = await executeSearchWorkflow({
       query: contextualQuery,
       limit: 5,
@@ -130,6 +130,8 @@ export async function POST(request: NextRequest) {
       includeContent: true,
       includeEmbedding: false,
       timeout: 5000,
+      sessionId: chatRequest.sessionId,
+      userId: chatRequest.userId,
     });
 
     // Build RAG prompt with search results and context
