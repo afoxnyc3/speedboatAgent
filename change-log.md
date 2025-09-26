@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Planning for Week 4: Production readiness with Mem0 and monitoring
 
-### Changed
-- None yet
-
 ### Fixed
+- **Issue #20**: Weaviate schema alignment for hybrid search with web content
+  - Fixed web crawler document properties to match schema
+  - Updated hybrid search field queries for flattened structure
+  - Removed invalid score filters and metadata nesting
+  - Validated mixed source routing (GitHub + web content)
+  - Confirmed query classification routing with authority weighting
+
+### Changed
 - None yet
 
 ### Removed

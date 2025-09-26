@@ -91,14 +91,17 @@
 
 ## Active Issues (Week 3 Wrap-up)
 
-### Issue #20: Source Routing Optimization [P1 - High]
-**Status**: Ready to begin (Week 3 completion)
+### ✅ Issue #20: Source Routing Optimization [P1 - High] - COMPLETE
+**Status**: Completed (Week 3)
 **GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/20
+**PR**: Branch `fix/20-source-routing-schema` (ready for merge)
 
-- [ ] Complete hybrid search integration with authority weighting
-- [ ] Test mixed source results (GitHub + web content)
-- [ ] Validate query classification routing with dual sources
-- [ ] Performance testing with hybrid dataset
+- ✅ Complete hybrid search integration with authority weighting
+- ✅ Test mixed source results (GitHub + web content)
+- ✅ Validate query classification routing with dual sources
+- ✅ Performance testing with hybrid dataset
+- ✅ Fixed Weaviate schema compatibility issues
+- ✅ Verified Firecrawl integration with real API key
 
 ### Code Quality Refactoring [P1 - Technical Debt]
 **Status**: Required for CLAUDE.md compliance
