@@ -9,6 +9,7 @@ export * from './chat';
 export * from './api';
 export * from './rag';
 export * from './query-classification';
+export * from './memory';
 
 // Re-export specific commonly used types for convenience
 export type {
@@ -37,6 +38,15 @@ export type {
   RetrievalId,
   ContextId,
 } from './rag';
+
+export type {
+  // Core entity IDs from memory
+  MemoryId,
+  UserId,
+  SessionId,
+  RunId,
+  AgentId,
+} from './memory';
 
 export type {
   // Search interfaces

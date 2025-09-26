@@ -44,7 +44,7 @@ function buildHybridQuery(
       query: params.query,
       alpha: params.config.hybridWeights.vector,
       properties: ['content', 'filepath'],
-      fusionType: 'relativeScoreFusion' as const
+      fusionType: 'relativeScoreFusion' as any
     })
     .withLimit(params.limit + params.offset)
     .withOffset(params.offset);

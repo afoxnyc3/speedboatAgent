@@ -126,7 +126,7 @@ export interface SearchMetadata {
 // Main search interfaces
 export interface SearchRequest {
   readonly query: string;
-  readonly sessionId?: SessionId;
+  readonly sessionId?: string;
   readonly limit?: number;
   readonly offset?: number;
   readonly filters?: SearchFilters;
@@ -253,7 +253,7 @@ export const SearchFiltersSchema = z.object({
 
 export const SearchRequestSchema = z.object({
   query: z.string().min(1).max(1000),
-  sessionId: SessionIdSchema.optional(),
+  sessionId: z.string().optional(),
   limit: z.number().positive().max(100).default(10),
   offset: z.number().nonnegative().default(0),
   filters: SearchFiltersSchema.optional(),

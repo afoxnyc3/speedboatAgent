@@ -65,7 +65,7 @@ export default function ChatInterface({
   const renderMessageContent = (message: ChatMessage) => {
     // Handle code blocks in message content
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-    const parts = [];
+    const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
 

@@ -35,12 +35,8 @@ function validateSearchRequest(body: unknown): SearchRequest {
     return SearchRequestSchema.parse(body);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const message = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
-      throw new z.ZodError([{
-        code: 'custom',
-        message: `Validation failed: ${message}`,
-        path: []
-      }]);
+      const message = error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      throw new Error(`Validation failed: ${message}`);
     }
     throw error;
   }

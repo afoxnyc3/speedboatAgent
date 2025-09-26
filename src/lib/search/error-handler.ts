@@ -56,7 +56,7 @@ export function handleValidationError(
     'PARSING_ERROR',
     'Invalid request format',
     queryId,
-    error.errors
+    { errors: error.issues }
   );
 
   return {
