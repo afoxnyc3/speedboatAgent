@@ -294,7 +294,8 @@ The `/work` command provides a streamlined development workflow that automatical
 2. **Implementation**: TDD cycle with atomic commits
 3. **Validation**: Tests, CI, requirements verification
 4. **Documentation**: Auto-update roadmap, progress tracking
-5. **Cleanup**: PR merge, branch cleanup, ready for next issue
+5. **GitHub Issue Closure**: Automatic via PR merge or manual with implementation summary
+6. **Cleanup**: PR merge, branch cleanup, ready for next issue
 
 #### Benefits
 - **Zero Decision Fatigue**: Just run `/work` to start
@@ -302,6 +303,48 @@ The `/work` command provides a streamlined development workflow that automatical
 - **Complete Cycle**: Includes all cleanup and documentation
 - **Progress Tracking**: Automatic milestone updates
 - **Flexible**: Can override with specific issue when needed
+
+## GitHub Issue Management
+
+### Automatic Issue Closure
+GitHub issues are automatically closed when PRs are merged if they contain the proper keywords:
+
+```bash
+# In PR description or commit message:
+Closes #21
+Fixes #21
+Resolves #21
+```
+
+### Manual Issue Closure
+For issues requiring detailed implementation summaries:
+
+```bash
+gh issue close <issue-number> --comment "✅ [Issue Title] complete
+
+Implemented:
+- [Key feature 1]
+- [Key feature 2]
+- [Key feature 3]
+
+Testing:
+- [Test coverage details]
+- [Integration test results]
+
+All requirements met and tests passing."
+```
+
+### Issue Verification
+Always verify issue closure and update project tracking:
+
+```bash
+# Verify closure
+gh issue view <issue-number>
+
+# Update roadmap.md status
+# Update progress.md percentages
+# Archive completed tasks in todo.md
+```
 
 ## Launch Checklist
 

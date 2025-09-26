@@ -124,6 +124,12 @@ Brief description of changes
 ## Issue
 Closes #<issue-number>
 
+<!-- Use one of these keywords for automatic issue closure:
+- Closes #21 (most common)
+- Fixes #21 (for bug fixes)
+- Resolves #21 (for feature requests)
+-->
+
 ## Changes
 - [ ] Feature implementation
 - [ ] Tests added/updated
@@ -236,6 +242,59 @@ vercel --prod
 - Update issue status in GitHub
 - Communicate blockers immediately
 - Document lessons learned
+
+### GitHub Issue Closure
+
+#### Automatic Closure (Preferred)
+Issues are automatically closed when PRs are merged if the PR description or commit message contains:
+```bash
+# In PR description or commit message:
+Closes #<issue-number>
+Fixes #<issue-number>     # For bug fixes
+Resolves #<issue-number>  # For feature requests
+```
+
+#### Manual Closure with Summary
+For complex issues requiring detailed implementation summaries:
+```bash
+gh issue close <issue-number> --comment "✅ [Issue Title] complete
+
+Implemented:
+- [Core feature/functionality]
+- [Additional features/improvements]
+- [Integration points/dependencies]
+
+Technical Details:
+- [Architecture decisions]
+- [Performance improvements]
+- [Security considerations]
+
+Testing & Validation:
+- [Test coverage details]
+- [Integration test results]
+- [Performance benchmarks met]
+
+Documentation:
+- [API documentation updated]
+- [README/guides updated]
+- [Examples/tutorials added]
+
+All requirements met and tests passing."
+```
+
+#### Issue Closure Verification
+```bash
+# Verify issue closure
+gh issue view <issue-number>
+
+# List all open issues for the milestone
+gh issue list --milestone "Week 4"
+
+# Update project documentation
+# - Mark complete in roadmap.md
+# - Update percentages in progress.md
+# - Archive tasks in todo.md
+```
 
 ## Tools & Resources
 

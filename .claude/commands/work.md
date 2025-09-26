@@ -66,7 +66,11 @@ Start development on a specific issue from the roadmap.
   - Mark issue complete in `roadmap.md`
   - Update completion percentage in `progress.md`
   - Archive completed tasks in `todo.md`
-- **Close GitHub Issue**: Add implementation summary
+- **Close GitHub Issue**:
+  - **Automatic Closure**: Ensure PR description contains `Closes #<issue-number>` for automatic closure on merge
+  - **Manual Closure** (if needed): `gh issue close <issue-number> --comment "✅ [Issue Title] complete\n\nImplemented:\n- [Key feature 1]\n- [Key feature 2]\n- [Key feature 3]\n\nAll requirements met and tests passing."`
+  - **Verify Closure**: `gh issue view <issue-number>` to confirm issue is closed
+  - **Implementation Summary**: Include detailed summary of what was built, key features, and validation results
 - **Branch Cleanup**:
   - Switch to main branch
   - Pull latest changes
@@ -112,6 +116,7 @@ Creating branch: feature/25-performance-optimization
 
 ✅ Issue #25 complete (11→12 issues, 61%→67% progress)
 ✅ PR #37 merged to main
+✅ GitHub Issue #25 closed with implementation summary
 ✅ Documentation updated
 
 Ready for next issue. Run /work to continue.
@@ -130,6 +135,31 @@ Assistant:
 Working on Issue #15 (P1): Source attribution system
 Note: Overriding priority order (P0 issue #25 available)
 [Proceeds with specified issue...]
+```
+
+### GitHub Issue Closure Example
+```bash
+# After successful PR merge, close the issue with detailed summary
+gh issue close 21 --comment "✅ Web crawl scheduling automation complete
+
+Implemented:
+- BullMQ-based job scheduler with weekly cron automation (every Sunday at 2 AM)
+- Change detection service using SHA-256 content hashing
+- Incremental update system with force-recrawl override capability
+- Comprehensive monitoring APIs for job status, health checks, and metrics
+- Job management: schedule, cancel, list jobs with status tracking
+- Error handling with retry logic and exponential backoff
+- Integration with existing Firecrawl and Weaviate infrastructure
+
+Testing:
+- Schema validation tests with Zod type safety (18 tests passing)
+- Integration test script: npm run test-crawl-automation
+- Health check endpoints for operational monitoring
+
+All requirements met and tests passing."
+
+# Verify the issue was closed
+gh issue view 21
 ```
 
 ## Integration with Agents
