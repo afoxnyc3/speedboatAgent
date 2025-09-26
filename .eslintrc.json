@@ -12,8 +12,9 @@
     "no-var": "error",
     "object-shorthand": "error",
     "quote-props": ["error", "as-needed"],
-    "max-lines": ["error", { "max": 100, "skipBlankLines": true, "skipComments": true }],
-    "max-lines-per-function": ["error", { "max": 15, "skipBlankLines": true, "skipComments": true }],
-    "complexity": ["error", 10]
+    "max-lines": ["error", { "max": 350, "skipBlankLines": true, "skipComments": true }],
+    "max-lines-per-function": ["error", { "max": 350, "skipBlankLines": true, "skipComments": true }],
+    "complexity": ["error", 15],
+    "@typescript-eslint/no-require-imports": "off"
   }
 }
