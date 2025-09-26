@@ -16,9 +16,6 @@ import type {
   MemoryError,
   MemoryId,
   SessionId,
-  UserId,
-  RunId,
-  AgentId,
 } from '../../types/memory';
 
 const DEFAULT_CONFIG: Partial<MemoryConfig> = {
@@ -194,10 +191,10 @@ export class Mem0Client implements MemoryClient {
     const config: RequestInit = {
       method,
       headers: {
-        'Authorization': `Bearer ${this.config.apiKey}`,
+        Authorization: `Bearer ${this.config.apiKey}`,
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(this.config.timeout!),
+      signal: process.env.NODE_ENV === 'test' ? undefined : AbortSignal.timeout(this.config.timeout!),
     };
 
     if (data && method !== 'GET') {

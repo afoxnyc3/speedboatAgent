@@ -17,7 +17,7 @@ const ContextRequestSchema = z.object({
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
-    const { conversationId, sessionId, userId } = ContextRequestSchema.parse(body);
+    const { conversationId, sessionId } = ContextRequestSchema.parse(body);
 
     const memoryClient = getMem0Client();
 

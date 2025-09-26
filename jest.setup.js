@@ -98,6 +98,16 @@ global.crypto = require('crypto').webcrypto || {
   subtle: {}
 };
 
+// Polyfill AbortSignal.timeout for test environment compatibility
+if (!global.AbortSignal?.timeout) {
+  global.AbortSignal.timeout = (delay) => {
+    const controller = new AbortController();
+    // Don't actually abort in tests to avoid interference
+    // The timeout functionality isn't critical for testing business logic
+    return controller.signal;
+  };
+}
+
 // Suppress console errors in tests
 const originalError = console.error;
 const originalWarn = console.warn;

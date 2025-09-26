@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import ChatInterface from "./ChatInterface";
 import type { ChatMessage } from "./types";
-import type { ConversationId, SessionId, UserId } from "../../types/memory";
+import type { ConversationId, SessionId } from "../../types/memory";
 
 interface MemoryEnhancedChatProps {
   userId?: string;
@@ -87,7 +87,7 @@ export default function MemoryChatAssistant({
     try {
       const requestPayload = {
         message: messageText,
-        conversationId: conversationId,
+        conversationId,
         sessionId: enableMemory ? sessionId : undefined,
         userId: enableMemory ? userId : undefined,
         streaming: false, // For simplicity, disable streaming initially

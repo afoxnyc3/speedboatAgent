@@ -5,7 +5,6 @@
 
 import type {
   MemoryItem,
-  MemoryConfig,
   UserId,
   SessionId,
   MemoryCategory,
@@ -140,7 +139,6 @@ export class PrivacyComplianceManager {
     userId?: UserId,
     sessionId?: SessionId
   ): Promise<number> {
-    const now = new Date();
     let deletedCount = 0;
 
     for (const policy of this.config.retentionPolicies) {
@@ -188,7 +186,7 @@ Contact us for privacy-related requests.
     `.trim();
   }
 
-  validateMemoryContent(content: string, category: MemoryCategory): {
+  validateMemoryContent(content: string, _category: MemoryCategory): {
     isValid: boolean;
     reason?: string;
     sanitizedContent?: string;

@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { getMem0Client } from '../../../lib/memory/mem0-client';
 import { getSearchOrchestrator } from '../../../lib/search/search-orchestrator';
 import type {
-  ChatRequest,
   ChatResponse,
   ChatMessage,
   ConversationId,
