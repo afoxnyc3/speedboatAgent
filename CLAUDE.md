@@ -236,6 +236,16 @@ const routeQuery = async (query: string) => {
 ```
 Types: feat, fix, chore, docs, refactor, test
 
+### Post-Merge Process
+1. Create PR for your feature/fix branch
+2. Merge PR to main via GitHub (after CI passes)
+3. Switch to main branch: `git checkout main`
+4. Pull latest changes: `git pull origin main`
+5. Delete merged branch: `git branch -d <branch-name>`
+6. Verify clean working tree: `git status`
+
+**Note**: `/tidyup` should include branch cleanup verification to ensure proper workflow adherence.
+
 ## Launch Checklist
 
 **Note**: For current progress status, see [progress.md](./progress.md)
