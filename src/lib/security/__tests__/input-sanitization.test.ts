@@ -259,7 +259,7 @@ describe('validateHeaders', () => {
     const headers = new Headers({
       'content-type': 'application/json',
       'user-agent': 'Mozilla/5.0 (Test Browser)',
-      'host': 'example.com',
+      host: 'example.com',
     });
 
     const result = validateHeaders(headers);
@@ -291,7 +291,7 @@ describe('validateHeaders', () => {
 
   it('should reject invalid hostnames', () => {
     const headers = new Headers({
-      'host': 'invalid<>hostname',
+      host: 'invalid<>hostname',
     });
 
     const result = validateHeaders(headers);

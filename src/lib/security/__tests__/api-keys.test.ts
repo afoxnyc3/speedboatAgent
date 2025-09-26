@@ -3,7 +3,7 @@
  * Test API key management and validation
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { ApiKeyManager, validateApiKeyMiddleware, isApiKeyAuthEnabled } from '../api-keys';
 
 describe('ApiKeyManager', () => {
@@ -66,7 +66,7 @@ describe('ApiKeyManager', () => {
   describe('extractKeyFromHeaders', () => {
     it('should extract key from Authorization header', () => {
       const headers = new Headers({
-        'authorization': 'Bearer test_key_123',
+        authorization: 'Bearer test_key_123',
       });
 
       const key = apiKeyManager.extractKeyFromHeaders(headers);
@@ -86,7 +86,7 @@ describe('ApiKeyManager', () => {
 
     it('should prefer Authorization header over X-API-Key', () => {
       const headers = new Headers({
-        'authorization': 'Bearer auth_key',
+        authorization: 'Bearer auth_key',
         'x-api-key': 'api_key',
       });
 
@@ -105,7 +105,7 @@ describe('ApiKeyManager', () => {
 
     it('should handle malformed Authorization header', () => {
       const headers = new Headers({
-        'authorization': 'Basic dGVzdA==', // Not Bearer
+        authorization: 'Basic dGVzdA==', // Not Bearer
       });
 
       const key = apiKeyManager.extractKeyFromHeaders(headers);
@@ -171,7 +171,7 @@ describe('validateApiKeyMiddleware', () => {
 
   it('should validate request with correct API key', () => {
     const headers = new Headers({
-      'authorization': 'Bearer test_middleware_key_12345678901234567890',
+      authorization: 'Bearer test_middleware_key_12345678901234567890',
     });
 
     const result = validateApiKeyMiddleware(headers);
