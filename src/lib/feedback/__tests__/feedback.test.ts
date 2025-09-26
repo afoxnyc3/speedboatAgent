@@ -7,14 +7,20 @@ import {
   type FeedbackListOptions,
   FEEDBACK_CONSTANTS,
 } from '@/types/feedback';
-import { createMessageId, createConversationId } from '../../types/chat';
-import { FeedbackFileStore } from './feedback-store';
+import { createMessageId, createConversationId } from '../../../types/chat';
+import { FeedbackFileStore } from '../feedback-store';
+
+// Create mock functions
+const mockReadFile = jest.fn();
+const mockWriteFile = jest.fn();
+const mockAccess = jest.fn();
+const mockMkdir = jest.fn();
 
 jest.mock('fs/promises', () => ({
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-  access: jest.fn(),
-  mkdir: jest.fn(),
+  readFile: mockReadFile,
+  writeFile: mockWriteFile,
+  access: mockAccess,
+  mkdir: mockMkdir,
 }));
 
 describe('FeedbackFileStore', () => {
@@ -47,6 +53,11 @@ describe('FeedbackFileStore', () => {
   beforeEach(() => {
     store = new FeedbackFileStore(testDataDir);
     jest.clearAllMocks();
+    // Clear mock implementations
+    mockReadFile.mockClear();
+    mockWriteFile.mockClear();
+    mockAccess.mockClear();
+    mockMkdir.mockClear();
   });
 
   afterEach(() => {
@@ -55,10 +66,6 @@ describe('FeedbackFileStore', () => {
 
   describe('save', () => {
     it('should save feedback successfully', async () => {
-      const mockReadFile = jest.mocked(fs.readFile);
-      const mockWriteFile = jest.mocked(fs.writeFile);
-      const mockAccess = jest.mocked(fs.access);
-
       mockAccess.mockResolvedValue(undefined);
       mockReadFile.mockRejectedValue({ code: 'ENOENT' });
       mockWriteFile.mockResolvedValue(undefined);
@@ -76,9 +83,6 @@ describe('FeedbackFileStore', () => {
 
     it('should append to existing feedback', async () => {
       const existingFeedback = { ...mockFeedback, id: createFeedbackId('existing-1') };
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
-      const mockWriteFile = fs.writeFile as jest.MockedFunction<typeof fs.writeFile>;
-      const mockAccess = fs.access as jest.MockedFunction<typeof fs.access>;
 
       mockAccess.mockResolvedValue(undefined);
       mockReadFile.mockResolvedValue(JSON.stringify([existingFeedback]));
@@ -95,9 +99,6 @@ describe('FeedbackFileStore', () => {
     });
 
     it('should handle save errors gracefully', async () => {
-      const mockAccess = fs.access as jest.MockedFunction<typeof fs.access>;
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
-
       mockAccess.mockResolvedValue(undefined);
       mockReadFile.mockRejectedValue(new Error('Read error'));
 
@@ -110,7 +111,6 @@ describe('FeedbackFileStore', () => {
 
   describe('get', () => {
     it('should retrieve feedback by id', async () => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
       mockReadFile.mockResolvedValue(JSON.stringify([mockFeedback]));
 
       const result = await store.get(mockFeedback.id);
@@ -119,7 +119,6 @@ describe('FeedbackFileStore', () => {
     });
 
     it('should return null for non-existent feedback', async () => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
       mockReadFile.mockResolvedValue(JSON.stringify([mockFeedback]));
 
       const result = await store.get(createFeedbackId('non-existent'));
@@ -147,7 +146,6 @@ describe('FeedbackFileStore', () => {
     ];
 
     beforeEach(() => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
       mockReadFile.mockResolvedValue(JSON.stringify(feedbackList));
     });
 
@@ -243,7 +241,6 @@ describe('FeedbackFileStore', () => {
     ];
 
     beforeEach(() => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
       mockReadFile.mockResolvedValue(JSON.stringify(analyticsData));
     });
 
@@ -267,7 +264,6 @@ describe('FeedbackFileStore', () => {
     });
 
     it('should handle empty feedback gracefully', async () => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
       mockReadFile.mockResolvedValue(JSON.stringify([]));
 
       const result = await store.analyze();
@@ -280,8 +276,6 @@ describe('FeedbackFileStore', () => {
 
   describe('delete', () => {
     it('should delete feedback by id', async () => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
-      const mockWriteFile = fs.writeFile as jest.MockedFunction<typeof fs.writeFile>;
 
       mockReadFile.mockResolvedValue(JSON.stringify([mockFeedback]));
       mockWriteFile.mockResolvedValue(undefined);
@@ -297,7 +291,6 @@ describe('FeedbackFileStore', () => {
     });
 
     it('should return false for non-existent feedback', async () => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
 
       mockReadFile.mockResolvedValue(JSON.stringify([mockFeedback]));
 

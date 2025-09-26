@@ -20,9 +20,8 @@ const config = {
     'tests/chat/CodeBlock.test.tsx',
     'tests/integration/api.test.ts',
     'src/lib/ingestion/__tests__/web-crawler.test.ts',
-    // Temporarily ignore feedback tests with fs mocking issues
-    'lib/feedback/feedback.test.ts',
-    'src/lib/feedback/feedback.test.ts'
+    // Keep lib/feedback/feedback.test.ts ignored (duplicate location)
+    'lib/feedback/feedback.test.ts'
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
