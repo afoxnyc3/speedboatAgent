@@ -246,6 +246,21 @@ Types: feat, fix, chore, docs, refactor, test
 
 **Note**: `/tidyup` should include branch cleanup verification to ensure proper workflow adherence.
 
+### Push Frequency Best Practices
+- **After completing an issue**: Always push before starting next issue
+- **After documentation updates**: Push immediately (README, roadmap, progress, etc.)
+- **After /tidyup**: Ensure all changes are pushed to remote
+- **Before /work**: Check for unpushed commits with `git status`
+- **End of session**: Never leave unpushed commits overnight
+- **Maximum delay**: Never accumulate more than 2-3 commits without pushing
+
+### Visual Sync Indicators
+```bash
+✅ Clean: "Your branch is up to date with 'origin/main'"
+⚠️  Action needed: "Your branch is ahead of 'origin/main' by X commits"
+```
+**When you see ⚠️**: Immediately run `git push origin main`
+
 ## Development Workflow
 
 ### /work Command

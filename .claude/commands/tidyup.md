@@ -36,7 +36,9 @@ Create atomic commit with format:
 Types: feat, fix, docs, style, refactor, test, chore
 
 ### 4. Integrate
-- Push branch to remote
+- **Push branch to remote** (if on feature branch)
+- **Push to main**: If working on main, run `git push origin main`
+- **Verify sync**: `git status` should show "up to date with origin/main"
 - Create pull request with:
   - Link to issue
   - Summary of changes
@@ -49,6 +51,7 @@ Before finalizing:
 - [ ] Documentation updated
 - [ ] No lint errors
 - [ ] Code reviewed for standards
+- [ ] **All commits pushed**: `git status` shows "up to date"
 - [ ] Scratchpad cleared
 - [ ] Todo list updated
 

@@ -71,11 +71,15 @@ Start development on a specific issue from the roadmap.
   - Switch to main branch
   - Pull latest changes
   - Delete feature branch
+- **Push to Remote**: `git push origin main` (ensure all changes synced)
 - **Run /tidyup**: Final documentation alignment
+- **Verify Sync**: `git status` should show "up to date with origin/main"
 - **Ready Message**: "Ready for next issue. Run /work to continue."
 
 ## Pre-Flight Checklist
 Before starting:
+- [ ] **Check for unpushed commits**: `git status`
+- [ ] **If commits pending**: `git push origin main` (required before starting new work)
 - [ ] Read last entry in `scratchpad.md`
 - [ ] Check current tasks in `todo.md`
 - [ ] Review recent `change-log.md`
