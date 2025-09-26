@@ -15,7 +15,11 @@ import {
   CodeIcon,
   FileTextIcon,
   GithubIcon,
-  GlobeIcon
+  GlobeIcon,
+  StarIcon,
+  ShieldCheckIcon,
+  InfoIcon,
+  UsersIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SourceViewerProps, Citation } from './types';
@@ -60,6 +64,46 @@ export default function SourceViewer({
     );
   };
 
+  const getAuthorityBadge = (authority?: string) => {
+    if (!authority) return null;
+
+    const configs = {
+      primary: {
+        label: 'Primary',
+        color: 'bg-green-100 text-green-800 border-green-200',
+        icon: <StarIcon className="h-3 w-3" />
+      },
+      authoritative: {
+        label: 'Authoritative',
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
+        icon: <ShieldCheckIcon className="h-3 w-3" />
+      },
+      supplementary: {
+        label: 'Supplementary',
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        icon: <InfoIcon className="h-3 w-3" />
+      },
+      community: {
+        label: 'Community',
+        color: 'bg-gray-100 text-gray-800 border-gray-200',
+        icon: <UsersIcon className="h-3 w-3" />
+      }
+    };
+
+    const config = configs[authority as keyof typeof configs];
+    if (!config) return null;
+
+    return (
+      <Badge
+        variant="outline"
+        className={cn("text-xs flex items-center gap-1", config.color)}
+      >
+        {config.icon}
+        {config.label}
+      </Badge>
+    );
+  };
+
   const handleCitationClick = (citation: Citation) => {
     onCitationClick?.(citation);
     if (citation.url) {
@@ -71,17 +115,28 @@ export default function SourceViewer({
     return (
       <div className="flex flex-wrap gap-1 mt-2">
         {citations.map((citation, index) => (
-          <Badge
-            key={index}
-            variant="secondary"
-            className="cursor-pointer hover:bg-secondary/80 transition-colors"
-            onClick={() => handleCitationClick(citation)}
-          >
-            {getSourceIcon(citation)}
-            <span className="ml-1 text-xs">
-              {(citation.filepath || citation.title || citation.url || '').split('/').pop()}
-            </span>
-          </Badge>
+          <div key={index} className="flex items-center gap-1">
+            <Badge
+              variant="secondary"
+              className="cursor-pointer hover:bg-secondary/80 transition-colors"
+              onClick={() => handleCitationClick(citation)}
+            >
+              {getSourceIcon(citation)}
+              <span className="ml-1 text-xs">
+                {(citation.filepath || citation.title || citation.url || '').split('/').pop()}
+              </span>
+              {(citation.lineReference || citation.line) && (
+                <span className="ml-1 text-xs opacity-75">
+                  {citation.lineReference || `L${citation.line}`}
+                </span>
+              )}
+            </Badge>
+            {citation.authority && (
+              <div className="scale-75">
+                {getAuthorityBadge(citation.authority)}
+              </div>
+            )}
+          </div>
         ))}
       </div>
     );
@@ -106,9 +161,14 @@ export default function SourceViewer({
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     {getFileIcon(citation)}
                     <span className="truncate">{citation.filepath || citation.title || citation.url || ''}</span>
-                    {citation.line && (
+                    {(citation.lineReference || citation.line) && (
                       <Badge variant="outline" className="text-xs">
-                        L{citation.line}
+                        {citation.lineReference || `L${citation.line}`}
+                      </Badge>
+                    )}
+                    {citation.codeType && (
+                      <Badge variant="secondary" className="text-xs">
+                        {citation.codeType}
                       </Badge>
                     )}
                   </CardTitle>
@@ -120,6 +180,7 @@ export default function SourceViewer({
                     >
                       {Math.round(citation.score * 100)}%
                     </Badge>
+                    {getAuthorityBadge(citation.authority)}
                   </div>
                 </div>
               </CardHeader>
