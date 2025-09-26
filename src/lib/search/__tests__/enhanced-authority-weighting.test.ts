@@ -192,6 +192,50 @@ describe('Enhanced Authority Weighting System', () => {
     });
   });
 
+  describe('Authority validation tests', () => {
+    it('should pass all validation test cases', () => {
+      // Test 1: Basic technical query with GitHub
+      const test1Result = calculateEnhancedWeight({
+        queryType: 'technical',
+        sourceType: 'github'
+      });
+      expect(test1Result).toBe(1.5);
+
+      // Test 2: Technical query with primary authority
+      const test2Result = calculateEnhancedWeight({
+        queryType: 'technical',
+        sourceType: 'github',
+        authority: 'primary'
+      });
+      expect(test2Result).toBeCloseTo(2.25, 3); // 1.5 * 1.5
+
+      // Test 3: Business query with web source
+      const test3Result = calculateEnhancedWeight({
+        queryType: 'business',
+        sourceType: 'web',
+        authority: 'authoritative'
+      });
+      expect(test3Result).toBeCloseTo(1.8, 3); // 1.5 * 1.2
+
+      // Test 4: Code content bonus
+      const test4Result = calculateEnhancedWeight({
+        queryType: 'technical',
+        sourceType: 'github',
+        authority: 'primary',
+        contentType: 'code'
+      });
+      expect(test4Result).toBeCloseTo(2.475, 3); // 1.5 * 1.5 * 1.1
+
+      // Test 5: Enhanced source weights generation
+      const test5Result = generateEnhancedSourceWeights('technical', {
+        github: 'primary',
+        web: 'supplementary'
+      });
+      expect(test5Result.github).toBeCloseTo(2.25, 3);
+      expect(test5Result.web).toBeCloseTo(0.4, 3); // 0.5 * 0.8
+    });
+  });
+
   describe('Performance considerations', () => {
     it('should handle large numbers of weight calculations efficiently', () => {
       const startTime = Date.now();
