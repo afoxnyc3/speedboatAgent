@@ -9,9 +9,9 @@ import {
   SearchResponse,
   DEFAULT_SEARCH_CONFIG,
   type SearchFilters,
-  type SearchConfig,
-  type SourceWeights
+  type SearchConfig
 } from '../../types/search';
+import type { SourceWeights } from '../../types/query-classification';
 import { classifyQueryWithMetrics } from './query-classifier';
 import { performHybridSearch } from './hybrid-search';
 import {

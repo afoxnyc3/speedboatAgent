@@ -39,16 +39,12 @@ function buildHybridQuery(
   return client.graphql
     .get()
     .withClassName('Document')
-    .withFields([
-      'content', 'source', 'filepath', 'language', 'priority', 'lastModified',
-      'metadata { size wordCount lines encoding mimeType tags author created version branch commit url checksum }',
-      '_additional { score id }'
-    ])
+    .withFields('content source filepath language priority lastModified metadata { size wordCount lines encoding mimeType tags author created version branch commit url checksum } _additional { score id }')
     .withHybrid({
       query: params.query,
       alpha: params.config.hybridWeights.vector,
       properties: ['content', 'filepath'],
-      fusionType: 'relativeScoreFusion'
+      fusionType: 'relativeScoreFusion' as const
     })
     .withLimit(params.limit + params.offset)
     .withOffset(params.offset)
