@@ -246,6 +246,37 @@ Types: feat, fix, chore, docs, refactor, test
 
 **Note**: `/tidyup` should include branch cleanup verification to ensure proper workflow adherence.
 
+## Development Workflow
+
+### /work Command
+The `/work` command provides a streamlined development workflow that automatically selects the highest priority issue and guides through completion.
+
+#### Usage
+```bash
+/work              # Auto-select next priority issue
+/work <issue-id>   # Work on specific issue
+```
+
+#### Priority System
+- **P0 (Critical)**: Production blockers, performance, security (highest priority)
+- **P1 (High)**: Core features, user experience improvements
+- **P2 (Medium)**: Enhancements, optimization, monitoring
+- **P3 (Low)**: Nice-to-have features, documentation
+
+#### Complete Workflow Cycle
+1. **Auto-Selection**: Chooses highest priority pending issue from roadmap
+2. **Implementation**: TDD cycle with atomic commits
+3. **Validation**: Tests, CI, requirements verification
+4. **Documentation**: Auto-update roadmap, progress tracking
+5. **Cleanup**: PR merge, branch cleanup, ready for next issue
+
+#### Benefits
+- **Zero Decision Fatigue**: Just run `/work` to start
+- **Always Optimal**: Works on most impactful issues first
+- **Complete Cycle**: Includes all cleanup and documentation
+- **Progress Tracking**: Automatic milestone updates
+- **Flexible**: Can override with specific issue when needed
+
 ## Launch Checklist
 
 **Note**: For current progress status, see [progress.md](./progress.md)
