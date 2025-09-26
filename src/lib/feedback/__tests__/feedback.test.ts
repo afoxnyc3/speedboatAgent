@@ -94,8 +94,12 @@ describe('FeedbackFileStore', () => {
     });
 
     it('should handle save errors gracefully', async () => {
+      // Make fs.access succeed so ensureDataDir doesn't throw
       mockAccess.mockResolvedValue(undefined);
-      mockReadFile.mockRejectedValue(new Error('Read error'));
+      // Make loadFeedback return empty array (file doesn't exist)
+      mockReadFile.mockRejectedValue({ code: 'ENOENT' });
+      // Make writeFile fail to trigger the save error
+      mockWriteFile.mockRejectedValue(new Error('Write permission denied'));
 
       const result = await store.save(mockFeedback);
 
