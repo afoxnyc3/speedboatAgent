@@ -48,6 +48,55 @@ Enforce TDD methodology with automated agents and strict code standards.
 - Learning curve for team
 
 ### Alternatives Considered
+1. Manual testing approach
+   - Pros: Faster initial development
+   - Cons: Higher bug rate, maintenance issues
+
+---
+
+## ADR-002: Technical Debt Management Strategy
+Date: 2025-09-26
+Status: Accepted
+
+### Context
+Project accumulated technical debt during rapid development phases, including:
+- Missing environment documentation
+- Inconsistent test infrastructure
+- Type safety issues with 'any' types
+- CI instability due to test failures
+
+### Decision
+Implement systematic technical debt resolution strategy:
+1. **Environment Configuration**: Comprehensive .env.example documentation
+2. **Test Infrastructure**: Standardize mocking patterns and directory structure
+3. **Type Safety**: Eliminate 'any' types with proper TypeScript interfaces
+4. **Incremental Improvement**: Fix issues while maintaining CI stability
+
+### Consequences
+#### Positive
+- Improved developer onboarding experience
+- Better test reliability and coverage
+- Enhanced type safety reducing runtime errors
+- Maintained project velocity while improving quality
+- Established patterns for future development
+
+#### Negative
+- Time investment during feature development
+- Temporary increase in code complexity during migration
+- Some tests still require additional work
+
+### Alternatives Considered
+1. **Big Bang Refactor**: Fix all issues at once
+   - Pros: Complete resolution
+   - Cons: High risk, blocks development, potential breaking changes
+
+2. **Status Quo**: Leave technical debt as-is
+   - Pros: No development time spent
+   - Cons: Compounding problems, reduced team productivity
+
+3. **Post-Release Cleanup**: Defer until after production deployment
+   - Pros: Focuses on features first
+   - Cons: Technical debt becomes harder to fix, impacts production stability
 1. Traditional development with testing after
    - Pros: Faster initial development
    - Cons: More bugs, harder to refactor

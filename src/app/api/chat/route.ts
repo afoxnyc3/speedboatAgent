@@ -13,6 +13,8 @@ import type {
   ConversationId,
   MessageId,
 } from '../../../types/chat';
+import type { Document } from '../../../types/search';
+import type { ConversationMemoryContext } from '../../../types/memory';
 import type {
   MemoryMessage,
   SessionId,
@@ -139,7 +141,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 // Context-enhanced query building
-function buildContextualQuery(query: string, context: any): string {
+function buildContextualQuery(query: string, context: ConversationMemoryContext): string {
   const entityContext = context.entityMentions.slice(0, 5).join(', ');
   const topicContext = context.topicContinuity.slice(0, 3).join(', ');
 
@@ -153,12 +155,12 @@ function buildContextualQuery(query: string, context: any): string {
 // Contextual response generation
 async function generateContextualResponse(params: {
   query: string;
-  searchResults: any[];
-  memoryContext: any;
+  searchResults: Document[];
+  memoryContext: ConversationMemoryContext;
   conversationId: ConversationId;
 }): Promise<{
   content: string;
-  sources: any[];
+  sources: Document[];
   suggestions: string[];
 }> {
   const { query, searchResults, memoryContext } = params;
@@ -171,7 +173,7 @@ async function generateContextualResponse(params: {
 
   const memoryContextStr = memoryContext.relevantMemories
     .slice(0, 3)
-    .map((mem: any) => mem.content)
+    .map((mem) => mem.content)
     .join('\n');
 
   const systemPrompt = buildSystemPrompt(memoryContext);
@@ -198,7 +200,7 @@ Please provide a comprehensive answer with proper citations.`;
 }
 
 // System prompt with memory awareness
-function buildSystemPrompt(memoryContext: any): string {
+function buildSystemPrompt(memoryContext: ConversationMemoryContext): string {
   const stage = memoryContext.conversationStage;
   const preferences = Object.entries(memoryContext.userPreferences)
     .map(([k, v]) => `${k}: ${v}`)
@@ -225,7 +227,7 @@ function extractTopics(message: string): string[] {
 }
 
 // Citation source building
-function buildCitationSources(searchResults: any[]): any[] {
+function buildCitationSources(searchResults: Document[]): Array<{ title: string; url: string; snippet: string }> {
   return searchResults.slice(0, 5).map((doc, index) => ({
     id: `cite_${index + 1}`,
     documentId: doc.id,
