@@ -255,7 +255,7 @@ function calculateCostInsights(services: ServiceCost[]): {
   };
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Calculate costs for all services
     const services = [

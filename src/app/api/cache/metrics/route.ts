@@ -12,7 +12,7 @@ import { getSearchOrchestrator } from '../../../../lib/search/cached-search-orch
  * GET /api/cache/metrics
  * Returns comprehensive cache performance metrics
  */
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
     const cacheManager = getCacheManager();
     const embeddingService = getEmbeddingService();
