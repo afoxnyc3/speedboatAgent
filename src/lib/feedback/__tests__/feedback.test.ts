@@ -1,5 +1,4 @@
 import { describe, expect, it, jest, beforeEach, afterEach } from '@jest/globals';
-import fs from 'fs/promises';
 import path from 'path';
 import {
   createFeedbackId,
@@ -10,18 +9,19 @@ import {
 import { createMessageId, createConversationId } from '../../../types/chat';
 import { FeedbackFileStore } from '../feedback-store';
 
-// Create mock functions
-const mockReadFile = jest.fn();
-const mockWriteFile = jest.fn();
-const mockAccess = jest.fn();
-const mockMkdir = jest.fn();
-
+// Mock fs/promises module
 jest.mock('fs/promises', () => ({
-  readFile: mockReadFile,
-  writeFile: mockWriteFile,
-  access: mockAccess,
-  mkdir: mockMkdir,
+  readFile: jest.fn(),
+  writeFile: jest.fn(),
+  access: jest.fn(),
+  mkdir: jest.fn(),
 }));
+
+// Get mocked functions
+const fs = require('fs/promises');
+const mockReadFile = fs.readFile as jest.Mock;
+const mockWriteFile = fs.writeFile as jest.Mock;
+const mockAccess = fs.access as jest.Mock;
 
 describe('FeedbackFileStore', () => {
   let store: FeedbackFileStore;
@@ -53,11 +53,6 @@ describe('FeedbackFileStore', () => {
   beforeEach(() => {
     store = new FeedbackFileStore(testDataDir);
     jest.clearAllMocks();
-    // Clear mock implementations
-    mockReadFile.mockClear();
-    mockWriteFile.mockClear();
-    mockAccess.mockClear();
-    mockMkdir.mockClear();
   });
 
   afterEach(() => {

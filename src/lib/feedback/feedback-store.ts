@@ -205,8 +205,8 @@ export class FeedbackFileStore implements FeedbackStore {
     try {
       const data = await fs.readFile(this.filePath, 'utf-8');
       return JSON.parse(data);
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         return [];
       }
       throw error;

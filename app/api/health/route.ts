@@ -11,7 +11,7 @@ interface ComponentHealth {
   status: 'healthy' | 'degraded' | 'unhealthy';
   latency?: number;
   error?: string;
-  details?: Record<string, any>;
+  details?: Record<string, string | number | boolean | string[]>;
 }
 
 interface SystemHealth {

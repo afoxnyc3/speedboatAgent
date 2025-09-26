@@ -7,6 +7,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSearchOrchestrator } from '../../../../lib/search/cached-search-orchestrator';
 import { getEmbeddingService } from '../../../../lib/cache/embedding-service';
+import { type CacheMetrics } from '../../../../lib/cache/redis-cache';
+
+// Cache stats interface for warming decisions
+interface CacheStats {
+  overall: { hitRate: number; totalRequests: number };
+  byType: {
+    embedding?: CacheMetrics;
+    searchResult?: CacheMetrics;
+  };
+  recommendations: string[];
+}
 
 // Validation schema for warming requests
 const WarmingRequestSchema = z.object({
@@ -160,7 +171,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
       return NextResponse.json({
         success: true,
-        queries: queries.map((text, index) => ({
+        queries: queries.map((text, _index) => ({
           text,
           priority: Math.floor(Math.random() * 5) + 6, // Random priority 6-10
           suggested: true
@@ -274,7 +285,7 @@ export async function scheduleBackgroundWarming(): Promise<{
 /**
  * Select queries for warming based on cache performance
  */
-function selectQueriesForWarming(cacheStats: any): string[] {
+function selectQueriesForWarming(cacheStats: CacheStats): string[] {
   const queries: string[] = [];
 
   // If embedding cache is low, focus on technical queries

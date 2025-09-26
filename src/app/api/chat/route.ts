@@ -39,7 +39,7 @@ const generateMessageId = (): MessageId => `msg_${Date.now()}_${Math.random().to
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const body = await request.json();
+    const body: unknown = await request.json();
     const validatedRequest = ChatRequestSchema.parse(body);
 
     const sessionId = validatedRequest.sessionId as SessionId || generateSessionId();
@@ -66,8 +66,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       includeContent: true,
       includeEmbedding: false,
       timeout: 10000,
-      sessionId: sessionId,
-      userId: userId,
+      sessionId,
+      userId,
       context: `conversation:${conversationId}`,
       filters: {},
     });
