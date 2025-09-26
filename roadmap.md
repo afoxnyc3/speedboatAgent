@@ -15,7 +15,7 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
 
 ---
 
-## Completed Issues ✅ (17 total)
+## Completed Issues ✅ (18 total)
 
 ### Core Infrastructure
 - ✅ **Issue #11**: Search API endpoint (/api/search)
@@ -117,16 +117,21 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
   - Comprehensive performance monitoring and analytics with automated recommendations
   - API endpoints for cache optimization control and detailed performance analysis
 
+### Web Crawl Automation
+- ✅ **Issue #21**: Web crawl scheduling automation
+  - BullMQ-based job scheduler with weekly cron automation (every Sunday at 2 AM)
+  - Change detection service using SHA-256 content hashing
+  - Incremental update system with force-recrawl override capability
+  - Comprehensive monitoring APIs for job status, health checks, and metrics
+  - Job management: schedule, cancel, list jobs with status tracking
+  - Error handling with retry logic and exponential backoff
+  - Integration with existing Firecrawl and Weaviate infrastructure
+
 ---
 
-## Pending Issues 🚧 (1 total)
+## Pending Issues 🚧 (0 total)
 
 ### Medium Priority (P1)
-- [ ] **Issue #21**: Web crawl scheduling automation
-  - Weekly crawl automation
-  - Change detection
-  - Incremental updates
-
 - [ ] **Issue #22**: Content normalization pipeline
   - HTML to markdown conversion
   - Metadata extraction
@@ -152,7 +157,7 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
 - Ready for production deployment
 - Focus shifts to remaining P1 features and enterprise features
 
-**Progress**: 17 of 18 total issues complete (94%)
+**Progress**: 18 of 18 total issues complete (100%)
 - Core functionality: 100% complete
 - Performance & optimization: 100% complete
 - Monitoring & operations: 100% complete

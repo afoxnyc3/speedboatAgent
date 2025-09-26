@@ -17,7 +17,8 @@
     "ingest-local": "tsx scripts/ingest-local.ts",
     "test-weaviate": "tsx scripts/test-connection.ts",
     "setup-weaviate": "tsx scripts/setup-weaviate.ts",
-    "test-web-crawler": "tsx scripts/test-web-crawler.ts"
+    "test-web-crawler": "tsx scripts/test-web-crawler.ts",
+    "test-crawl-automation": "tsx scripts/test-crawl-automation.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.30",
