@@ -94,7 +94,7 @@
 ### ✅ Issue #20: Source Routing Optimization [P1 - High] - COMPLETE
 **Status**: Completed (Week 3)
 **GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/20
-**PR**: Branch `fix/20-source-routing-schema` (ready for merge)
+**PR**: PR #33 successfully merged (commit e510c2e)
 
 - ✅ Complete hybrid search integration with authority weighting
 - ✅ Test mixed source results (GitHub + web content)
@@ -124,7 +124,31 @@
 
 ---
 
-## Week 2 Success Criteria
+## Week 4 Production Features - READY TO BEGIN
+
+### Issue #23: Mem0 Conversation Memory Integration [P0 - Critical] 🎯
+**Status**: Ready to begin (Week 4 priority)
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/23
+**Environment**: MEM0_API_KEY configured and available
+
+- [ ] Create `/src/lib/memory/mem0-client.ts` with API integration
+- [ ] Implement session management for conversation tracking
+- [ ] Add context retrieval to chat pipeline
+- [ ] Create memory-based query enhancement
+- [ ] Implement privacy and data retention policies
+
+### Issue #24: User Feedback System [P0 - Critical]
+**Status**: Next after Mem0 integration
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/24
+
+- [ ] Create FeedbackWidget component (thumbs up/down)
+- [ ] Build `/app/api/feedback/route.ts` endpoint
+- [ ] Implement feedback storage and analysis
+- [ ] Create improvement pipeline integration
+
+---
+
+## ARCHIVED - Week 2 Success Criteria
 
 **Technical Targets:**
 - [ ] Search API returning relevant results from 477 indexed files
