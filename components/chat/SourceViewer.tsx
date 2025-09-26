@@ -34,7 +34,9 @@ export default function SourceViewer({
   }
 
   const getFileIcon = (citation: Citation) => {
-    const ext = citation.filepath.split('.').pop()?.toLowerCase();
+    // Use title or filepath, fallback to empty string
+    const path = citation.filepath || citation.title || citation.url || '';
+    const ext = path.split('.').pop()?.toLowerCase();
 
     switch (ext) {
       case 'ts':
@@ -77,7 +79,7 @@ export default function SourceViewer({
           >
             {getSourceIcon(citation)}
             <span className="ml-1 text-xs">
-              {citation.filepath.split('/').pop()}
+              {(citation.filepath || citation.title || citation.url || '').split('/').pop()}
             </span>
           </Badge>
         ))}
@@ -103,7 +105,7 @@ export default function SourceViewer({
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     {getFileIcon(citation)}
-                    <span className="truncate">{citation.filepath}</span>
+                    <span className="truncate">{citation.filepath || citation.title || citation.url || ''}</span>
                     {citation.line && (
                       <Badge variant="outline" className="text-xs">
                         L{citation.line}

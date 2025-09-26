@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import StreamingText from './StreamingText';
 import SourceViewer from './SourceViewer';
 import CodeBlock from './CodeBlock';
-import { FeedbackWidget } from '@/components/chat/FeedbackWidget';
+import { FeedbackWidget } from './FeedbackWidget';
 import type { ChatInterfaceProps, ChatMessage } from './types';
 
 /**

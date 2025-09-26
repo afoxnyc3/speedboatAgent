@@ -201,7 +201,7 @@ export class Mem0Client implements MemoryClient {
       config.body = JSON.stringify(data);
     } else if (data && method === 'GET') {
       const params = new URLSearchParams(data);
-      url += `?${params}`;
+      url = url + `?${params}`;
     }
 
     for (let attempt = 0; attempt < this.config.retryAttempts!; attempt++) {
@@ -290,9 +290,12 @@ export const getMem0Client = (): MemoryClient => {
   if (!mem0Instance) {
     const apiKey = process.env.MEM0_API_KEY;
     if (!apiKey) {
-      throw new Error('MEM0_API_KEY environment variable is required');
+      // Use mock client when API key is not configured
+      const { createMockMem0Client } = require('./mock-mem0-client');
+      mem0Instance = createMockMem0Client();
+    } else {
+      mem0Instance = createMem0Client(apiKey);
     }
-    mem0Instance = createMem0Client(apiKey);
   }
   return mem0Instance;
 };
