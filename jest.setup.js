@@ -101,6 +101,13 @@ global.crypto = require('crypto').webcrypto || {
   subtle: {}
 };
 
+// Add TextEncoder/TextDecoder polyfill for Node.js environments that don't have it
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
+
 // Polyfill AbortSignal.timeout for test environment compatibility
 if (typeof AbortSignal !== 'undefined' && !AbortSignal.timeout) {
   AbortSignal.timeout = function(delay) {
@@ -121,6 +128,19 @@ if (!global.AbortSignal.timeout) {
     return controller.signal;
   };
 }
+
+// Mock @upstash/redis to avoid ESM import issues
+jest.mock('@upstash/redis', () => ({
+  Redis: jest.fn().mockImplementation(() => ({
+    pipeline: jest.fn(),
+    ping: jest.fn(),
+    zremrangebyscore: jest.fn(),
+    zcard: jest.fn(),
+    zadd: jest.fn(),
+    expire: jest.fn(),
+    zcount: jest.fn(),
+  })),
+}));
 
 // Suppress console errors in tests
 const originalError = console.error;

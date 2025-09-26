@@ -25,38 +25,38 @@ describe('ApiKeyManager', () => {
   });
 
   describe('validateKey', () => {
-    it('should validate correct API key', () => {
-      const result = apiKeyManager.validateKey('test_primary_key_12345678901234567890');
+    it('should validate correct API key', async () => {
+      const result = await apiKeyManager.validateKey('test_primary_key_12345678901234567890');
 
       expect(result.valid).toBe(true);
       expect(result.keyId).toBe('key_1');
       expect(result.error).toBeUndefined();
     });
 
-    it('should reject invalid API key', () => {
-      const result = apiKeyManager.validateKey('invalid_key');
+    it('should reject invalid API key', async () => {
+      const result = await apiKeyManager.validateKey('invalid_key');
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('Invalid API key');
       expect(result.keyId).toBeUndefined();
     });
 
-    it('should reject empty API key', () => {
-      const result = apiKeyManager.validateKey('');
+    it('should reject empty API key', async () => {
+      const result = await apiKeyManager.validateKey('');
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe('API key required');
     });
 
-    it('should handle prefixed API keys', () => {
-      const result = apiKeyManager.validateKey('ak_test_primary_key_12345678901234567890');
+    it('should handle prefixed API keys', async () => {
+      const result = await apiKeyManager.validateKey('ak_test_primary_key_12345678901234567890');
 
       expect(result.valid).toBe(true);
       expect(result.keyId).toBe('key_1');
     });
 
-    it('should validate secondary API keys', () => {
-      const result = apiKeyManager.validateKey('test_secondary_key_12345678901234567890');
+    it('should validate secondary API keys', async () => {
+      const result = await apiKeyManager.validateKey('test_secondary_key_12345678901234567890');
 
       expect(result.valid).toBe(true);
       expect(result.keyId).toBe('key_2');
@@ -169,32 +169,32 @@ describe('validateApiKeyMiddleware', () => {
     delete process.env.API_KEY;
   });
 
-  it('should validate request with correct API key', () => {
+  it('should validate request with correct API key', async () => {
     const headers = new Headers({
       authorization: 'Bearer test_middleware_key_12345678901234567890',
     });
 
-    const result = validateApiKeyMiddleware(headers);
+    const result = await validateApiKeyMiddleware(headers);
 
     expect(result.valid).toBe(true);
     expect(result.keyId).toBe('key_1');
   });
 
-  it('should reject request without API key', () => {
+  it('should reject request without API key', async () => {
     const headers = new Headers();
 
-    const result = validateApiKeyMiddleware(headers);
+    const result = await validateApiKeyMiddleware(headers);
 
     expect(result.valid).toBe(false);
     expect(result.error).toContain('API key required');
   });
 
-  it('should reject request with invalid API key', () => {
+  it('should reject request with invalid API key', async () => {
     const headers = new Headers({
       'x-api-key': 'invalid_key',
     });
 
-    const result = validateApiKeyMiddleware(headers);
+    const result = await validateApiKeyMiddleware(headers);
 
     expect(result.valid).toBe(false);
     expect(result.error).toBe('Invalid API key');

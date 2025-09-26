@@ -4,18 +4,10 @@
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { Redis } from '@upstash/redis';
+import { RateLimiter, extractIP, DEFAULT_RATE_LIMIT_CONFIG } from '../rate-limiter';
 
-// Mock Redis client
-const mockRedis = {
-  pipeline: jest.fn(),
-  ping: jest.fn(),
-  zremrangebyscore: jest.fn(),
-  zcard: jest.fn(),
-  zadd: jest.fn(),
-  expire: jest.fn(),
-  zcount: jest.fn(),
-};
-
+// Create mock pipeline
 const mockPipeline = {
   zremrangebyscore: jest.fn().mockReturnThis(),
   zcard: jest.fn().mockReturnThis(),
@@ -24,12 +16,19 @@ const mockPipeline = {
   exec: jest.fn(),
 };
 
-// Mock the Redis import
-jest.mock('@upstash/redis', () => ({
-  Redis: jest.fn().mockImplementation(() => mockRedis),
-}));
+// Create mock Redis instance
+const mockRedis = {
+  pipeline: jest.fn().mockReturnValue(mockPipeline),
+  ping: jest.fn(),
+  zremrangebyscore: jest.fn(),
+  zcard: jest.fn(),
+  zadd: jest.fn(),
+  expire: jest.fn(),
+  zcount: jest.fn(),
+};
 
-import { RateLimiter, extractIP, DEFAULT_RATE_LIMIT_CONFIG } from '../rate-limiter';
+// Mock Redis constructor to return our mock instance
+(Redis as jest.MockedClass<typeof Redis>).mockImplementation(() => mockRedis as any);
 
 describe('RateLimiter', () => {
   let rateLimiter: RateLimiter;

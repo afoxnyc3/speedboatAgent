@@ -1,9 +1,13 @@
 /** @type {import('jest').Config} */
 const config = {
   testEnvironment: 'jsdom',
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': '@swc/jest',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@upstash/redis|uncrypto)/)',
+  ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testPathIgnorePatterns: [
     '/node_modules/',

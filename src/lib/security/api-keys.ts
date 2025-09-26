@@ -150,8 +150,24 @@ export class ApiKeyManager {
    * Hash API key using SHA-256 (Web Crypto API)
    */
   private async hashKey(key: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(key);
+    // Create encoder with proper fallback for Node.js environments
+    let data: Uint8Array | Buffer;
+
+    try {
+      // Try to use TextEncoder if available
+      const encoder = new TextEncoder();
+      data = encoder.encode(key);
+    } catch {
+      // Fallback to Buffer for Node.js environments
+      data = Buffer.from(key, 'utf8');
+    }
+
+    // Use Node.js crypto if Web Crypto is not available (test environment)
+    if (typeof crypto === 'undefined' || !crypto.subtle) {
+      const { createHash } = await import('crypto');
+      return createHash('sha256').update(data).digest('hex');
+    }
+
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
