@@ -283,22 +283,22 @@ class WebCrawlerService {
 
     for (const doc of documents) {
       try {
-        // Check for existing document by URL hash
+        // Check for existing document by URL
         const existingQuery = client.graphql
           .get()
           .withClassName('Document')
-          .withFields('id')
+          .withFields('content')
           .withWhere({
             operator: 'Equal',
-            path: ['metadata', 'checksum'],
-            valueString: doc.metadata.checksum,
+            path: ['url'],
+            valueString: doc.url || doc.filepath,
           })
           .withLimit(1);
 
         const existing = await existingQuery.do();
 
         if (existing?.data?.Get?.Document?.length > 0) {
-          continue; // Skip duplicate
+          continue; // Skip duplicate by URL
         }
 
         // Index new document
@@ -309,19 +309,14 @@ class WebCrawlerService {
             content: doc.content,
             source: doc.source,
             filepath: doc.filepath,
+            url: doc.url || doc.metadata?.url || doc.filepath,
             language: doc.language,
             priority: doc.priority,
             lastModified: doc.metadata.lastModified.toISOString(),
-            metadata: {
-              size: doc.metadata.size,
-              wordCount: doc.metadata.wordCount,
-              lines: doc.metadata.lines,
-              encoding: doc.metadata.encoding,
-              mimeType: doc.metadata.mimeType,
-              tags: doc.metadata.tags,
-              url: doc.metadata.url,
-              checksum: doc.metadata.checksum,
-            },
+            isCode: false,
+            isDocumentation: true,
+            fileType: 'documentation',
+            size: doc.metadata.size || 0,
           })
           .do();
 

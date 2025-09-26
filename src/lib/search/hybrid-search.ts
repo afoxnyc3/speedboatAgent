@@ -39,7 +39,7 @@ function buildHybridQuery(
   return client.graphql
     .get()
     .withClassName('Document')
-    .withFields('content source filepath language priority lastModified metadata { size wordCount lines encoding mimeType tags author created version branch commit url checksum } _additional { score id }')
+    .withFields('content source filepath url language priority lastModified isCode isDocumentation fileType size _additional { score id }')
     .withHybrid({
       query: params.query,
       alpha: params.config.hybridWeights.vector,
@@ -47,33 +47,28 @@ function buildHybridQuery(
       fusionType: 'relativeScoreFusion' as const
     })
     .withLimit(params.limit + params.offset)
-    .withOffset(params.offset)
-    .withWhere({
-      operator: 'GreaterThan',
-      path: ['_additional', 'score'],
-      valueNumber: params.config.minScore
-    });
+    .withOffset(params.offset);
 }
 
 /**
- * Creates document metadata from raw data
+ * Creates document metadata from flattened schema properties
  */
-function createDocumentMetadata(rawMetadata: any, content: string) {
+function createDocumentMetadata(doc: any, content: string) {
   return {
-    size: rawMetadata?.size || 0,
-    wordCount: rawMetadata?.wordCount || 0,
-    lines: rawMetadata?.lines || 1,
-    encoding: rawMetadata?.encoding || 'utf-8',
-    mimeType: rawMetadata?.mimeType || 'text/plain',
-    tags: rawMetadata?.tags || [],
-    author: rawMetadata?.author,
-    lastModified: rawMetadata?.lastModified ? new Date(rawMetadata.lastModified) : new Date(),
-    created: rawMetadata?.created ? new Date(rawMetadata.created) : new Date(),
-    version: rawMetadata?.version,
-    branch: rawMetadata?.branch,
-    commit: rawMetadata?.commit,
-    url: rawMetadata?.url,
-    checksum: rawMetadata?.checksum || createDocumentHash(content)
+    size: doc.size || 0,
+    wordCount: content.split(/\s+/).length,
+    lines: content.split('\n').length,
+    encoding: 'utf-8',
+    mimeType: 'text/plain',
+    tags: [],
+    author: undefined,
+    lastModified: doc.lastModified ? new Date(doc.lastModified) : new Date(),
+    created: doc.lastModified ? new Date(doc.lastModified) : new Date(),
+    version: undefined,
+    branch: undefined,
+    commit: undefined,
+    url: doc.url,
+    checksum: createDocumentHash(content)
   };
 }
 
@@ -97,7 +92,7 @@ function processDocumentResult(
     source: (doc.source || 'local') as DocumentSource,
     score: finalScore,
     priority: priorityScore,
-    metadata: createDocumentMetadata(doc.metadata, doc.content || '')
+    metadata: createDocumentMetadata(doc, doc.content || '')
   };
 }
 
@@ -120,6 +115,7 @@ export async function performHybridSearch(
 
   const documents = result.data.Get.Document
     .map((doc: any) => processDocumentResult(doc, params.sourceWeights))
+    .filter((doc) => doc.score >= params.config.minScore)
     .sort((a, b) => b.score - a.score);
 
   return {
