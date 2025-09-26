@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 
+// Ensure NODE_ENV is set for test detection
+process.env.NODE_ENV = 'test';
+
 // Make React available globally for JSX
 global.React = React;
 
@@ -99,11 +102,22 @@ global.crypto = require('crypto').webcrypto || {
 };
 
 // Polyfill AbortSignal.timeout for test environment compatibility
-if (!global.AbortSignal?.timeout) {
-  global.AbortSignal.timeout = (delay) => {
+if (typeof AbortSignal !== 'undefined' && !AbortSignal.timeout) {
+  AbortSignal.timeout = function(delay) {
     const controller = new AbortController();
     // Don't actually abort in tests to avoid interference
     // The timeout functionality isn't critical for testing business logic
+    return controller.signal;
+  };
+}
+
+// Also set it on global for extra compatibility
+if (!global.AbortSignal) {
+  global.AbortSignal = AbortSignal || class AbortSignal {};
+}
+if (!global.AbortSignal.timeout) {
+  global.AbortSignal.timeout = function(delay) {
+    const controller = new AbortController();
     return controller.signal;
   };
 }
