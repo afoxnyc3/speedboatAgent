@@ -20,6 +20,12 @@ export interface Citation {
   language?: string;
   /** Source type: github or web */
   source?: 'github' | 'web';
+  /** Source authority level for weighting */
+  authority?: 'primary' | 'authoritative' | 'supplementary' | 'community';
+  /** Line reference in formatted display (e.g., "L123-L127") */
+  lineReference?: string;
+  /** Code type classification */
+  codeType?: 'function' | 'class' | 'interface' | 'variable' | 'import';
 }
 
 export interface ChatMessage {
