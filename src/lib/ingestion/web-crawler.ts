@@ -291,7 +291,7 @@ class WebCrawlerService {
           .withWhere({
             operator: 'Equal',
             path: ['url'],
-            valueString: doc.url || doc.filepath,
+            valueString: doc.metadata?.url || doc.filepath,
           })
           .withLimit(1);
 
@@ -309,7 +309,7 @@ class WebCrawlerService {
             content: doc.content,
             source: doc.source,
             filepath: doc.filepath,
-            url: doc.url || doc.metadata?.url || doc.filepath,
+            url: doc.metadata?.url || doc.filepath,
             language: doc.language,
             priority: doc.priority,
             lastModified: doc.metadata.lastModified.toISOString(),
