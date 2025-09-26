@@ -18,7 +18,8 @@ const config = {
     'tests/chat/ChatInterface.test.tsx',
     'tests/chat/StreamingText.test.tsx',
     'tests/chat/CodeBlock.test.tsx',
-    'tests/integration/api.test.ts'
+    'tests/integration/api.test.ts',
+    'src/lib/ingestion/__tests__/web-crawler.test.ts'
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
