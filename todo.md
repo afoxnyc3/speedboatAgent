@@ -1,15 +1,15 @@
-# TODO - Week 3 Hybrid Data
+# TODO - Week 4 Production Readiness
 
-## Current Phase: Week 3 - Hybrid Data Ingestion
-**Focus**: Web crawling integration and deduplication pipeline
+## Current Phase: Week 4 - Production Features
+**Focus**: Mem0 memory integration, feedback systems, and monitoring
 
-**Week 2 Complete**: Intelligence Layer fully implemented with Search API, Query Classification, and Frontend Chat. All components integrated and production-ready. CI infrastructure stabilized with all GitHub Actions passing.
+**Week 3 Status**: Hybrid Data core implementation complete. Firecrawl integration and deduplication pipeline functional. Code quality refactoring needed.
 
-**CI Status**: ✅ All jobs passing (lint ✅, test ✅, build ✅)
+**Environment Status**: ⚠️ Requires FIRECRAWL_API_KEY for end-to-end testing
 
 ---
 
-## ✅ COMPLETED - Archived
+## ✅ COMPLETED - Week 3 Archived
 
 ### ✅ Issue #11: Search API Endpoint [P0 - Critical] - COMPLETE
 **GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/11
@@ -57,19 +57,56 @@
 - ✅ Closed GitHub Issues #11, #13, #14 with proper commit references
 - ✅ All GitHub Actions jobs now passing (lint ✅, test ✅, build ✅)
 
----
-
-## Active Issues (Week 3)
-
-### Issue #18: Firecrawl Web Ingestion Setup [P0 - Critical]
-**Status**: Ready to begin Week 3
+### ✅ Issue #18: Firecrawl Web Ingestion Setup [P0 - Critical] - IMPLEMENTATION COMPLETE
 **GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/18
 
-- [ ] Configure Firecrawl API integration
-- [ ] Set up selective crawling for target domains
-- [ ] Target domains: `docs.*`, `api.*`, `help.*`
-- [ ] Exclude patterns: `/blog/*`, `/careers/*`, `/legal/*`
-- [ ] Create web content ingestion pipeline
+- ✅ Configured @mendable/firecrawl-js SDK integration with retry logic
+- ✅ Set up selective crawling for target domains (docs.*, api.*, help.*)
+- ✅ Implemented exclusion patterns (/blog/*, /careers/*, /legal/*)
+- ✅ Created comprehensive web content ingestion pipeline
+- ✅ Added rate limiting (5 requests per 15 minutes per IP)
+- ✅ Built testing framework and environment validation
+- ⚠️ Needs FIRECRAWL_API_KEY environment setup for testing
+
+### ✅ Issue #19: Deduplication Pipeline [P0 - Critical] - IMPLEMENTATION COMPLETE
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/19
+
+- ✅ Implemented SHA-256 content hashing with source priority
+- ✅ GitHub content precedence over web sources established
+- ✅ Added similarity analysis (Jaccard, Cosine, Levenshtein algorithms)
+- ✅ Batch processing for large document sets
+- ✅ Canonical URL tracking implemented
+- ⚠️ Needs end-to-end testing with real content
+
+### ✅ CLAUDE.md Workflow Implementation [P0 - Process] - COMPLETE
+**Session**: 2025-09-25 Process excellence establishment
+
+- ✅ Created /sessions/ directory structure with templates
+- ✅ Established pre-work session planning process
+- ✅ Implemented post-work session documentation
+- ✅ Created Week 3 session plan and summary
+- ✅ Documented agent mapping strategy (ai-engineer vs specialized agents)
+
+---
+
+## Active Issues (Week 3 Wrap-up)
+
+### Issue #20: Source Routing Optimization [P1 - High]
+**Status**: Ready to begin (Week 3 completion)
+**GitHub**: https://github.com/afoxnyc3/speedboatAgent/issues/20
+
+- [ ] Complete hybrid search integration with authority weighting
+- [ ] Test mixed source results (GitHub + web content)
+- [ ] Validate query classification routing with dual sources
+- [ ] Performance testing with hybrid dataset
+
+### Code Quality Refactoring [P1 - Technical Debt]
+**Status**: Required for CLAUDE.md compliance
+
+- [ ] Refactor web crawler functions to <15 lines each
+- [ ] Split web ingestion API file to <100 lines
+- [ ] Modularize deduplication pipeline components
+- [ ] Remove unused variables and imports
 
 ### Issue #9: Redis Cache Setup [P1 - Optimization]
 **Status**: Week 2 optimization (after core features)

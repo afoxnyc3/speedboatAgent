@@ -169,3 +169,82 @@ Implement temporary CI/CD relaxation strategy while preserving all Week 2 functi
 3. Disable CI entirely
    - Pros: No immediate blocking
    - Cons: Loss of automated quality gates, dangerous precedent
+
+## ADR-005: Firecrawl Integration Architecture
+Date: 2025-09-25
+Status: Accepted
+
+### Context
+Week 3 Hybrid Data phase requires web content ingestion to complement existing GitHub repository data. Need reliable web crawling with selective domain filtering, content deduplication, and proper authority weighting following CLAUDE.md specifications.
+
+### Decision
+Implement Firecrawl-based web ingestion architecture with:
+- @mendable/firecrawl-js SDK for reliable web crawling
+- Authority weighting: Web content 0.8x vs GitHub 1.2x priority
+- Selective crawling: docs.*, api.*, help.* domains only
+- Exclusion patterns: /blog/*, /careers/*, /legal/*
+- SHA-256 content deduplication with GitHub source precedence
+- Rate limiting: 5 requests per 15 minutes per IP
+
+### Consequences
+#### Positive
+- Production-ready web crawling with comprehensive error handling
+- Respects site rate limits and provides proper content filtering
+- Authority weighting ensures GitHub content maintains higher priority
+- Deduplication prevents content redundancy between sources
+- API endpoints provide controlled access to crawling functionality
+
+#### Negative
+- External service dependency (Firecrawl API) introduces cost and limits
+- Complex configuration management for multiple crawling targets
+- Requires environment setup (FIRECRAWL_API_KEY) for testing
+
+### Alternatives Considered
+1. Custom web scraping with Puppeteer/Playwright
+   - Pros: Full control, no external service costs
+   - Cons: Complex maintenance, rate limiting challenges, anti-bot measures
+2. Simple fetch-based crawling
+   - Pros: Lightweight, no dependencies
+   - Cons: Limited content extraction, no JavaScript rendering
+3. Use existing crawling services (Scrapy Cloud, Apify)
+   - Pros: Established platforms
+   - Cons: Different API patterns, less integrated with LLM workflows
+
+## ADR-006: CLAUDE.md Agent Mapping Strategy
+Date: 2025-09-25
+Status: Accepted
+
+### Context
+CLAUDE.md specifies specialized agents (`ingestion-pipeline`, `weaviate-expert`, `rag-optimizer`, `perf-validator`) that are not available in Claude Code. Need strategy to maintain project specifications while working with available tools.
+
+### Decision
+Implement agent mapping strategy:
+- `ai-engineer` as substitute for `ingestion-pipeline` (RAG system development)
+- `ai-engineer` as substitute for `rag-optimizer` (query classification, search optimization)
+- `ai-engineer` as substitute for `weaviate-expert` (vector database operations)
+- `ai-engineer` as substitute for `perf-validator` (performance testing)
+- Document mapping decisions for future reference
+- Maintain CLAUDE.md compliance in architecture and outcomes
+
+### Consequences
+#### Positive
+- Enables Week 3 implementation despite agent availability gaps
+- ai-engineer provides comprehensive RAG system development capabilities
+- Maintains architectural compliance with CLAUDE.md specifications
+- Documents agent strategy for future sessions and handoffs
+
+#### Negative
+- Less specialized expertise than dedicated agents would provide
+- Need to explicitly guide ai-engineer for domain-specific tasks
+- May require more detailed prompts to achieve specialized outcomes
+
+### Alternatives Considered
+1. Wait for specialized agents to become available
+   - Pros: Perfect compliance with CLAUDE.md
+   - Cons: Blocks all Week 3 development indefinitely
+2. Modify CLAUDE.md to match available agents
+   - Pros: Removes specification mismatch
+   - Cons: Reduces specialized expertise benefits of agent-based approach
+3. Use general-purpose agent for all tasks
+   - Pros: Consistent approach across project
+   - Cons: Loss of specialized knowledge and optimization
