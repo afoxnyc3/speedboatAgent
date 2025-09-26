@@ -211,7 +211,7 @@ describe('SecuritySchemas', () => {
       const input = { query: 'test <script>alert("xss")</script>' };
       const result = SecuritySchemas.searchRequest.parse(input);
 
-      expect(result.query).toBe('test ');
+      expect(result.query).toBe('test');
     });
   });
 });

@@ -17,7 +17,7 @@ export class InputSanitizer {
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
       .replace(/<[^>]*>/g, '') // Remove all HTML tags
       .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/\bon\w+\s*=/gi, '') // Remove event handlers (with word boundary)
+      .replace(/\bon\w+\s*=\s*[^>\s]*/gi, '') // Remove event handlers
       .trim();
   }
 
@@ -155,7 +155,7 @@ export async function validateRequest<T>(
         .join(', ');
       return { success: false, error: `Validation failed: ${errorMessage}` };
     }
-    return { success: false, error: 'Invalid request format' };
+    return { success: false, error: 'Validation failed: Invalid request format' };
   }
 }
 
