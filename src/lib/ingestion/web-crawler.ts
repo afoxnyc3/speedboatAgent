@@ -7,6 +7,7 @@ import FirecrawlApp from '@mendable/firecrawl-js';
 import { z } from 'zod';
 import { createWeaviateClient } from '../weaviate/client';
 import { createDocumentHash } from '../search/search-utils';
+import { ContentNormalizer } from './content-normalizer';
 import {
   Document,
   DocumentSource,
@@ -90,6 +91,7 @@ export interface WebCrawlResult {
 class WebCrawlerService {
   private readonly firecrawl: FirecrawlApp;
   private readonly config: WebCrawlConfig;
+  private readonly normalizer: ContentNormalizer;
 
   constructor(config: Partial<WebCrawlConfig> = {}) {
     const apiKey = process.env.FIRECRAWL_API_KEY;
@@ -99,6 +101,7 @@ class WebCrawlerService {
 
     this.firecrawl = new FirecrawlApp({ apiKey });
     this.config = { ...DEFAULT_WEB_CRAWL_CONFIG, ...config };
+    this.normalizer = new ContentNormalizer();
   }
 
   /**
@@ -176,13 +179,32 @@ class WebCrawlerService {
   }
 
   /**
-   * Converts crawled page to Document format
+   * Converts crawled page to Document format with content normalization
    */
   private pageToDocument(page: CrawledPage, target: CrawlTarget): Document {
-    const content = page.content;
+    // Normalize content from HTML to markdown
+    const normalizationResult = this.normalizer.normalize(page.content);
+
+    const content = normalizationResult.markdown || page.content;
     const filepath = new URL(page.url).pathname || '/';
-    const language = this.detectLanguage(page.url, content);
-    const metadata = this.createWebDocumentMetadata(page);
+
+    // Use normalized language detection if available, fallback to URL-based detection
+    const language = normalizationResult.language.confidence > 0.5
+      ? (normalizationResult.language.language as DocumentLanguage)
+      : this.detectLanguage(page.url, content);
+
+    // Enhanced metadata from normalization
+    const baseMetadata = this.createWebDocumentMetadata(page);
+    const enhancedMetadata: DocumentMetadata = {
+      ...baseMetadata,
+      author: normalizationResult.metadata.author || baseMetadata.author,
+      wordCount: normalizationResult.metadata.wordCount || baseMetadata.wordCount,
+      tags: [...baseMetadata.tags, ...normalizationResult.metadata.tags],
+    };
+
+    // Adjust priority based on content quality
+    const qualityBonus = normalizationResult.metadata.qualityScore > 0.7 ? 0.1 : 0;
+    const adjustedPriority = target.priority * this.config.authorityWeight + qualityBonus;
 
     return {
       id: createDocumentId(`web-${createDocumentHash(page.url)}`),
@@ -190,9 +212,9 @@ class WebCrawlerService {
       filepath,
       language,
       source: 'web' as DocumentSource,
-      score: 0.8, // Base score for web content
-      priority: target.priority * this.config.authorityWeight,
-      metadata,
+      score: Math.min(0.8 + qualityBonus, 1.0), // Base score enhanced by quality
+      priority: Math.min(adjustedPriority, 2.0), // Cap priority at 2.0
+      metadata: enhancedMetadata,
     };
   }
 
