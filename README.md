@@ -278,11 +278,20 @@ vercel --prod
 
 ## 🤝 Contributing
 
+### Quick Start
+1. Use `/work` command for automated issue-driven development
+2. Follow standardized workflow with automatic GitHub issue closure
+3. All documentation and issue management handled automatically
+
+### Development Workflow
 1. Check GitHub issues for current tasks
-2. Create feature branch: `feature/<issue-id>-<description>`
+2. Run `/work [issue-id]` to start automated development workflow
 3. Follow code standards (15-line functions, 100-line files)
-4. Ensure tests pass
-5. Create pull request
+4. Ensure tests pass with automated validation
+5. Create pull request with automatic issue closure (`Closes #<issue-id>`)
+6. Run `/tidyup` to finalize documentation and integration
+
+See [workflow.md](./workflow.md) and [CLAUDE.md](./CLAUDE.md) for detailed development procedures.
 
 ## 📄 License
 
