@@ -4,15 +4,106 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCacheManager } from '../../../../lib/cache/redis-cache';
+import { getCacheManager, type CacheMetrics } from '../../../../lib/cache/redis-cache';
 import { getEmbeddingService } from '../../../../lib/cache/embedding-service';
 import { getSearchOrchestrator } from '../../../../lib/search/cached-search-orchestrator';
+
+// Type definitions for cache health
+interface CacheHealth {
+  overall: { hitRate: number; totalRequests: number };
+  byType: Record<string, CacheMetrics>;
+  recommendations: string[];
+}
+
+interface OverallMetrics {
+  totalRequests: number;
+  hitRate: number;
+  cacheSize: number;
+  [key: string]: number;
+}
+
+/**
+ * Build overall performance metrics
+ */
+function buildOverallMetrics(cacheHealth: CacheHealth, systemHealth: { cache: { healthy: boolean; latency: number } }, cacheManager: { isAvailable(): boolean }) {
+  return {
+    hitRate: cacheHealth.overall.hitRate,
+    totalRequests: cacheHealth.overall.totalRequests,
+    cacheEnabled: cacheManager.isAvailable(),
+    healthStatus: systemHealth.cache.healthy ? 'healthy' : 'unhealthy',
+    latency: systemHealth.cache.latency,
+    targetHitRate: 0.7,
+    performanceGrade: getPerformanceGrade(cacheHealth.overall.hitRate)
+  };
+}
+
+/**
+ * Build detailed metrics by cache type
+ */
+function buildDetailedMetrics(cacheHealth: CacheHealth, embeddingStats: { hitRate: number }, cacheSize: Record<string, number>) {
+  return {
+    embedding: {
+      ...embeddingStats,
+      sizeEstimate: cacheSize.embedding || 0,
+      efficiency: getEfficiencyRating(embeddingStats.hitRate)
+    },
+    searchResults: buildCacheTypeMetrics(cacheHealth.byType.searchResult, cacheSize.searchResult),
+    classifications: buildCacheTypeMetrics(cacheHealth.byType.classification, cacheSize.classification),
+    contextualQueries: buildCacheTypeMetrics(cacheHealth.byType.contextualQuery, cacheSize.contextualQuery)
+  };
+}
+
+/**
+ * Build metrics for a specific cache type
+ */
+function buildCacheTypeMetrics(typeMetrics: CacheMetrics | undefined, sizeEstimate: number) {
+  return {
+    hits: typeMetrics?.hits || 0,
+    misses: typeMetrics?.misses || 0,
+    hitRate: typeMetrics?.hitRate || 0,
+    sizeEstimate: sizeEstimate || 0,
+    lastUpdated: typeMetrics?.lastUpdated || new Date()
+  };
+}
+
+/**
+ * Get efficiency rating based on hit rate
+ */
+function getEfficiencyRating(hitRate: number): string {
+  if (hitRate > 0.8) return 'excellent';
+  if (hitRate > 0.6) return 'good';
+  if (hitRate > 0.4) return 'fair';
+  return 'poor';
+}
+
+/**
+ * Build performance analysis
+ */
+function buildAnalysis(cacheHealth: CacheHealth, overallMetrics: OverallMetrics) {
+  return {
+    recommendations: cacheHealth.recommendations,
+    issues: identifyPerformanceIssues(cacheHealth),
+    optimizations: suggestOptimizations(cacheHealth, overallMetrics),
+    costSavings: estimateCostSavings(cacheHealth.overall)
+  };
+}
+
+/**
+ * Build system information
+ */
+function buildSystemInfo(systemHealth: { cache: { healthy: boolean }; embedding: { cacheAvailable: boolean } }) {
+  return {
+    redisConnected: systemHealth.cache.healthy,
+    embeddingCacheEnabled: systemHealth.embedding.cacheAvailable,
+    version: '1.0.0'
+  };
+}
 
 /**
  * GET /api/cache/metrics
  * Returns comprehensive cache performance metrics
  */
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
     const cacheManager = getCacheManager();
     const embeddingService = getEmbeddingService();
@@ -24,56 +115,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const systemHealth = await searchOrchestrator.healthCheck();
     const cacheSize = await cacheManager.getCacheSize();
 
-    // Calculate overall performance metrics
-    const overallMetrics = {
-      hitRate: cacheHealth.overall.hitRate,
-      totalRequests: cacheHealth.overall.totalRequests,
-      cacheEnabled: cacheManager.isAvailable(),
-      healthStatus: systemHealth.cache.healthy ? 'healthy' : 'unhealthy',
-      latency: systemHealth.cache.latency,
-      targetHitRate: 0.7,
-      performanceGrade: getPerformanceGrade(cacheHealth.overall.hitRate)
-    };
-
-    // Detailed breakdown by cache type
-    const detailedMetrics = {
-      embedding: {
-        ...embeddingStats,
-        sizeEstimate: cacheSize.embedding || 0,
-        efficiency: embeddingStats.hitRate > 0.8 ? 'excellent' :
-                   embeddingStats.hitRate > 0.6 ? 'good' :
-                   embeddingStats.hitRate > 0.4 ? 'fair' : 'poor'
-      },
-      searchResults: {
-        hits: cacheHealth.byType.searchResult?.hits || 0,
-        misses: cacheHealth.byType.searchResult?.misses || 0,
-        hitRate: cacheHealth.byType.searchResult?.hitRate || 0,
-        sizeEstimate: cacheSize.searchResult || 0,
-        lastUpdated: cacheHealth.byType.searchResult?.lastUpdated || new Date()
-      },
-      classifications: {
-        hits: cacheHealth.byType.classification?.hits || 0,
-        misses: cacheHealth.byType.classification?.misses || 0,
-        hitRate: cacheHealth.byType.classification?.hitRate || 0,
-        sizeEstimate: cacheSize.classification || 0,
-        lastUpdated: cacheHealth.byType.classification?.lastUpdated || new Date()
-      },
-      contextualQueries: {
-        hits: cacheHealth.byType.contextualQuery?.hits || 0,
-        misses: cacheHealth.byType.contextualQuery?.misses || 0,
-        hitRate: cacheHealth.byType.contextualQuery?.hitRate || 0,
-        sizeEstimate: cacheSize.contextualQuery || 0,
-        lastUpdated: cacheHealth.byType.contextualQuery?.lastUpdated || new Date()
-      }
-    };
-
-    // Performance analysis and recommendations
-    const analysis = {
-      recommendations: cacheHealth.recommendations,
-      issues: identifyPerformanceIssues(cacheHealth),
-      optimizations: suggestOptimizations(cacheHealth, overallMetrics),
-      costSavings: estimateCostSavings(cacheHealth.overall)
-    };
+    // Build metrics components
+    const overallMetrics = buildOverallMetrics(cacheHealth, systemHealth, cacheManager);
+    const detailedMetrics = buildDetailedMetrics(cacheHealth, embeddingStats, cacheSize);
+    const analysis = buildAnalysis(cacheHealth, overallMetrics);
+    const system = buildSystemInfo(systemHealth);
 
     const response = {
       success: true,
@@ -81,11 +127,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       overall: overallMetrics,
       detailed: detailedMetrics,
       analysis,
-      system: {
-        redisConnected: systemHealth.cache.healthy,
-        embeddingCacheEnabled: systemHealth.embedding.cacheAvailable,
-        version: '1.0.0'
-      }
+      system
     };
 
     return NextResponse.json(response, {
@@ -175,14 +217,14 @@ function getPerformanceGrade(hitRate: number): string {
 /**
  * Identify performance issues
  */
-function identifyPerformanceIssues(cacheHealth: any): string[] {
+function identifyPerformanceIssues(cacheHealth: CacheHealth): string[] {
   const issues: string[] = [];
 
   if (cacheHealth.overall.hitRate < 0.7) {
     issues.push('Overall cache hit rate below 70% target');
   }
 
-  Object.entries(cacheHealth.byType).forEach(([type, metrics]: [string, any]) => {
+  Object.entries(cacheHealth.byType).forEach(([type, metrics]: [string, CacheMetrics | undefined]) => {
     if (metrics && metrics.hitRate < 0.5) {
       issues.push(`${type} cache hit rate critically low: ${(metrics.hitRate * 100).toFixed(1)}%`);
     }
@@ -198,7 +240,7 @@ function identifyPerformanceIssues(cacheHealth: any): string[] {
 /**
  * Suggest performance optimizations
  */
-function suggestOptimizations(cacheHealth: any, overallMetrics: any): string[] {
+function suggestOptimizations(cacheHealth: CacheHealth, overallMetrics: OverallMetrics): string[] {
   const optimizations: string[] = [];
 
   if (overallMetrics.hitRate < 0.7) {
@@ -222,7 +264,7 @@ function suggestOptimizations(cacheHealth: any, overallMetrics: any): string[] {
 /**
  * Estimate cost savings from caching
  */
-function estimateCostSavings(overallMetrics: any): {
+function estimateCostSavings(overallMetrics: OverallMetrics): {
   apiCallsSaved: number;
   estimatedDollars: number;
   efficiency: string;

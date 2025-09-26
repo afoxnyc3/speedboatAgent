@@ -68,3 +68,6 @@ desktop.ini
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Sentry
+.sentryclirc
