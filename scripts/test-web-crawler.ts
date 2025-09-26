@@ -14,7 +14,7 @@ import { deduplicateDocuments } from '../src/lib/ingestion/deduplication';
 import { createWeaviateClient } from '../src/lib/weaviate/client';
 
 // Load environment variables
-config();
+config({ path: '.env.local' });
 
 // Test configuration
 const TEST_CONFIG = {
