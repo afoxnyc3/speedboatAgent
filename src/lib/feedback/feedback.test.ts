@@ -7,9 +7,15 @@ import {
   type FeedbackListOptions,
   FEEDBACK_CONSTANTS,
 } from '@/types/feedback';
+import { createMessageId, createConversationId } from '../../types/chat';
 import { FeedbackFileStore } from './feedback-store';
 
-jest.mock('fs/promises');
+jest.mock('fs/promises', () => ({
+  readFile: jest.fn(),
+  writeFile: jest.fn(),
+  access: jest.fn(),
+  mkdir: jest.fn(),
+}));
 
 describe('FeedbackFileStore', () => {
   let store: FeedbackFileStore;
@@ -20,8 +26,8 @@ describe('FeedbackFileStore', () => {
     id: createFeedbackId('test-feedback-1'),
     type: 'thumbs_up',
     category: 'accuracy',
-    messageId: 'msg-123' as any,
-    conversationId: 'conv-456' as any,
+    messageId: createMessageId('msg-123'),
+    conversationId: createConversationId('conv-456'),
     timestamp: new Date('2025-01-01T12:00:00Z'),
     context: {
       query: 'What is TypeScript?',
@@ -49,9 +55,9 @@ describe('FeedbackFileStore', () => {
 
   describe('save', () => {
     it('should save feedback successfully', async () => {
-      const mockReadFile = fs.readFile as jest.MockedFunction<typeof fs.readFile>;
-      const mockWriteFile = fs.writeFile as jest.MockedFunction<typeof fs.writeFile>;
-      const mockAccess = fs.access as jest.MockedFunction<typeof fs.access>;
+      const mockReadFile = jest.mocked(fs.readFile);
+      const mockWriteFile = jest.mocked(fs.writeFile);
+      const mockAccess = jest.mocked(fs.access);
 
       mockAccess.mockResolvedValue(undefined);
       mockReadFile.mockRejectedValue({ code: 'ENOENT' });

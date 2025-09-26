@@ -15,12 +15,11 @@ import type {
   MemoryMessage,
   SessionId,
 } from '@/types/memory';
-import { createSessionId } from '@/types/memory';
 
 export class MockMem0Client implements MemoryClient {
   async add(
-    messages: readonly MemoryMessage[],
-    options: MemoryAddOptions
+    _messages: readonly MemoryMessage[],
+    _options: MemoryAddOptions
   ): Promise<MemoryOperationResult> {
     return {
       success: true,
@@ -30,8 +29,8 @@ export class MockMem0Client implements MemoryClient {
   }
 
   async search(
-    query: string,
-    options?: MemorySearchOptions
+    _query: string,
+    _options?: MemorySearchOptions
   ): Promise<MemorySearchResult> {
     return {
       memories: [],
@@ -46,9 +45,9 @@ export class MockMem0Client implements MemoryClient {
   }
 
   async update(
-    memoryId: MemoryId,
-    content: string,
-    metadata?: Record<string, unknown>
+    _memoryId: MemoryId,
+    _content: string,
+    _metadata?: Record<string, unknown>
   ): Promise<MemoryOperationResult> {
     return {
       success: true,
@@ -57,7 +56,7 @@ export class MockMem0Client implements MemoryClient {
     };
   }
 
-  async delete(memoryId: MemoryId): Promise<MemoryOperationResult> {
+  async delete(_memoryId: MemoryId): Promise<MemoryOperationResult> {
     return {
       success: true,
       operationType: 'delete',
@@ -80,13 +79,12 @@ export class MockMem0Client implements MemoryClient {
     };
   }
 
-  async cleanup(options: MemoryCleanupOptions): Promise<{ deletedCount: number }> {
+  async cleanup(_options: MemoryCleanupOptions): Promise<{ deletedCount: number }> {
     return { deletedCount: 0 };
   }
 }
 
 // Factory function for mock client
 export const createMockMem0Client = (): MemoryClient => {
-  console.log('Using mock memory client (no MEM0_API_KEY configured)');
   return new MockMem0Client();
 };

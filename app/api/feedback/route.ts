@@ -6,6 +6,7 @@ import {
   type Feedback,
   type FeedbackResponse
 } from '@/types/feedback';
+import { createMessageId, createConversationId } from '../../../src/types/chat';
 import { FeedbackFileStore } from '@/lib/feedback/feedback-store';
 
 // Initialize feedback store
@@ -22,8 +23,8 @@ export async function POST(request: NextRequest) {
       id: createFeedbackId(generateId()),
       type: validatedData.type,
       category: validatedData.category,
-      messageId: validatedData.messageId as any,
-      conversationId: validatedData.conversationId as any,
+      messageId: createMessageId(validatedData.messageId),
+      conversationId: createConversationId(validatedData.conversationId),
       timestamp: new Date(),
       context: {
         query: validatedData.context?.query || '',
@@ -87,8 +88,8 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
 
     const options = {
-      conversationId: conversationId as any,
-      type: type as any,
+      conversationId: conversationId ? createConversationId(conversationId) : undefined,
+      type: type as 'thumbs_up' | 'thumbs_down' | 'correction' | 'comment' | null,
       limit: limit ? parseInt(limit, 10) : 50,
     };
 
