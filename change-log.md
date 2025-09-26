@@ -16,6 +16,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - None yet
 
+## [0.9.0] - 2025-09-26
+
+**Issues #15 & #16 Source Attribution & Response Formatting Complete**
+
+### Added
+- **Source Attribution System**: Line-level precision for GitHub code references with L123-L127 format support
+- **URL Generation Utilities**: Deep links and anchors for GitHub permalinks using commit SHAs
+- **Authority Weighting System**: 4-tier hierarchy (primary > authoritative > supplementary > community)
+- **TypeScript Attribution Types**: Comprehensive interfaces with Zod validation schemas
+- **Authority Badges**: Visual indicators with color-coded hierarchy for source credibility
+- **Enhanced Line References**: Range format support (L123-L127) integrated with source attribution
+- **Code Type Classification**: Function/class/interface/variable/import badges in citations
+
+### Changed
+- **Citation Interface**: Extended with authority, lineReference, and codeType fields
+- **SourceViewer Component**: Enhanced with authority badges and improved visual hierarchy
+- **Response Formatting**: Integrated source attribution system with existing code highlighting
+- **Compact View**: Authority indicators in condensed format with enhanced line references
+
+### Enhanced
+- **Code Syntax Highlighting**: Maintained react-syntax-highlighter with oneDark theme
+- **Collapsible Source Sections**: Preserved Sources/SourcesTrigger component functionality
+- **Copy Functionality**: Maintained copy/check state management with accessibility features
+
+### Technical Achievements
+- **100% Backward Compatibility**: Legacy citations continue working seamlessly
+- **Visual Hierarchy**: Green (primary), Blue (authoritative), Yellow (supplementary), Gray (community)
+- **Integration Success**: Source attribution system fully connected to UX layer
+- **TypeScript Safety**: All new features properly typed with validation
+
+### Progress
+- **Roadmap Completion**: 15 of 18 issues complete (83% completion rate)
+- **UX Enhancement**: Authority-based source ranking with visual feedback
+- **Production Ready**: Enhanced response formatting with comprehensive source attribution
+
 ## [0.7.0] - 2025-09-26
 
 **Issue #26 System Monitoring & Analytics Complete**
