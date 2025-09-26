@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
             activeJobs: scheduledJobs.filter(job => job.status === 'active').length,
             waitingJobs: scheduledJobs.filter(job => job.status === 'waiting').length,
           };
-        } catch (_error) {
+        } catch {
           results.scheduler.metrics = { error: 'Failed to fetch metrics' };
         }
       }

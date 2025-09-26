@@ -150,7 +150,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.json(response);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to get optimization status' },
       { status: 500 }
