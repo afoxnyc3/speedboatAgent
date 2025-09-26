@@ -45,56 +45,6 @@ User Query → Query Classifier → Hybrid Search → Rerank → GPT-4 → Strea
 - Zero hallucination policy
 - Push event processing: < 30s
 
-## Session Documentation Workflow
-
-### Before Starting Work Session
-AI agents must create session documentation before beginning implementation work:
-
-1. **Create Session Plan**: `/sessions/YYYY-MM-DD-<topic>-plan.md`
-   - Session objectives and goals
-   - Current context and dependencies
-   - Detailed implementation plan with task breakdown
-   - Success criteria and performance targets
-   - Time allocation and priority order
-
-2. **Reference Issues**: Link relevant GitHub issues and dependencies
-
-3. **Commit Plan**: Save session plan before starting implementation
-
-### After Completing Work Session
-AI agents must document outcomes after completing work:
-
-1. **Create Session Summary**: `/sessions/YYYY-MM-DD-<topic>-summary.md`
-   - Completed work with specific details
-   - Artifacts created (files, PRs, issues)
-   - Performance metrics and benchmarks achieved
-   - Challenges encountered and solutions implemented
-   - Next session setup and recommendations
-
-2. **Update Progress**: Add high-level summary to `progress.md`
-
-3. **Link Documentation**: Reference session docs from progress.md for traceability
-
-4. **Commit Results**: Save all documentation with implementation
-
-### Session Directory Structure
-```
-/sessions/
-├── README.md                    # Index of all sessions with links
-├── templates/
-│   ├── session-plan.md         # Planning template
-│   └── session-summary.md      # Summary template
-└── YYYY-MM-DD-<topic>.md       # Individual session documents
-```
-
-### Session Documentation Standards
-- Use consistent naming: `YYYY-MM-DD-<week#>-<focus-area>`
-- Include GitHub issue numbers and links
-- Document both planned and actual outcomes
-- Capture technical decisions and rationale
-- Measure progress against success criteria
-- Provide clear handoff notes for next session
-
 ## Implementation Timeline
 
 ### Week 1: Foundation
@@ -161,31 +111,6 @@ AI agents must document outcomes after completing work:
 - **Validation**: Zod schemas for all API inputs
 - **Error Handling**: Try-catch with Sentry reporting
 - **Testing**: Unit tests for critical paths
-- **Functions**: 15 lines max
-- **Files**: 100 lines max
-- **Classes**: 50 lines max
-
-### Specialized Agent Usage
-**IMPORTANT**: This project includes specialized Claude Code agents that MUST be used for their respective domains:
-
-- **Use `weaviate-expert`** for all Weaviate schema design, hybrid search optimization, vector database operations, and query performance tuning
-- **Use `ingestion-pipeline`** for GitHub webhook processing, LlamaIndex integration, Firecrawl web crawling, and content deduplication
-- **Use `rag-optimizer`** for query classification, response quality improvement, Mem0 memory integration, and feedback system implementation
-- **Use `perf-validator`** for performance testing, metrics validation, load testing, and SLA compliance verification
-
-**Agent Invocation Guidelines**:
-- Agents should be invoked proactively when working on their specialized domains
-- Use parallel agent execution for independent tasks (e.g., `weaviate-expert` + `perf-validator`)
-- Agents have access to project-specific context and enforce coding standards automatically
-- Each agent maintains expertise in their domain's best practices and optimization techniques
-
-**Available Slash Commands**:
-- `/weaviate-setup [env]` - Initialize Weaviate schema with hybrid search
-- `/ingest-github <repo-url> [branch]` - Trigger GitHub ingestion pipeline
-- `/test-rag [test-type] [query]` - Execute RAG pipeline validation
-- `/check-metrics [metric-type] [time-range]` - Validate performance against SLAs
-- `/deploy-webhook <repo-url> [webhook-url]` - Set up GitHub webhook integration
-- `/crawl-docs [domains] [mode]` - Initiate web documentation crawling
 
 ### Security
 - API key rotation via Vercel KV
@@ -298,16 +223,6 @@ const routeQuery = async (query: string) => {
 - 50% reduction in documentation discovery time
 - 85%+ user satisfaction score
 
-## Cost Projections
-| Component | Monthly Estimate | Optimization Strategy |
-|-----------|-----------------|----------------------|
-| OpenAI API | $200-400 | Embedding cache, dimension reduction |
-| Weaviate | $99 | Hybrid search reduces dual queries |
-| Upstash | $10 | TTL policies, selective caching |
-| Mem0 | $49 | User-level memory only |
-| Firecrawl | $29 | Weekly crawls, change detection |
-| **Total** | **~$387-587** | Target 40% reduction via cache |
-
 ## Git Workflow
 
 ### Branches
@@ -325,34 +240,16 @@ Types: feat, fix, chore, docs, refactor, test
 
 **Note**: For current progress status, see [progress.md](./progress.md)
 
-- [ ] Weaviate schema configured with hybrid search (`/weaviate-setup`)
-- [ ] GitHub webhook integrated and tested (`/deploy-webhook`)
-- [ ] Initial repository content indexed via LlamaIndex (`/ingest-github`)
-- [ ] Web crawl targets identified and tested with Firecrawl (`/crawl-docs`)
-- [ ] Deduplication pipeline validated (use `ingestion-pipeline` agent)
-- [ ] Query routing logic deployed (use `rag-optimizer` agent)
-- [ ] Mem0 memory integration complete (use `rag-optimizer` agent)
+- [ ] Weaviate schema configured with hybrid search
+- [ ] GitHub webhook integrated and tested
+- [ ] Initial repository content indexed via LlamaIndex
+- [ ] Web crawl targets identified and tested with Firecrawl
+- [ ] Deduplication pipeline validated
+- [ ] Query routing logic deployed
+- [ ] Mem0 memory integration complete
 - [ ] Rate limiting enabled
 - [ ] Error tracking active with Sentry
-- [ ] Load testing complete (use `perf-validator` agent, `/test-rag performance`)
+- [ ] Load testing complete
 - [ ] Security review passed
-- [ ] Cost monitoring dashboards live (`/check-metrics cost`)
-- [ ] Team training completed on agent usage and slash commands
-
-## Agent Development Workflow
-
-### Phase-Based Agent Usage
-**Week 1 - Foundation**: Primary use of `weaviate-expert` and `ingestion-pipeline` agents
-**Week 2 - Intelligence**: Primary use of `rag-optimizer` agent with `weaviate-expert` support
-**Week 3 - Hybrid Data**: Primary use of `ingestion-pipeline` agent for web crawling
-**Week 4 - Production**: Primary use of `perf-validator` agent with all others as needed
-
-### Task-to-Agent Mapping
-| Task Type | Primary Agent | Supporting Agents | Slash Commands |
-|-----------|---------------|-------------------|----------------|
-| Schema Design | `weaviate-expert` | - | `/weaviate-setup` |
-| Data Ingestion | `ingestion-pipeline` | - | `/ingest-github`, `/crawl-docs` |
-| Query Optimization | `rag-optimizer` | `weaviate-expert` | `/test-rag` |
-| Performance Testing | `perf-validator` | All agents | `/check-metrics`, `/test-rag performance` |
-| Webhook Setup | `ingestion-pipeline` | - | `/deploy-webhook` |
-| System Monitoring | `perf-validator` | - | `/check-metrics` |
+- [ ] Cost monitoring dashboards live
+- [ ] Team training completed
