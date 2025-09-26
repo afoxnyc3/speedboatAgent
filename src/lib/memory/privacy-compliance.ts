@@ -8,6 +8,7 @@ import type {
   UserId,
   SessionId,
   MemoryCategory,
+  MemoryClient,
 } from '../../types/memory';
 
 // PII detection patterns
@@ -135,7 +136,7 @@ export class PrivacyComplianceManager {
   }
 
   async cleanupExpiredMemories(
-    memoryClient: any,
+    memoryClient: MemoryClient,
     userId?: UserId,
     sessionId?: SessionId
   ): Promise<number> {

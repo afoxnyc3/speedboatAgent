@@ -16,6 +16,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - None yet
 
+## [0.5.0] - 2025-09-26
+
+**Milestone: Week 4 User Feedback System - Issue #24 Complete**
+
+### Added
+- **FeedbackWidget Component** (`/src/components/chat/FeedbackWidget.tsx`): Thumbs up/down UI with sentiment collection
+- **Feedback API Endpoint** (`/src/app/api/feedback/route.ts`): REST endpoint for feedback submission with validation
+- **Feedback Storage Layer** (`/src/lib/feedback/feedback-storage.ts`): File-based persistence with JSON storage and rotation
+- **Feedback Types** (`/src/types/feedback.ts`): Comprehensive TypeScript definitions with branded types
+- **Chat Interface Integration**: Non-intrusive feedback collection in existing chat components
+- **Mock Client Support**: Environment compatibility for systems without external dependencies
+
+### Technical Achievements
+- **File-Based Storage**: MVP approach using JSON files with automatic rotation and archival
+- **Message Context Preservation**: Full conversation context stored with feedback for meaningful analysis
+- **API Validation**: Zod schemas for feedback data with comprehensive error handling
+- **Sentiment Analysis Ready**: Structure supports future integration with sentiment analysis services
+- **Privacy Compliant**: No PII stored in feedback data, session-based tracking only
+
+### Architecture Decisions
+- **Storage Strategy**: File-based approach chosen for MVP simplicity over database complexity
+- **Mock Clients**: Graceful degradation pattern for missing API dependencies
+- **Feedback Integration**: Inline widget design maintains chat flow without interruption
+
+### Fixed
+- **Environment Compatibility**: Added mock client patterns for environments lacking external API access
+- **Storage Reliability**: Implemented error recovery and fallback strategies for file operations
+- **Integration Testing**: Comprehensive test coverage for all feedback collection scenarios
+
+### Changed
+- **Chat Interface**: Enhanced with feedback collection capabilities while maintaining existing functionality
+
 ## [0.4.0] - 2025-09-25
 
 **Milestone: Week 4 Memory Integration - Issue #23 Complete**

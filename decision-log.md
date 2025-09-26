@@ -322,3 +322,82 @@ Adjust ESLint limits to industry-standard practical values:
    - Pros: No restrictions
    - Cons: Loss of code quality enforcement
 
+## ADR-007: File-Based Feedback Storage Strategy
+Date: 2025-09-26
+Status: Accepted
+
+### Context
+Issue #24 requires user feedback collection and storage system. Need to balance simplicity for MVP with future scalability requirements while ensuring reliable data persistence and analysis capabilities.
+
+### Decision
+Implement file-based feedback storage for MVP:
+- JSON file persistence with structured feedback data
+- Automatic file rotation and archival (1000 entries per file)
+- Directory-based organization (`/data/feedback/`)
+- Full message context preservation for analysis
+- Graceful fallback handling for file system errors
+
+### Consequences
+#### Positive
+- Simple implementation without database setup complexity
+- Easy to backup, version control, and debug
+- No external database dependencies or costs
+- Direct file access for analysis and reporting
+- Fast implementation allowing focus on feedback collection UX
+
+#### Negative
+- Limited scalability compared to database solutions
+- Manual file management required for large datasets
+- No built-in querying capabilities
+- Potential file system performance issues at scale
+
+### Alternatives Considered
+1. Database storage (PostgreSQL, MongoDB)
+   - Pros: Scalable, queryable, ACID compliance
+   - Cons: Infrastructure complexity, deployment requirements, cost
+2. Cloud storage (AWS S3, Google Cloud Storage)
+   - Pros: Scalable, managed service
+   - Cons: External dependency, API complexity, latency
+3. In-memory storage only
+   - Pros: Fastest access
+   - Cons: Data loss on restart, no persistence
+
+## ADR-008: Mock Client Pattern for Missing API Dependencies
+Date: 2025-09-26
+Status: Accepted
+
+### Context
+Development and testing environments may lack access to external APIs (Mem0, feedback services) but should maintain functionality for comprehensive testing and development workflows.
+
+### Decision
+Implement mock client pattern with environment-based switching:
+- Detect missing API keys or service availability
+- Provide mock implementations that maintain interface compatibility
+- Log mock usage clearly for debugging
+- Preserve full functionality for testing and development
+- Graceful degradation without blocking core features
+
+### Consequences
+#### Positive
+- Development continues without external service dependencies
+- Testing remains comprehensive in all environments
+- Reduces setup complexity for new developers
+- Prevents failures due to service unavailability
+- Maintains consistent interfaces across environments
+
+#### Negative
+- Mock behavior may not exactly match production services
+- Additional code complexity for mock implementations
+- Potential for missed integration issues in development
+
+### Alternatives Considered
+1. Require all external services for development
+   - Pros: Exact production parity
+   - Cons: High setup barrier, external service dependencies
+2. Skip functionality when services unavailable
+   - Pros: Simpler implementation
+   - Cons: Incomplete testing, reduced development capabilities
+3. Use service stubs/fakes instead of mocks
+   - Pros: More realistic behavior
+   - Cons: Complex to implement, maintain separate fake services
+

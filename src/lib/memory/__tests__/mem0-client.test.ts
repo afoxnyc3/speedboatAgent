@@ -327,12 +327,13 @@ describe('Mem0Client', () => {
       expect(factoryClient).toBeInstanceOf(Mem0Client);
     });
 
-    it('should throw error when API key is missing for singleton', () => {
+    it('should return mock client when API key is missing for singleton', () => {
       delete process.env.MEM0_API_KEY;
 
-      expect(() => {
-        require('../mem0-client').getMem0Client();
-      }).toThrow('MEM0_API_KEY environment variable is required');
+      const client = require('../mem0-client').getMem0Client();
+      expect(client).toBeDefined();
+      // Verify it's the mock client by checking it doesn't throw on operations
+      expect(() => client.add([], {})).not.toThrow();
     });
   });
 

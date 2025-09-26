@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import StreamingText from './StreamingText';
 import SourceViewer from './SourceViewer';
 import CodeBlock from './CodeBlock';
+import { FeedbackWidget } from './FeedbackWidget';
 import type { ChatInterfaceProps, ChatMessage } from './types';
 
 /**
@@ -183,6 +184,22 @@ export default function ChatInterface({
                           citations={message.sources}
                           onCitationClick={(citation) => {
                             console.log('Citation clicked:', citation);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Feedback widget for assistant messages */}
+                    {message.role === 'assistant' && !message.streaming && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <FeedbackWidget
+                          messageId={message.id as any}
+                          conversationId={message.id as any}
+                          query={messages.find(m => m.role === 'user' && m.id < message.id)?.content}
+                          response={message.content}
+                          sources={message.sources?.map(s => String(s.source)).filter(s => s !== 'undefined')}
+                          onFeedbackSubmit={(feedback) => {
+                            console.log('Feedback submitted:', feedback);
                           }}
                         />
                       </div>

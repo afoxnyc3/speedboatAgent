@@ -5,17 +5,19 @@
 
 export interface Citation {
   /** File path within the repository */
-  filepath: string;
+  filepath?: string;
+  /** Title of the source (alternative to filepath) */
+  title?: string;
+  /** URL of the source */
+  url?: string;
   /** Line number for precise code references */
   line?: number;
   /** Relevant content snippet */
-  content: string;
+  content?: string;
   /** Relevance score (0-1) */
   score: number;
   /** Programming language for syntax highlighting */
   language?: string;
-  /** Source URL if available */
-  url?: string;
   /** Source type: github or web */
   source?: 'github' | 'web';
 }

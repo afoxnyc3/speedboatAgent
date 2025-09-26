@@ -6,87 +6,6 @@ An intelligent knowledge assistant that provides instant, accurate answers from 
 
 Save 40 engineering hours by building a production-ready RAG agent that unifies code understanding and documentation retrieval across GitHub repositories and web sources.
 
-## 🔄 How It Works
-
-### The Complete Workflow
-
-Our RAG agent operates through two main pipelines:
-
-#### 1️⃣ **Knowledge Ingestion Pipeline** (Building the Knowledge Base)
-
-```mermaid
-graph LR
-    A[GitHub Push Event] --> B[Webhook Trigger]
-    B --> C[BullMQ Queue]
-    C --> D[LlamaIndex Processor]
-    D --> E[AST Code Parser]
-    E --> F[Smart Chunking]
-    F --> G[OpenAI Embeddings]
-    G --> H[Weaviate Storage]
-
-    I[Web Documentation] --> J[Firecrawl Scraper]
-    J --> K[Content Deduplication]
-    K --> G
-```
-
-**What happens when code is pushed:**
-1. GitHub webhook notifies our system within seconds
-2. BullMQ queues the processing job for reliability
-3. LlamaIndex reads the repository and understands code structure using AST parsing
-4. Content is intelligently chunked (max 1500 tokens) preserving context
-5. Each chunk is converted to a 1024-dimensional vector embedding
-6. Vectors are stored in Weaviate with metadata and priority weighting
-
-**Web documentation flow:**
-1. Firecrawl scrapes documentation sites weekly
-2. HTML is converted to markdown for processing
-3. SHA-256 hashing prevents duplicate content
-4. GitHub content always takes precedence over web docs
-
-#### 2️⃣ **Query Processing Pipeline** (Answering Questions)
-
-```mermaid
-graph TD
-    A[User Question] --> B{Query Classifier}
-    B -->|Technical| C[Boost GitHub 1.5x]
-    B -->|Business| D[Boost Web 1.5x]
-    B -->|Operational| E[Balanced Weights]
-
-    C --> F[Hybrid Search]
-    D --> F
-    E --> F
-
-    F --> G[75% Vector Search]
-    F --> H[25% Keyword Search]
-
-    G --> I[Result Fusion]
-    H --> I
-
-    I --> J[Cache Check]
-    J --> K[Reranking Model]
-    K --> L[Context Building]
-
-    M[Mem0 History] --> L
-
-    L --> N[GPT-4 Generation]
-    N --> O[Streaming Response]
-    O --> P[User Interface]
-
-    P --> Q[Feedback Collection]
-    Q --> M
-```
-
-**What happens when you ask a question:**
-1. **Classification** - Your question is analyzed to determine if it's technical, business, or operational
-2. **Smart Routing** - Different question types prioritize different sources
-3. **Hybrid Search** - Combines semantic understanding (vector) with exact matching (keyword)
-4. **Caching** - Previously computed embeddings are reused (70% hit rate target)
-5. **Reranking** - Cross-encoder model ensures most relevant results appear first
-6. **Memory** - Mem0 adds conversation context for follow-up questions
-7. **Generation** - GPT-4 creates response with mandatory source citations
-8. **Streaming** - Response appears token-by-token for better UX
-9. **Learning** - Your feedback improves future responses
-
 ## ⚡ Core Features
 
 ### Intelligent Capabilities
@@ -97,11 +16,6 @@ graph TD
 - **Source Attribution** - Every answer includes clickable source links
 - **Conversation Memory** - Understands context from previous questions
 - **Zero Hallucination** - If we don't know, we say so
-
-### Deployment Options
-- **🕵️ Stealth Mode** - Local repository cloning and processing (current implementation)
-- **🔄 Live Mode** - GitHub webhooks for real-time updates (Week 2+)
-- **🌐 Hybrid Mode** - Combine local repos with web documentation
 
 ### Performance Guarantees
 - Response time: < 2s (p95)
@@ -133,20 +47,6 @@ graph TD
 - **Deployment**: Vercel
 
 ## 📦 Quick Start
-
-### Prerequisites
-```yaml
-Minimum Required (Week 1):
-  - Node.js 20+
-  - Weaviate Cloud account (14-day free trial)
-  - OpenAI API key
-
-Optional Services (Week 2+):
-  - GitHub token (for webhook mode)
-  - Upstash Redis instance
-  - Mem0 account
-  - Firecrawl API key
-```
 
 ### Installation
 
@@ -203,43 +103,7 @@ SENTRY_DSN=...
 VERCEL_ENV=...
 ```
 
-## 📁 Architecture
-
-### System Architecture
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         USER INTERFACE                       │
-│                    Next.js App Router + React                │
-└─────────────────────────────────────────────────────────────┘
-                                │
-                    ┌───────────┴───────────┐
-                    │    API GATEWAY        │
-                    │   /api/* routes       │
-                    └───────────┬───────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        │                       │                       │
-┌───────▼────────┐    ┌────────▼────────┐    ┌────────▼────────┐
-│ INGESTION      │    │ SEARCH ENGINE   │    │ CHAT SERVICE    │
-│                │    │                 │    │                 │
-│ • LlamaIndex   │    │ • Query Class   │    │ • GPT-4 Turbo   │
-│ • Firecrawl    │    │ • Hybrid Search │    │ • Streaming     │
-│ • Deduplication│    │ • Reranking     │    │ • Mem0 Context  │
-└────────────────┘    └────────┬────────┘    └────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   WEAVIATE CLOUD    │
-                    │  Vector + Keyword   │
-                    │   Hybrid Database   │
-                    └─────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   REDIS CACHE       │
-                    │  Embedding Cache    │
-                    └─────────────────────┘
-```
-
-### Project Structure
+## 📁 Project Structure
 ```
 /src
   /app
@@ -352,25 +216,6 @@ const queryWeights = {
 }
 ```
 
-## 🧪 Testing
-
-```bash
-# Test Weaviate connection
-npm run test-weaviate
-
-# Setup Weaviate schema
-npm run setup-weaviate development
-
-# Test local ingestion (dry run)
-npm run ingest-local /path/to/repo --dry-run --verbose
-
-# Full local ingestion
-npm run ingest-local /path/to/repo
-
-# Run standard tests
-npm test
-```
-
 ## 📈 Success Metrics
 
 ### Technical Metrics
@@ -384,17 +229,6 @@ npm test
 - ✅ 50% reduction in discovery time
 - ✅ 85%+ user satisfaction
 - ✅ ROI positive within 60 days
-
-## 💰 Cost Breakdown
-
-| Component | Monthly | Usage | Optimization |
-|-----------|---------|-------|--------------|
-| OpenAI | $200-400 | Embeddings + GPT-4 | Cache embeddings aggressively |
-| Weaviate | $99 | Vector storage | Hybrid search reduces queries |
-| Upstash | $10 | Caching layer | TTL policies |
-| Mem0 | $49 | Memory system | User-level only |
-| Firecrawl | $29 | Web crawling | Weekly schedule |
-| **Total** | **$387-587** | | Target -40% via cache |
 
 ## 🔒 Security & Reliability
 
@@ -441,19 +275,6 @@ vercel --prod
 - [project-spec.md](./project-spec.md) - Full specification
 - [roadmap.md](./roadmap.md) - Development timeline
 - [todo.md](./todo.md) - Current sprint tasks
-
-## 🔗 External References
-
-### Core Technologies
-- [Weaviate Hybrid Search](https://weaviate.io/developers/weaviate/search/hybrid)
-- [LlamaIndex GitHub Reader](https://docs.llamaindex.ai/en/stable/examples/data_connectors/GithubRepositoryReaderDemo/)
-- [Firecrawl Documentation](https://docs.firecrawl.dev/)
-- [Mem0 SDK](https://docs.mem0.ai/)
-
-### Infrastructure
-- [Upstash Redis](https://docs.upstash.com/redis)
-- [BullMQ Documentation](https://docs.bullmq.io/)
-- [OpenAI Embeddings](https://platform.openai.com/docs/guides/embeddings)
 
 ## 🤝 Contributing
 
