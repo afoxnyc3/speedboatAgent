@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getMem0Client } from '../../../lib/memory/mem0-client';
-import { getSearchOrchestrator } from '../../../lib/search/search-orchestrator';
+import { getSearchOrchestrator } from '../../../lib/search/cached-search-orchestrator';
 import type {
   ChatResponse,
   ChatMessage,
@@ -58,18 +58,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Step 2: Enhance query with memory context
     const enhancedQuery = buildContextualQuery(validatedRequest.message, memoryContext);
 
-    // Step 3: Perform RAG search with enhanced query
+    // Step 3: Perform RAG search with enhanced query (with caching)
     const searchResults = await searchOrchestrator.search({
       query: enhancedQuery,
       limit: validatedRequest.maxSources,
-      hybridWeights: { vector: 0.75, keyword: 0.25 },
+      offset: 0,
+      includeContent: true,
+      includeEmbedding: false,
+      timeout: 10000,
+      sessionId: sessionId,
+      userId: userId,
+      context: `conversation:${conversationId}`,
       filters: {},
     });
 
     // Step 4: Generate contextual response
     const response = await generateContextualResponse({
       query: validatedRequest.message,
-      searchResults: searchResults.documents,
+      searchResults: searchResults.results,
       memoryContext,
       conversationId,
     });
@@ -94,8 +100,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       conversationId,
       category: 'context',
       metadata: {
-        sourcesUsed: searchResults.documents.length,
-        searchTime: searchResults.searchTime,
+        sourcesUsed: searchResults.results.length,
+        searchTime: searchResults.metadata.searchTime,
         topics: extractTopics(validatedRequest.message),
       },
     });
@@ -110,8 +116,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       status: 'completed',
       sources: response.sources,
       metadata: {
-        searchTime: searchResults.searchTime,
-        retrievalCount: searchResults.documents.length,
+        searchTime: searchResults.metadata.searchTime,
+        retrievalCount: searchResults.results.length,
         memoryContext: {
           relevantMemories: memoryContext.relevantMemories.length,
           entities: memoryContext.entityMentions.length,
