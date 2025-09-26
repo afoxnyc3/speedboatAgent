@@ -15,7 +15,7 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
 
 ---
 
-## Completed Issues ✅ (14 total)
+## Completed Issues ✅ (15 total)
 
 ### Core Infrastructure
 - ✅ **Issue #11**: Search API endpoint (/api/search)
@@ -90,9 +90,18 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
   - Comprehensive TypeScript types with Zod validation schemas
   - GitHub permalink generation using commit SHAs for stability
 
+### User Experience Enhancement
+- ✅ **Issue #16**: Response formatting enhancements
+  - Code syntax highlighting with react-syntax-highlighter and oneDark theme
+  - Collapsible source sections with Sources/SourcesTrigger components
+  - Copy functionality with copy/check state management and accessibility
+  - Authority badges integrated with source attribution system
+  - Enhanced line references supporting range format (L123-L127)
+  - Code type classification badges (function/class/interface/variable/import)
+
 ---
 
-## Pending Issues 🚧 (4 total)
+## Pending Issues 🚧 (3 total)
 
 ### High Priority (P0)
   - Cache hit rate > 70%
@@ -106,10 +115,6 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
   - Performance optimization
 
 
-- [ ] **Issue #16**: Response formatting enhancements
-  - Code syntax highlighting
-  - Collapsible source sections
-  - Copy functionality
 
 - [ ] **Issue #17**: Source authority weighting system
   - GitHub: 1.5x for technical queries
@@ -146,7 +151,7 @@ Build a production-ready RAG agent that saves 40 engineering hours through intel
 - Ready for production deployment
 - Focus shifts to remaining P1 features and enterprise features
 
-**Progress**: 14 of 18 total issues complete (78%)
+**Progress**: 15 of 18 total issues complete (83%)
 - Core functionality: 100% complete
 - Performance & optimization: 100% complete
 - Monitoring & operations: 100% complete
