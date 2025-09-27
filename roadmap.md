@@ -1,9 +1,9 @@
 # RAG Agent Development Roadmap - Production First
 
-## 🚀 Current Focus: PRODUCTION DEPLOYMENT
+## 🚀 Current Focus: CRITICAL PERFORMANCE & DATA FIXES
 
-**Status**: MVP Complete, Ready for Production
-**Next Step**: Deploy to Vercel within 24-48 hours
+**Status**: Deployed but Performance & Data Issues
+**Next Step**: Fix 8-12s response time and content metadata
 
 ## Success Metrics
 - ✅ 95% query coverage from hybrid sources
@@ -11,12 +11,51 @@
 - ✅ 0% hallucination rate with source verification
 - ✅ 73% cache hit rate (exceeds 70% target)
 - ✅ 1000 concurrent users supported
-- ⏳ Production deployment live
-- ⏳ 100+ real users tested
+- ✅ Production deployment live
+- ⏳ Chat response <3s (currently 8-12s)
+- ⏳ Company content properly categorized
 
 ---
 
-## Phase 1: Critical Tech Debt ⚡ (Today)
+## Phase 0: Critical Production Fixes 🚨 (NEW - This Week)
+**Time: 2-3 days**
+
+### P0 - Performance & Data Integrity
+- [ ] **Issue #61**: Achieve 2-3s Chat Response Time
+  - Parallel processing for memory + search
+  - Implement response streaming
+  - **Target**: <3s response time
+  - **Time**: 4 hours
+
+- [ ] **Issue #62**: Re-ingest Company Content
+  - Fix 280+ files marked as 'local'
+  - Apply correct source metadata
+  - **Time**: 2 hours
+
+- [ ] **Issue #60**: Fix Content Miscategorization (In Progress)
+  - Scripts created, need execution
+  - **Time**: 2 hours remaining
+
+### P1 - Performance Enhancements
+- [ ] **Issue #63**: Implement Response Streaming
+  - Stream tokens as generated
+  - First token in <1s
+  - **Time**: 3 hours
+
+- [ ] **Issue #64**: Add Parallel Processing
+  - Concurrent memory + search operations
+  - Reduce latency by 50%
+  - **Time**: 2 hours
+
+### P2 - Research
+- [ ] **Issue #65**: Evaluate Memory Alternatives
+  - Benchmark Mem0 vs Redis vs PostgreSQL
+  - Consider removing if not valuable
+  - **Time**: 4 hours
+
+---
+
+## Phase 1: Critical Tech Debt ⚡ (Next)
 **Time: 4 hours total**
 
 ### P0 - Production Blockers
@@ -33,7 +72,6 @@
 ---
 
 ## Phase 2: Production Deployment 🎯 (Week 1)
-**Target: Live in 24-48 hours**
 
 ### P0 - Deploy to Production
 - [x] **Issue #47**: Deploy to Vercel Production ✅
@@ -76,10 +114,11 @@
   - Verify search results
   - **Time**: 4 hours
 
-- [ ] **Issue #53**: Performance Optimization
-  - Enable cache warming
-  - CDN configuration
-  - **Time**: 4 hours
+- [x] **Issue #53**: Performance Optimization (Partial) ⚠️
+  - ✅ Reduced chat from 20s → 8-12s
+  - ✅ Added circuit breaker for Mem0
+  - ⏳ Still need to reach 2-3s target (see Issue #61)
+  - **Time**: 2 hours completed, 2 hours remaining
 
 ---
 
@@ -113,9 +152,14 @@
 
 ---
 
-## Completed Issues ✅ (22 total)
+## Completed Issues ✅ (23 total + 1 partial)
 
 ### Recently Completed
+- ⚠️ **Issue #53**: Performance Optimization (PARTIAL)
+  - Fixed critical 20s → 8-12s response time
+  - Added Mem0 circuit breaker and timeout reduction
+  - Still need 2-3s target (tracked in Issue #61)
+
 - ✅ **Issue #47**: Deploy to Vercel Production
   - Successfully deployed to https://speedboat-agent.vercel.app
   - All environment variables configured
@@ -140,15 +184,15 @@
 ## Timeline
 
 ### Week 1 (This Week)
-- **Day 1**: Fix critical tech debt (4h)
-- **Day 2**: Deploy to production (4h)
-- **Day 3**: Monitoring & testing (6h)
-- **Day 4-5**: Hardening & optimization (10h)
+- **Today**: Phase 0 - Critical fixes (Issues #60-62)
+- **Tomorrow**: Performance improvements (Issues #63-64)
+- **Day 3**: Complete Phase 0, start Phase 1
+- **Day 4-5**: Continue Phase 1 & 2
 
 ### Week 2
-- Documentation cleanup (4h)
-- Code refactoring (6h)
-- Test coverage (4h)
+- Complete remaining Phase 2 & 3 issues
+- Documentation and code cleanup
+- Test coverage improvements
 
 ---
 
