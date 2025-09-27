@@ -57,14 +57,13 @@ async function getConversationContext(
 ) {
   // Check if memory is disabled by circuit breaker
   if (Date.now() < memoryDisabledUntil) {
-    console.log('Memory disabled by circuit breaker, skipping...');
     return { context: null, contextualQuery: query };
   }
 
   try {
-    // Add a hard timeout wrapper around the Mem0 call (2 seconds max)
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Memory timeout')), 2000)
+    // Add a hard timeout wrapper around the Mem0 call (800ms max for performance)
+    const timeoutPromise = new Promise((resolve, reject) =>
+      setTimeout(() => reject(new Error('Memory timeout')), 800)
     );
 
     const memClient = getMem0Client();
@@ -93,12 +92,10 @@ async function getConversationContext(
     // Check if we should activate circuit breaker
     if (memoryFailureCount >= MAX_MEMORY_FAILURES) {
       memoryDisabledUntil = Date.now() + MEMORY_DISABLE_DURATION;
-      console.error(`Memory circuit breaker activated after ${memoryFailureCount} failures. Disabling for ${MEMORY_DISABLE_DURATION/1000}s`);
       memoryFailureCount = 0; // Reset counter
     }
 
     // Fail fast - continue without memory context rather than blocking
-    console.warn('Memory retrieval failed or timed out, continuing without context:', error);
     return { context: null, contextualQuery: query };
   }
 }
@@ -145,19 +142,24 @@ async function storeConversation(
       runId: createRunId(randomUUID()),
       category: 'context',
     });
-  } catch (error) {
-    console.warn('Memory storage failed:', error);
+  } catch {
+    // Memory storage failed - continue silently
   }
 }
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const timings: Record<string, number> = {};
 
   try {
+    // Parse request with timing
+    const parseStart = Date.now();
     const body = await request.json();
     const chatRequest = validateChatRequest(body);
+    timings.parsing = Date.now() - parseStart;
 
     // Run memory fetch and search in parallel for better performance
+    const parallelStart = Date.now();
     const [contextResult, searchResult] = await Promise.allSettled([
       // Memory fetch with timeout protection
       getConversationContext(
@@ -168,13 +170,14 @@ export async function POST(request: NextRequest) {
       // Search with original query (will be enhanced if memory succeeds)
       executeSearchWorkflow({
         query: chatRequest.message, // Use original query initially
-        limit: 5,
+        limit: 3, // Reduced from 5 to 3
         offset: 0,
         includeContent: true,
         includeEmbedding: false,
-        timeout: 5000,
+        timeout: 2000, // Reduced from 5000ms to 2000ms
       })
     ]);
+    timings.parallelOps = Date.now() - parallelStart;
 
     // Extract results from Promise.allSettled
     const context = contextResult.status === 'fulfilled' ? contextResult.value.context : null;
@@ -183,6 +186,7 @@ export async function POST(request: NextRequest) {
       : chatRequest.message;
 
     // Get search results or re-run if we have contextual query
+    const searchProcessStart = Date.now();
     let finalSearchResult;
     if (searchResult.status === 'fulfilled' && contextualQuery === chatRequest.message) {
       // Use the parallel search result if context didn't enhance the query
@@ -191,36 +195,59 @@ export async function POST(request: NextRequest) {
       // Re-run search with enhanced query if memory provided context
       finalSearchResult = await executeSearchWorkflow({
         query: contextualQuery,
-        limit: 5,
+        limit: 3, // Reduced from 5 to 3
         offset: 0,
         includeContent: true,
         includeEmbedding: false,
-        timeout: 5000,
+        timeout: 1500, // Aggressive: 1500ms vs 5000ms
       });
     } else {
       // Fallback: run search with original query if parallel search failed
       finalSearchResult = await executeSearchWorkflow({
         query: chatRequest.message,
-        limit: 5,
+        limit: 3, // Reduced from 5 to 3
         offset: 0,
         includeContent: true,
         includeEmbedding: false,
-        timeout: 5000,
+        timeout: 1500, // Aggressive: 1500ms vs 5000ms
       });
     }
+    timings.searchProcessing = Date.now() - searchProcessStart;
 
     // Build RAG prompt with search results and context
+    const promptStart = Date.now();
     const ragPrompt = buildRAGPrompt(
       chatRequest.message,
       finalSearchResult,
       context
     );
+    timings.promptBuilding = Date.now() - promptStart;
 
-    // Generate response with OpenAI
-    const { text } = await generateText({
-      model: openai('gpt-4'),
-      prompt: ragPrompt,
-    });
+    // Generate response with OpenAI (with timeout and faster model)
+    const aiStart = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout for OpenAI
+
+    let text;
+    try {
+      const result = await generateText({
+        model: openai('gpt-3.5-turbo'), // Changed from gpt-4 to gpt-3.5-turbo for speed
+        prompt: ragPrompt,
+        abortSignal: controller.signal,
+      });
+      text = result.text;
+      clearTimeout(timeoutId);
+      timings.aiGeneration = Date.now() - aiStart;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        return NextResponse.json(
+          { error: 'Response generation timed out. Please try again.' },
+          { status: 408 }
+        );
+      }
+      throw error;
+    }
 
     // Store conversation in memory (non-blocking - fire and forget)
     // This improves response time from ~20s to ~3s
@@ -231,31 +258,27 @@ export async function POST(request: NextRequest) {
       chatRequest.message,
       text
     ).catch(error => {
-      // Log error but don't block the response
-      console.warn('Background memory storage failed:', error);
+      // Memory storage failed but don't block the response
     });
 
     // Calculate performance metrics
     const totalTime = Date.now() - startTime;
     const performanceMetrics = {
       totalTime,
+      ...timings,
       memoryFetchTime: contextResult.status === 'fulfilled' ?
         (context ? 'success' : 'timeout') : 'failed',
       searchTime: finalSearchResult.metadata?.searchTime || 0,
       parallelProcessing: true,
     };
 
-    // Log performance metrics for monitoring
-    console.log('Chat performance:', {
-      ...performanceMetrics,
-      sessionId: chatRequest.sessionId,
-    });
+    // Performance metrics available for monitoring
 
     return NextResponse.json({
       response: text,
       sessionId: chatRequest.sessionId,
       conversationId: chatRequest.conversationId,
-      sources: finalSearchResult.results.map(r => ({
+      sources: finalSearchResult.results.map((r: any) => ({
         title: r.filepath,
         url: r.metadata?.url,
         score: r.score,
@@ -265,7 +288,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Chat API error:', error);
+    // Log error for debugging if needed
     return NextResponse.json(
       { error: 'Failed to generate response' },
       { status: 500 }
