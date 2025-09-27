@@ -41,6 +41,7 @@ lerna-debug.log*
 
 # vercel
 .vercel
+.vercel.json.local
 
 # typescript
 *.tsbuildinfo
