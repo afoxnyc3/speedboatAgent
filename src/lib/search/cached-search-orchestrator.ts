@@ -64,7 +64,7 @@ export class CachedSearchOrchestrator {
       const cacheContext = createCacheContext(
         params.sessionId,
         params.userId,
-        params.weights
+        params.weights as Record<string, number> | undefined
       );
 
       // 1. Check search result cache first (unless forced fresh)
@@ -78,15 +78,15 @@ export class CachedSearchOrchestrator {
           cleanup();
           return {
             success: true,
-            results: cachedResults.documents,
+            results: cachedResults.documents as any,
             metadata: {
               ...cachedResults.metadata,
               queryId,
               cacheHit: true,
               searchTime: Date.now() - startTime
-            },
+            } as any,
             query: processQuery(params.query, 'operational', params.filters),
-            suggestions: generateSearchSuggestions(params.query, cachedResults.documents)
+            suggestions: generateSearchSuggestions(params.query, cachedResults.documents as any)
           };
         }
       }
@@ -139,8 +139,8 @@ export class CachedSearchOrchestrator {
       if (this.cacheManager.isAvailable() && documents.length > 0) {
         await this.cacheManager.setSearchResults(
           params.query,
-          documents,
-          metadata,
+          documents as any,
+          metadata as any,
           cacheContext
         );
       }
@@ -152,10 +152,8 @@ export class CachedSearchOrchestrator {
         results: processedDocuments,
         metadata: {
           ...metadata,
-          cacheHit: embeddingResult.cached,
-          embeddingCached: embeddingResult.cached,
-          embeddingResponseTime: embeddingResult.responseTime
-        },
+          cacheHit: embeddingResult.cached
+        } as any,
         query: processQuery(params.query, classification.type, params.filters),
         suggestions
       };

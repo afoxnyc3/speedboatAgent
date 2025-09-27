@@ -8,7 +8,7 @@ import {
   type FeedbackAnalytics,
   type FeedbackAnalysisOptions,
   type FeedbackId,
-  type FeedbackIssue,
+  type FeedbackCategory,
   FEEDBACK_CONSTANTS,
 } from '@/types/feedback';
 
@@ -120,8 +120,13 @@ export class FeedbackFileStore implements FeedbackStore {
       // Calculate satisfaction rate
       const satisfactionRate = total > 0 ? thumbsUp / (thumbsUp + thumbsDown) : 0;
 
-      // Identify top issues
-      const issueCategories: Record<string, FeedbackIssue> = {};
+      // Identify top issues - use mutable structure during construction
+      const issueCategories: Record<string, {
+        category: FeedbackCategory;
+        count: number;
+        percentage: number;
+        examples: string[];
+      }> = {};
 
       filtered
         .filter(f => f.type === 'thumbs_down' && f.category)

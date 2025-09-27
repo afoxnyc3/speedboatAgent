@@ -89,7 +89,7 @@ async function checkRedisHealth(): Promise<ComponentHealth> {
       status,
       latency: healthCheck.latency,
       details: {
-        cacheMetrics: cacheManager.getCacheMetrics()
+        cacheMetrics: JSON.stringify(cacheManager.getCacheMetrics())
       }
     };
   } catch (error) {

@@ -26,7 +26,7 @@ export interface CacheMetrics {
 }
 
 // Embedding cache entry
-interface EmbeddingCacheEntry {
+export interface EmbeddingCacheEntry {
   embedding: number[];
   model: string;
   dimensions: number;

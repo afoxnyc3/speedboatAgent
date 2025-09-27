@@ -26,7 +26,7 @@ export async function scanKeys(
       // Handle both array and object response formats
       const [nextCursor, batch] = Array.isArray(result)
         ? result
-        : [result.cursor, result.keys || []];
+        : [(result as any).cursor, (result as any).keys || []];
 
       keys.push(...batch);
       cursor = typeof nextCursor === 'string' ? parseInt(nextCursor) : nextCursor;
@@ -66,7 +66,7 @@ export async function batchDeleteKeys(
 
       const [nextCursor, batch] = Array.isArray(result)
         ? result
-        : [result.cursor, result.keys || []];
+        : [(result as any).cursor, (result as any).keys || []];
 
       if (batch.length > 0) {
         // Delete in smaller chunks to avoid blocking
@@ -113,7 +113,7 @@ export async function countKeys(
 
       const [nextCursor, batch] = Array.isArray(result)
         ? result
-        : [result.cursor, result.keys || []];
+        : [(result as any).cursor, (result as any).keys || []];
 
       count += batch.length;
       cursor = typeof nextCursor === 'string' ? parseInt(nextCursor) : nextCursor;
@@ -151,7 +151,7 @@ export async function streamKeys(
 
       const [nextCursor, batch] = Array.isArray(result)
         ? result
-        : [result.cursor, result.keys || []];
+        : [(result as any).cursor, (result as any).keys || []];
 
       if (batch.length > 0) {
         await callback(batch);
@@ -190,7 +190,7 @@ export async function sampleKeys(
 
       const [nextCursor, batch] = Array.isArray(result)
         ? result
-        : [result.cursor, result.keys || []];
+        : [(result as any).cursor, (result as any).keys || []];
 
       keys.push(...batch);
       cursor = typeof nextCursor === 'string' ? parseInt(nextCursor) : nextCursor;

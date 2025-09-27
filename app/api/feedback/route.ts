@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Invalid feedback data',
-          details: error.errors,
+          details: error.issues,
           timestamp: new Date(),
         },
         { status: 400 }
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     const options = {
       conversationId: conversationId ? createConversationId(conversationId) : undefined,
-      type: type as 'thumbs_up' | 'thumbs_down' | 'correction' | 'comment' | null,
+      type: type && type !== 'null' ? type as 'thumbs_up' | 'thumbs_down' | 'correction' | 'comment' : undefined,
       limit: limit ? parseInt(limit, 10) : 50,
     };
 

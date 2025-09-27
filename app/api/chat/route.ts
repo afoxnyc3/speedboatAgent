@@ -4,7 +4,7 @@
  */
 
 import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+import { generateText, streamText } from 'ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMem0Client } from '../../../src/lib/memory/mem0-client';
 import { executeSearchWorkflow } from '../../../src/lib/search/cached-search-orchestrator';
@@ -151,33 +151,68 @@ async function storeConversation(
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
     const body = await request.json();
     const chatRequest = validateChatRequest(body);
 
-    // Get conversation context and enhance query
-    const { context, contextualQuery } = await getConversationContext(
-      chatRequest.sessionId!,
-      chatRequest.conversationId!,
-      chatRequest.message
-    );
+    // Run memory fetch and search in parallel for better performance
+    const [contextResult, searchResult] = await Promise.allSettled([
+      // Memory fetch with timeout protection
+      getConversationContext(
+        chatRequest.sessionId!,
+        chatRequest.conversationId!,
+        chatRequest.message
+      ),
+      // Search with original query (will be enhanced if memory succeeds)
+      executeSearchWorkflow({
+        query: chatRequest.message, // Use original query initially
+        limit: 5,
+        offset: 0,
+        includeContent: true,
+        includeEmbedding: false,
+        timeout: 5000,
+      })
+    ]);
 
-    // Search for relevant information with caching
-    const searchResult = await executeSearchWorkflow({
-      query: contextualQuery,
-      limit: 5,
-      offset: 0,
-      includeContent: true,
-      includeEmbedding: false,
-      timeout: 5000,
-      sessionId: chatRequest.sessionId,
-      userId: chatRequest.userId,
-    });
+    // Extract results from Promise.allSettled
+    const context = contextResult.status === 'fulfilled' ? contextResult.value.context : null;
+    const contextualQuery = contextResult.status === 'fulfilled'
+      ? contextResult.value.contextualQuery
+      : chatRequest.message;
+
+    // Get search results or re-run if we have contextual query
+    let finalSearchResult;
+    if (searchResult.status === 'fulfilled' && contextualQuery === chatRequest.message) {
+      // Use the parallel search result if context didn't enhance the query
+      finalSearchResult = searchResult.value;
+    } else if (contextualQuery !== chatRequest.message) {
+      // Re-run search with enhanced query if memory provided context
+      finalSearchResult = await executeSearchWorkflow({
+        query: contextualQuery,
+        limit: 5,
+        offset: 0,
+        includeContent: true,
+        includeEmbedding: false,
+        timeout: 5000,
+      });
+    } else {
+      // Fallback: run search with original query if parallel search failed
+      finalSearchResult = await executeSearchWorkflow({
+        query: chatRequest.message,
+        limit: 5,
+        offset: 0,
+        includeContent: true,
+        includeEmbedding: false,
+        timeout: 5000,
+      });
+    }
 
     // Build RAG prompt with search results and context
     const ragPrompt = buildRAGPrompt(
       chatRequest.message,
-      searchResult,
+      finalSearchResult,
       context
     );
 
@@ -200,16 +235,33 @@ export async function POST(request: NextRequest) {
       console.warn('Background memory storage failed:', error);
     });
 
+    // Calculate performance metrics
+    const totalTime = Date.now() - startTime;
+    const performanceMetrics = {
+      totalTime,
+      memoryFetchTime: contextResult.status === 'fulfilled' ?
+        (context ? 'success' : 'timeout') : 'failed',
+      searchTime: finalSearchResult.metadata?.searchTime || 0,
+      parallelProcessing: true,
+    };
+
+    // Log performance metrics for monitoring
+    console.log('Chat performance:', {
+      ...performanceMetrics,
+      sessionId: chatRequest.sessionId,
+    });
+
     return NextResponse.json({
       response: text,
       sessionId: chatRequest.sessionId,
       conversationId: chatRequest.conversationId,
-      sources: searchResult.results.map(r => ({
+      sources: finalSearchResult.results.map(r => ({
         title: r.filepath,
         url: r.metadata?.url,
         score: r.score,
       })),
       contextUsed: !!context,
+      metrics: performanceMetrics,
     });
 
   } catch (error) {

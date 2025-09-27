@@ -4,8 +4,8 @@
  */
 
 import { z } from 'zod';
-import type { MessageId, ConversationId } from './chat';
-import type { SessionId, UserId } from './memory';
+import type { MessageId, ConversationId } from '../src/types/chat';
+import type { SessionId, UserId } from '../src/types/memory';
 
 // Branded types for feedback system
 export type FeedbackId = string & { readonly __brand: 'FeedbackId' };
