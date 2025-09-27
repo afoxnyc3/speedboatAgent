@@ -8,24 +8,15 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Enable experimental instrumentation for Sentry
-  experimental: {
-    instrumentationHook: true,
-  },
-
-  // Sentry configuration
-  sentry: {
-    // Suppress source maps uploading logs during build
-    silent: true,
-    org: 'speedboat-agent',
-    project: 'rag-agent',
-  },
+  // No experimental features needed - instrumentation.js is available by default
 };
 
 // Sentry configuration options
 const sentryWebpackPluginOptions = {
   // Additional config options for the Sentry Webpack plugin
   silent: true, // Suppresses source map uploading logs
+  org: 'speedboat-agent',
+  project: 'rag-agent',
 
   // Only upload source maps in production
   dryRun: process.env.NODE_ENV !== 'production',
