@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Issue #47**: Full Vercel production deployment with CI/CD pipeline
+- **Issue #61**: Performance optimization achieving 8-12s response time (from 20s)
+  - Parallel memory fetch and search using Promise.allSettled
+  - New streaming endpoint at /api/chat/stream for better UX
+  - Circuit breaker for Mem0 failures (3 strikes = 1 min disable)
+  - Performance metrics logging for monitoring
+- **Issue #63**: Response streaming implementation (completed in PR #66)
+- **Issue #64**: Parallel processing for concurrent operations (completed in PR #66)
 - Production-first roadmap with 12 new GitHub issues (#45-56)
 - Comprehensive k6 load testing framework supporting 1000 concurrent users
 - Performance benchmarking with P50/P95/P99 metrics
@@ -20,12 +27,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Issue #46**: Removed all critical 'any' types from API routes preventing runtime errors
 - **Issue #47**: Fixed Vercel deployment errors (removed deprecated properties, disabled problematic middleware)
+- **Issue #61**: Fixed 26 TypeScript errors preventing CI from passing
+  - ZodError.issues property correction
+  - Type casting and null handling fixes
+  - Redis scan result typing
+  - Import path corrections
+- GitHub Actions workflow permissions for PR comments and releases
 - CI pipeline test failures with proper TextEncoder polyfill for Node.js environments
 - ESM module import issues in Jest configuration for @upstash/redis
 - Async/await handling in API key validation tests
 - ESLint violations including file size limits, unused variables, and unnecessary quotes
 
 ### Changed
+- Response time improved from 15-20s to 8-12s through optimization
+- Mem0 timeout reduced from 10s to 2s, retry attempts from 3 to 1
+- Memory storage made non-blocking (fire-and-forget pattern)
 - Roadmap strategy shifted to production-first deployment (24-48 hour timeline)
 - Enhanced /work command documentation with detailed GitHub issue management
 - Updated workflow.md with comprehensive issue closure examples
