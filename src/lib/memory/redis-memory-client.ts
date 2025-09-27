@@ -5,6 +5,11 @@
 
 import { Redis } from '@upstash/redis';
 import { createHash } from 'crypto';
+import {
+  extractTopics,
+  extractPreferences,
+  determineStage as determineConversationStage
+} from './redis-memory-helpers';
 import type {
   MemoryClient,
   MemoryMessage,
@@ -17,7 +22,6 @@ import type {
   MemoryId,
   SessionId,
   MemoryItem,
-  MemoryConfig,
 } from '../../types/memory';
 
 interface RedisMemoryEntry {
@@ -377,9 +381,9 @@ export class RedisMemoryClient implements MemoryClient {
       sessionId,
       relevantMemories: searchResult.memories,
       entityMentions: [],
-      topicContinuity: this.extractTopics(searchResult.memories),
-      userPreferences: this.extractPreferences(searchResult.memories),
-      conversationStage: this.determineStage(searchResult.memories),
+      topicContinuity: extractTopics(searchResult.memories),
+      userPreferences: extractPreferences(searchResult.memories),
+      conversationStage: determineConversationStage(searchResult.memories),
     };
   }
 
@@ -420,37 +424,6 @@ export class RedisMemoryClient implements MemoryClient {
     }
   }
 
-  private extractTopics(memories: readonly MemoryItem[]): string[] {
-    // Simple topic extraction - in production, use NLP
-    const topics = new Set<string>();
-
-    for (const memory of memories) {
-      const words = memory.content.toLowerCase().split(/\s+/);
-      // Extract potential topics (words longer than 5 chars)
-      words.filter(w => w.length > 5).forEach(w => topics.add(w));
-    }
-
-    return Array.from(topics).slice(0, 10);
-  }
-
-  private extractPreferences(memories: readonly MemoryItem[]): Record<string, unknown> {
-    const preferences: Record<string, unknown> = {};
-
-    for (const memory of memories) {
-      if (memory.category === 'preference' && memory.metadata) {
-        Object.assign(preferences, memory.metadata);
-      }
-    }
-
-    return preferences;
-  }
-
-  private determineStage(memories: readonly MemoryItem[]): string {
-    if (memories.length === 0) return 'greeting';
-    if (memories.length < 3) return 'inquiry';
-    if (memories.some(m => m.content.toLowerCase().includes('thank'))) return 'resolution';
-    return 'discussion';
-  }
 }
 
 // Factory function
