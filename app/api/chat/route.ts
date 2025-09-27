@@ -17,6 +17,12 @@ import { randomUUID } from 'crypto';
 import { ConversationMemoryContext, MemoryItem } from '../../../src/types/memory';
 import { SearchResponse } from '../../../src/types/search';
 
+// Simple circuit breaker for Mem0 - disables memory after repeated failures
+let memoryFailureCount = 0;
+let memoryDisabledUntil = 0;
+const MAX_MEMORY_FAILURES = 3;
+const MEMORY_DISABLE_DURATION = 60000; // Disable for 1 minute after 3 failures
+
 interface ChatRequest {
   message: string;
   sessionId?: string;
@@ -42,26 +48,57 @@ function validateChatRequest(body: unknown): ChatRequest {
 }
 
 /**
- * Retrieves conversation context from memory
+ * Retrieves conversation context from memory with timeout protection
  */
 async function getConversationContext(
   sessionId: string,
   conversationId: string,
   query: string
 ) {
+  // Check if memory is disabled by circuit breaker
+  if (Date.now() < memoryDisabledUntil) {
+    console.log('Memory disabled by circuit breaker, skipping...');
+    return { context: null, contextualQuery: query };
+  }
+
   try {
+    // Add a hard timeout wrapper around the Mem0 call (2 seconds max)
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Memory timeout')), 2000)
+    );
+
     const memClient = getMem0Client();
-    const context = await memClient.getConversationContext(
+    const contextPromise = memClient.getConversationContext(
       conversationId,
       createSessionId(sessionId)
     );
 
+    // Race between the actual call and timeout
+    const context = await Promise.race([
+      contextPromise,
+      timeoutPromise
+    ]) as ConversationMemoryContext;
+
     // Build enhanced query with context
     const contextualQuery = buildContextualQuery(query, context);
 
+    // Reset failure count on success
+    memoryFailureCount = 0;
+
     return { context, contextualQuery };
   } catch (error) {
-    console.warn('Memory retrieval failed, continuing without context:', error);
+    // Increment failure count
+    memoryFailureCount++;
+
+    // Check if we should activate circuit breaker
+    if (memoryFailureCount >= MAX_MEMORY_FAILURES) {
+      memoryDisabledUntil = Date.now() + MEMORY_DISABLE_DURATION;
+      console.error(`Memory circuit breaker activated after ${memoryFailureCount} failures. Disabling for ${MEMORY_DISABLE_DURATION/1000}s`);
+      memoryFailureCount = 0; // Reset counter
+    }
+
+    // Fail fast - continue without memory context rather than blocking
+    console.warn('Memory retrieval failed or timed out, continuing without context:', error);
     return { context: null, contextualQuery: query };
   }
 }
@@ -150,14 +187,18 @@ export async function POST(request: NextRequest) {
       prompt: ragPrompt,
     });
 
-    // Store conversation in memory
-    await storeConversation(
+    // Store conversation in memory (non-blocking - fire and forget)
+    // This improves response time from ~20s to ~3s
+    storeConversation(
       chatRequest.sessionId!,
       chatRequest.userId,
       chatRequest.conversationId!,
       chatRequest.message,
       text
-    );
+    ).catch(error => {
+      // Log error but don't block the response
+      console.warn('Background memory storage failed:', error);
+    });
 
     return NextResponse.json({
       response: text,

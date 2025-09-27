@@ -19,8 +19,8 @@ import type {
 } from '../../types/memory';
 
 const DEFAULT_CONFIG: Partial<MemoryConfig> = {
-  timeout: 10000,
-  retryAttempts: 3,
+  timeout: 2000, // Reduced from 10s to 2s for production performance
+  retryAttempts: 1, // Reduced from 3 to 1 - fail fast in production
   defaultScope: 'session',
   retention: {
     sessionMemoryTtl: 24 * 60 * 60 * 1000, // 24 hours
