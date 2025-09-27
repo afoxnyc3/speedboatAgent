@@ -1,0 +1,219 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 6 AM UTC (before potential demo times)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - search
+          - chat
+          - performance
+          - error-handling
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test on multiple browsers for demo reliability
+        browser: [chromium, firefox]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Build application
+        run: npm run build
+        env:
+          # Use test environment variables
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
+          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
+          UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL_TEST }}
+          UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN_TEST }}
+          MEM0_API_KEY: ${{ secrets.MEM0_API_KEY_TEST }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY_TEST }}
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+          # Wait for application to be ready
+          npx wait-on http://localhost:3000/api/health --timeout 60000
+        env:
+          # Use test environment variables
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
+          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
+          UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL_TEST }}
+          UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN_TEST }}
+          MEM0_API_KEY: ${{ secrets.MEM0_API_KEY_TEST }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY_TEST }}
+
+      - name: Run E2E tests (All)
+        if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Run E2E tests (Search only)
+        if: github.event.inputs.test_suite == 'search'
+        run: npx playwright test search.spec.ts --project=${{ matrix.browser }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Run E2E tests (Chat only)
+        if: github.event.inputs.test_suite == 'chat'
+        run: npx playwright test chat.spec.ts --project=${{ matrix.browser }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Run E2E tests (Performance only)
+        if: github.event.inputs.test_suite == 'performance'
+        run: npx playwright test performance.spec.ts --project=${{ matrix.browser }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Run E2E tests (Error handling only)
+        if: github.event.inputs.test_suite == 'error-handling'
+        run: npx playwright test error-handling.spec.ts --project=${{ matrix.browser }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results-${{ matrix.browser }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 7
+
+  demo-readiness-check:
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    if: always()
+    steps:
+      - name: Check demo readiness
+        run: |
+          if [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+            echo "✅ Demo is ready! All E2E tests passed."
+            echo "🚀 Safe to demonstrate the following features:"
+            echo "  - Search functionality (/api/search)"
+            echo "  - Chat streaming (/api/chat/stream)"
+            echo "  - Performance monitoring (/api/monitoring/*)"
+            echo "  - Error handling and recovery"
+          else
+            echo "❌ Demo readiness check failed!"
+            echo "⚠️  Some E2E tests failed. Review test results before demo."
+            exit 1
+          fi
+
+  # Critical path smoke test for urgent demo prep
+  smoke-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build application
+        run: npm run build
+        env:
+          # Use test environment variables
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
+          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+          npx wait-on http://localhost:3000/api/health --timeout 30000
+        env:
+          # Use test environment variables
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
+          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
+
+      - name: Critical path smoke test
+        run: |
+          # Test critical demo endpoints
+          echo "Testing health endpoint..."
+          curl -f http://localhost:3000/api/health || exit 1
+
+          echo "Testing search endpoint..."
+          curl -f -X POST http://localhost:3000/api/search \
+            -H "Content-Type: application/json" \
+            -d '{"query":"test"}' || exit 1
+
+          echo "Testing monitoring endpoint..."
+          curl -f http://localhost:3000/api/monitoring/costs || exit 1
+
+          echo "✅ Critical demo paths are working!"
+
+      - name: Demo readiness summary
+        run: |
+          echo "🎯 DEMO READINESS SUMMARY"
+          echo "========================="
+          echo "✅ Application builds successfully"
+          echo "✅ Application starts without errors"
+          echo "✅ Health endpoint responds"
+          echo "✅ Search API accepts requests"
+          echo "✅ Monitoring APIs respond"
+          echo ""
+          echo "🚀 READY FOR DEMO!"
+          echo ""
+          echo "Demo URLs to test:"
+          echo "  - Health: GET /api/health"
+          echo "  - Search: POST /api/search"
+          echo "  - Chat: POST /api/chat/stream"
+          echo "  - Costs: GET /api/monitoring/costs"
