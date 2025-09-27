@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Issue #47**: Full Vercel production deployment with CI/CD pipeline
 - Production-first roadmap with 12 new GitHub issues (#45-56)
 - Comprehensive k6 load testing framework supporting 1000 concurrent users
 - Performance benchmarking with P50/P95/P99 metrics
@@ -17,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue verification and project tracking procedures
 
 ### Fixed
+- **Issue #46**: Removed all critical 'any' types from API routes preventing runtime errors
+- **Issue #47**: Fixed Vercel deployment errors (removed deprecated properties, disabled problematic middleware)
 - CI pipeline test failures with proper TextEncoder polyfill for Node.js environments
 - ESM module import issues in Jest configuration for @upstash/redis
 - Async/await handling in API key validation tests
