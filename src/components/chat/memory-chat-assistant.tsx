@@ -10,11 +10,19 @@ import ChatInterface from "./ChatInterface";
 import type { ChatMessage } from "./types";
 import type { ConversationId, SessionId } from "../../types/memory";
 
+// Memory context type
+interface MemoryContext {
+  entityMentions: string[];
+  topicContinuity: string[];
+  relevantMemories: Array<{ content: string }>;
+  conversationStage: string;
+}
+
 interface MemoryEnhancedChatProps {
   userId?: string;
   conversationId?: string;
   enableMemory?: boolean;
-  onMemoryUpdate?: (context: any) => void;
+  onMemoryUpdate?: (context: MemoryContext) => void;
 }
 
 interface ChatResponse {
@@ -23,7 +31,7 @@ interface ChatResponse {
   conversationId: string;
   suggestions?: string[];
   relatedTopics?: string[];
-  error?: any;
+  error?: string;
 }
 
 export default function MemoryChatAssistant({
@@ -39,7 +47,7 @@ export default function MemoryChatAssistant({
   const [conversationId, setConversationId] = useState<ConversationId>(
     (initialConversationId as ConversationId) || generateConversationId()
   );
-  const [memoryContext, setMemoryContext] = useState<any>(null);
+  const [memoryContext, setMemoryContext] = useState<MemoryContext | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   // Initialize conversation context on mount
@@ -47,7 +55,7 @@ export default function MemoryChatAssistant({
     if (enableMemory) {
       initializeMemoryContext();
     }
-  }, [conversationId, enableMemory]);
+  }, [conversationId, enableMemory, initializeMemoryContext]);
 
   const initializeMemoryContext = async () => {
     try {
@@ -264,7 +272,7 @@ function generateMessageId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function getSmartPlaceholder(memoryContext: any): string {
+function getSmartPlaceholder(memoryContext: MemoryContext | null): string {
   if (!memoryContext) {
     return "Ask me anything about your codebase...";
   }

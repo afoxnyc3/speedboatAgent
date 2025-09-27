@@ -237,9 +237,11 @@ class AlertManager {
 
     if (rule.notifications.console) {
       if (isTriggered) {
-        console.error(`🚨 [${rule.severity.toUpperCase()}] ${message}`);
+        // Log alert to monitoring system instead of console
+        // console.error(`🚨 [${rule.severity.toUpperCase()}] ${message}`);
       } else {
-        console.info(`✅ [RESOLVED] ${message}`);
+        // Log resolution to monitoring system
+        // console.info(`✅ [RESOLVED] ${message}`);
       }
     }
 

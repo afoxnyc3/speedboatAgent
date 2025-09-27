@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
       case 'validation':
         // Test validation error
-        const invalidData = null as any;
+        const invalidData = null as Record<string, unknown>;
         invalidData.property.nested.value = 'test';
         break;
 

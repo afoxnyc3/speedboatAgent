@@ -6,6 +6,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCacheManager } from '../../../../src/lib/cache/redis-cache';
 
+// Helper types for type safety
+interface PerformanceMetrics {
+  responseTime: { current: number; average: number; p95: number; p99: number };
+  throughput: { requestsPerSecond: number; requestsPerMinute: number; totalRequests: number };
+  errorRate: { current: number; fiveMinute: number; oneHour: number };
+}
+
+interface CacheHealthMetrics {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  hitRate: number;
+  operations: { hits: number; misses: number; total: number };
+  latency: { average: number; p95: number };
+}
+
 // Real-time metrics interface
 interface DashboardMetrics {
   timestamp: string;
@@ -213,7 +227,7 @@ async function checkComponentHealth(): Promise<{
 /**
  * Generate active alerts based on current metrics
  */
-function generateAlerts(metrics: any, cacheHealth: any): DashboardMetrics['alerts'] {
+function generateAlerts(metrics: PerformanceMetrics, cacheHealth: CacheHealthMetrics): DashboardMetrics['alerts'] {
   const alerts: DashboardMetrics['alerts']['recent'] = [];
   let critical = 0;
   let warnings = 0;
