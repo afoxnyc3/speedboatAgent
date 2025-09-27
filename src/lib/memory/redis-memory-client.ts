@@ -8,7 +8,12 @@ import { createHash } from 'crypto';
 import {
   extractTopics,
   extractPreferences,
-  determineStage as determineConversationStage
+  determineStage as determineConversationStage,
+  createMemoryEntry,
+  convertEntryToMemoryItem,
+  createErrorResult,
+  createSuccessResult,
+  type RedisMemoryEntry
 } from './redis-memory-helpers';
 import type {
   MemoryClient,
@@ -24,17 +29,6 @@ import type {
   MemoryItem,
 } from '../../types/memory';
 
-interface RedisMemoryEntry {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: number;
-  sessionId: string;
-  conversationId?: string;
-  userId?: string;
-  category?: string;
-  metadata?: Record<string, unknown>;
-}
 
 export class RedisMemoryClient implements MemoryClient {
   private redis: Redis | null = null;
@@ -86,17 +80,7 @@ export class RedisMemoryClient implements MemoryClient {
     options: MemoryAddOptions
   ): Promise<MemoryOperationResult> {
     if (!this.redis) {
-      return {
-        success: false,
-        operationType: 'add',
-        timestamp: new Date(),
-        error: {
-          code: 'REDIS_NOT_AVAILABLE' as any,
-          message: 'Redis client not initialized',
-          timestamp: new Date(),
-          retryable: false,
-        },
-      };
+      return createErrorResult('add', 'REDIS_NOT_AVAILABLE', 'Redis client not initialized', false);
     }
 
     try {
@@ -107,18 +91,7 @@ export class RedisMemoryClient implements MemoryClient {
       const pipeline = this.redis.pipeline();
 
       for (const message of messages) {
-        const entry: RedisMemoryEntry = {
-          id: `${memoryId}_${message.role}`,
-          content: message.content,
-          role: message.role,
-          timestamp,
-          sessionId: options.sessionId as string,
-          conversationId: options.conversationId as string,
-          userId: options.userId,
-          category: options.category,
-          metadata: options.metadata,
-        };
-
+        const entry = createMemoryEntry(memoryId, message, options, timestamp);
         const key = this.generateKey('message', entry.id);
         pipeline.setex(key, this.ttl, JSON.stringify(entry));
 
@@ -139,24 +112,14 @@ export class RedisMemoryClient implements MemoryClient {
 
       await pipeline.exec();
 
-      return {
-        success: true,
-        memoryId,
-        operationType: 'add',
-        timestamp: new Date(),
-      };
+      return createSuccessResult('add', memoryId);
     } catch (error) {
-      return {
-        success: false,
-        operationType: 'add',
-        timestamp: new Date(),
-        error: {
-          code: 'STORAGE_ERROR' as any,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date(),
-          retryable: true,
-        },
-      };
+      return createErrorResult(
+        'add',
+        'STORAGE_ERROR',
+        error instanceof Error ? error.message : 'Unknown error',
+        true
+      );
     }
   }
 
@@ -212,20 +175,7 @@ export class RedisMemoryClient implements MemoryClient {
 
             // Apply relevance filtering if specified
             if (!options.relevanceThreshold || Math.random() > options.relevanceThreshold) {
-              memories.push({
-                id: entry.id as MemoryId,
-                content: entry.content,
-                role: entry.role,
-                timestamp: new Date(entry.timestamp),
-                metadata: {
-                  sessionId: entry.sessionId,
-                  conversationId: entry.conversationId,
-                  userId: entry.userId,
-                  category: entry.category,
-                  ...entry.metadata,
-                },
-                category: entry.category || 'context',
-              } as MemoryItem);
+              memories.push(convertEntryToMemoryItem(entry));
             }
           }
         }
@@ -264,17 +214,7 @@ export class RedisMemoryClient implements MemoryClient {
     metadata?: Record<string, unknown>
   ): Promise<MemoryOperationResult> {
     if (!this.redis) {
-      return {
-        success: false,
-        operationType: 'update',
-        timestamp: new Date(),
-        error: {
-          code: 'REDIS_NOT_AVAILABLE' as any,
-          message: 'Redis client not initialized',
-          timestamp: new Date(),
-          retryable: false,
-        },
-      };
+      return createErrorResult('update', 'REDIS_NOT_AVAILABLE', 'Redis client not initialized', false);
     }
 
     try {
@@ -282,17 +222,7 @@ export class RedisMemoryClient implements MemoryClient {
       const existing = await this.redis.get(key);
 
       if (!existing) {
-        return {
-          success: false,
-          operationType: 'update',
-          timestamp: new Date(),
-          error: {
-            code: 'MEMORY_NOT_FOUND' as any,
-            message: 'Memory not found',
-            timestamp: new Date(),
-            retryable: false,
-          },
-        };
+        return createErrorResult('update', 'MEMORY_NOT_FOUND', 'Memory not found', false);
       }
 
       const entry = JSON.parse(existing as string) as RedisMemoryEntry;
@@ -303,64 +233,34 @@ export class RedisMemoryClient implements MemoryClient {
 
       await this.redis.setex(key, this.ttl, JSON.stringify(entry));
 
-      return {
-        success: true,
-        memoryId,
-        operationType: 'update',
-        timestamp: new Date(),
-      };
+      return createSuccessResult('update', memoryId);
     } catch (error) {
-      return {
-        success: false,
-        operationType: 'update',
-        timestamp: new Date(),
-        error: {
-          code: 'UPDATE_ERROR' as any,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date(),
-          retryable: true,
-        },
-      };
+      return createErrorResult(
+        'update',
+        'UPDATE_ERROR',
+        error instanceof Error ? error.message : 'Unknown error',
+        true
+      );
     }
   }
 
   async delete(memoryId: MemoryId): Promise<MemoryOperationResult> {
     if (!this.redis) {
-      return {
-        success: false,
-        operationType: 'delete',
-        timestamp: new Date(),
-        error: {
-          code: 'REDIS_NOT_AVAILABLE' as any,
-          message: 'Redis client not initialized',
-          timestamp: new Date(),
-          retryable: false,
-        },
-      };
+      return createErrorResult('delete', 'REDIS_NOT_AVAILABLE', 'Redis client not initialized', false);
     }
 
     try {
       const key = this.generateKey('message', memoryId as string);
       await this.redis.del(key);
 
-      return {
-        success: true,
-        memoryId,
-        operationType: 'delete',
-        timestamp: new Date(),
-      };
+      return createSuccessResult('delete', memoryId);
     } catch (error) {
-      return {
-        success: false,
-        operationType: 'delete',
-        timestamp: new Date(),
-        error: {
-          code: 'DELETE_ERROR' as any,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date(),
-          retryable: true,
-        },
-      };
+      return createErrorResult(
+        'delete',
+        'DELETE_ERROR',
+        error instanceof Error ? error.message : 'Unknown error',
+        true
+      );
     }
   }
 
