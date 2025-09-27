@@ -63,18 +63,18 @@ export function generateAlerts(
   }
 
   // Error rate alerts
-  if (metrics.errorRate.last5min > 5) {
+  if (metrics.errorRate.fiveMinute > 5) {
     alerts.push({
       type: 'error',
-      message: `Error rate exceeds 5%: ${metrics.errorRate.last5min.toFixed(2)}%`,
+      message: `Error rate exceeds 5%: ${metrics.errorRate.fiveMinute.toFixed(2)}%`,
       timestamp: new Date().toISOString(),
       resolved: false
     });
     critical++;
-  } else if (metrics.errorRate.last5min > 2) {
+  } else if (metrics.errorRate.fiveMinute > 2) {
     alerts.push({
       type: 'warning',
-      message: `Error rate elevated: ${metrics.errorRate.last5min.toFixed(2)}%`,
+      message: `Error rate elevated: ${metrics.errorRate.fiveMinute.toFixed(2)}%`,
       timestamp: new Date().toISOString(),
       resolved: false
     });

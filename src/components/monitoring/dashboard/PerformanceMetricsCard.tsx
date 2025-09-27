@@ -17,8 +17,8 @@ interface PerformanceMetricsCardProps {
       };
       errorRate: {
         current: number;
-        last5min: number;
-        last1hour: number;
+        fiveMinute: number;
+        oneHour: number;
       };
     };
   } | null;
@@ -80,17 +80,17 @@ export function PerformanceMetricsCard({ metrics }: PerformanceMetricsCardProps)
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            <span className={metrics && metrics.performance.errorRate.current > 0.01 ? 'text-red-600' : ''}>
-              {metrics ? `${(metrics.performance.errorRate.current * 100).toFixed(2)}%` : 'N/A'}
+            <span className={metrics && metrics.performance.errorRate.current > 1 ? 'text-red-600' : ''}>
+              {metrics ? `${metrics.performance.errorRate.current.toFixed(2)}%` : 'N/A'}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Last 5min: {metrics ? `${(metrics.performance.errorRate.last5min * 100).toFixed(2)}%` : 'N/A'}
+            Last 5min: {metrics ? `${metrics.performance.errorRate.fiveMinute.toFixed(2)}%` : 'N/A'}
           </p>
           <div className="text-xs mt-1">
             <span className="text-muted-foreground">1hr avg: </span>
             <span className="font-medium">
-              {metrics ? `${(metrics.performance.errorRate.last1hour * 100).toFixed(2)}%` : 'N/A'}
+              {metrics ? `${metrics.performance.errorRate.oneHour.toFixed(2)}%` : 'N/A'}
             </span>
           </div>
         </CardContent>

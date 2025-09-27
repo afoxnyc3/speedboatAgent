@@ -54,7 +54,7 @@ export class PerformanceTracker {
   getMetrics(): {
     responseTime: { current: number; average: number; p95: number; p99: number };
     throughput: { requestsPerSecond: number; requestsPerMinute: number; totalRequests: number };
-    errorRate: { current: number; last5min: number; last1hour: number };
+    errorRate: { current: number; fiveMinute: number; oneHour: number };
     activeUsers: { current: number; peak: number; sessions: number };
     uptime: number;
   } {
@@ -95,7 +95,7 @@ export class PerformanceTracker {
     return {
       responseTime: { current, average, p95, p99 },
       throughput: { requestsPerSecond, requestsPerMinute, totalRequests },
-      errorRate: { current: currentErrorRate, last5min: last5minErrorRate, last1hour: last1hourErrorRate },
+      errorRate: { current: currentErrorRate, fiveMinute: last5minErrorRate, oneHour: last1hourErrorRate },
       activeUsers: {
         current: this.activeConnections.size,
         peak: this.sessionCount,
