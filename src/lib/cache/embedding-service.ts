@@ -51,7 +51,7 @@ export class EmbeddingService {
     } = options;
 
     // Create cache context for this request
-    const cacheContext = createCacheContext(sessionId, userId, { model, dimensions });
+    const cacheContext = createCacheContext(sessionId, userId, { model: 1, dimensions: 1 });
     const fullContext = context ? `${cacheContext}:${context}` : cacheContext;
 
     // Check cache first (unless forced fresh)
@@ -71,9 +71,7 @@ export class EmbeddingService {
     // Generate fresh embedding
     try {
       const { embedding } = await embed({
-        model: openai.embedding(model, {
-          dimensions
-        }),
+        model: openai.embedding(model),
         value: text
       });
 

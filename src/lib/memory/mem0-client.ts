@@ -297,5 +297,5 @@ export const getMem0Client = (): MemoryClient => {
       mem0Instance = createMem0Client(apiKey);
     }
   }
-  return mem0Instance;
+  return mem0Instance!; // Non-null assertion - we always initialize it above
 };
