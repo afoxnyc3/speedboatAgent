@@ -18,7 +18,14 @@
     "test-weaviate": "tsx scripts/test-connection.ts",
     "setup-weaviate": "tsx scripts/setup-weaviate.ts",
     "test-web-crawler": "tsx scripts/test-web-crawler.ts",
-    "test-crawl-automation": "tsx scripts/test-crawl-automation.ts"
+    "test-crawl-automation": "tsx scripts/test-crawl-automation.ts",
+    "load:benchmark": "k6 run tests/load/benchmark.js",
+    "load:search": "k6 run tests/load/scenarios/search.js",
+    "load:chat": "k6 run tests/load/scenarios/chat.js",
+    "load:cache": "k6 run tests/load/scenarios/cache.js",
+    "load:health": "k6 run tests/load/scenarios/health.js",
+    "load:all": "k6 run tests/load/run-all.js",
+    "load:stress": "k6 run --stage 2m:500,5m:1000,2m:0 tests/load/scenarios/search.js"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.30",
