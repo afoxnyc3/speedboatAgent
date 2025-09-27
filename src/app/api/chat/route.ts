@@ -42,13 +42,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const timings: Record<string, number> = {};
 
   try {
-    console.log('🟡 Chat API: Starting request processing');
     // Parse and validate request
     const parseStart = Date.now();
     const body: unknown = await request.json();
     const validatedRequest = ChatRequestSchema.parse(body);
     timings.requestParsing = Date.now() - parseStart;
-    console.log('🟢 Chat API: Request parsed and validated', timings.requestParsing, 'ms');
 
     const sessionId = validatedRequest.sessionId as SessionId || generateSessionId();
     const conversationId = validatedRequest.conversationId as ConversationId ||
@@ -58,15 +56,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Initialize clients
     const clientStart = Date.now();
-    console.log('🟡 Chat API: Initializing clients');
     const memoryClient = getMem0Client();
     const searchOrchestrator = getSearchOrchestrator();
     timings.clientInit = Date.now() - clientStart;
-    console.log('🟢 Chat API: Clients initialized', timings.clientInit, 'ms');
 
     // Run memory retrieval and search preparation in parallel
-    console.log('🟡 Chat API: Starting memory retrieval');
-    const [memoryContext, _] = await Promise.all([
+    const [memoryContext] = await Promise.all([
       // Step 1: Retrieve conversation memory context (with aggressive timeout and fallback)
       (async () => {
         const memoryStart = Date.now();
@@ -88,10 +83,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
           const context = await Promise.race([memoryPromise, memoryTimeout]) as ConversationMemoryContext;
           timings.memoryRetrieval = Date.now() - memoryStart;
-          console.log('🟢 Chat API: Memory retrieved successfully', timings.memoryRetrieval, 'ms');
           return context;
-        } catch (error) {
-          console.warn('🟠 Chat API: Memory retrieval failed, using empty context');
+        } catch {
           timings.memoryRetrieval = Date.now() - memoryStart;
           return emptyContext;
         }
@@ -107,7 +100,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     timings.queryEnhancement = Date.now() - enhanceStart;
 
     // Step 3: Perform RAG search with enhanced query (with aggressive timeout)
-    console.log('🟡 Chat API: Starting RAG search');
     const searchStart = Date.now();
     let searchResults;
     try {
@@ -128,10 +120,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         setTimeout(() => reject(new Error('Search timeout')), 2000) // 2s external timeout
       );
 
-      searchResults = await Promise.race([searchPromise, searchTimeout]) as any;
-      console.log('🟢 Chat API: RAG search completed', Date.now() - searchStart, 'ms');
-    } catch (error) {
-      console.warn('🟠 Chat API: Search failed or timed out, using empty results', error);
+      searchResults = await Promise.race([searchPromise, searchTimeout]);
+    } catch {
       // Return empty results on search failure
       searchResults = {
         success: false,
@@ -148,7 +138,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     timings.ragSearch = Date.now() - searchStart;
 
     // Step 4: Generate contextual response
-    console.log('🟡 Chat API: Generating response');
     const responseStart = Date.now();
     const response = await generateContextualResponse({
       query: validatedRequest.message,
@@ -157,7 +146,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       conversationId,
     });
     timings.responseGeneration = Date.now() - responseStart;
-    console.log('🟢 Chat API: Response generated', timings.responseGeneration, 'ms');
 
     // Step 5: Store conversation in memory (fire and forget with timeout)
     const memoryStoreStart = Date.now();
@@ -185,7 +173,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         searchTime: searchResults.metadata.searchTime,
         topics: extractTopics(validatedRequest.message),
       },
-    }).catch(err => console.warn('Memory storage failed:', err));
+    }).catch(() => {
+      // Memory storage failed - continue silently
+    });
 
     // Wait max 500ms for memory storage
     await Promise.race([
@@ -226,22 +216,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Calculate total time
     timings.total = Date.now() - totalStart;
 
-    // Log performance metrics
-    console.log('Chat Performance Metrics:', {
-      ...timings,
-      breakdown: {
-        memoryOps: timings.memoryRetrieval + timings.memoryStorage,
-        searchOps: timings.ragSearch,
-        llmOps: timings.responseGeneration,
-        overhead: timings.requestParsing + timings.clientInit + timings.queryEnhancement + timings.responsePreparation,
-      },
-      percentages: {
-        memory: Math.round(((timings.memoryRetrieval + timings.memoryStorage) / timings.total) * 100),
-        search: Math.round((timings.ragSearch / timings.total) * 100),
-        llm: Math.round((timings.responseGeneration / timings.total) * 100),
-        overhead: Math.round(((timings.requestParsing + timings.clientInit + timings.queryEnhancement + timings.responsePreparation) / timings.total) * 100),
-      }
-    });
+    // Performance metrics available for monitoring
 
     return NextResponse.json(chatResponse, {
       headers: {
@@ -257,7 +232,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   } catch (error) {
     timings.total = Date.now() - totalStart;
-    console.error('Chat API Error with timings:', { error, timings });
     return handleChatError(error);
   }
 }
@@ -399,7 +373,6 @@ async function simulateOpenAIResponse(systemPrompt: string, userPrompt: string):
 
 // Error handling
 function handleChatError(error: unknown): NextResponse {
-  console.error('Chat API Error:', error);
 
   const errorResponse = {
     success: false,

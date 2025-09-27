@@ -57,13 +57,12 @@ async function getConversationContext(
 ) {
   // Check if memory is disabled by circuit breaker
   if (Date.now() < memoryDisabledUntil) {
-    console.log('Memory disabled by circuit breaker, skipping...');
     return { context: null, contextualQuery: query };
   }
 
   try {
     // Add a hard timeout wrapper around the Mem0 call (800ms max for performance)
-    const timeoutPromise = new Promise((_, reject) =>
+    const timeoutPromise = new Promise((resolve, reject) =>
       setTimeout(() => reject(new Error('Memory timeout')), 800)
     );
 
@@ -93,12 +92,10 @@ async function getConversationContext(
     // Check if we should activate circuit breaker
     if (memoryFailureCount >= MAX_MEMORY_FAILURES) {
       memoryDisabledUntil = Date.now() + MEMORY_DISABLE_DURATION;
-      console.error(`Memory circuit breaker activated after ${memoryFailureCount} failures. Disabling for ${MEMORY_DISABLE_DURATION/1000}s`);
       memoryFailureCount = 0; // Reset counter
     }
 
     // Fail fast - continue without memory context rather than blocking
-    console.warn('Memory retrieval failed or timed out, continuing without context:', error);
     return { context: null, contextualQuery: query };
   }
 }
@@ -145,8 +142,8 @@ async function storeConversation(
       runId: createRunId(randomUUID()),
       category: 'context',
     });
-  } catch (error) {
-    console.warn('Memory storage failed:', error);
+  } catch {
+    // Memory storage failed - continue silently
   }
 }
 
@@ -160,10 +157,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const chatRequest = validateChatRequest(body);
     timings.parsing = Date.now() - parseStart;
-    console.log('🟡 Chat API: Request parsed in', timings.parsing, 'ms');
 
     // Run memory fetch and search in parallel for better performance
-    console.log('🟡 Chat API: Starting parallel memory + search');
     const parallelStart = Date.now();
     const [contextResult, searchResult] = await Promise.allSettled([
       // Memory fetch with timeout protection
@@ -183,7 +178,6 @@ export async function POST(request: NextRequest) {
       })
     ]);
     timings.parallelOps = Date.now() - parallelStart;
-    console.log('🟢 Chat API: Parallel operations completed in', timings.parallelOps, 'ms');
 
     // Extract results from Promise.allSettled
     const context = contextResult.status === 'fulfilled' ? contextResult.value.context : null;
@@ -192,16 +186,13 @@ export async function POST(request: NextRequest) {
       : chatRequest.message;
 
     // Get search results or re-run if we have contextual query
-    console.log('🟡 Chat API: Processing search results');
     const searchProcessStart = Date.now();
     let finalSearchResult;
     if (searchResult.status === 'fulfilled' && contextualQuery === chatRequest.message) {
       // Use the parallel search result if context didn't enhance the query
       finalSearchResult = searchResult.value;
-      console.log('🟢 Chat API: Using parallel search result');
     } else if (contextualQuery !== chatRequest.message) {
       // Re-run search with enhanced query if memory provided context
-      console.log('🟡 Chat API: Re-running search with contextual query');
       finalSearchResult = await executeSearchWorkflow({
         query: contextualQuery,
         limit: 3, // Reduced from 5 to 3
@@ -212,7 +203,6 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Fallback: run search with original query if parallel search failed
-      console.log('🟡 Chat API: Fallback search with original query');
       finalSearchResult = await executeSearchWorkflow({
         query: chatRequest.message,
         limit: 3, // Reduced from 5 to 3
@@ -223,10 +213,8 @@ export async function POST(request: NextRequest) {
       });
     }
     timings.searchProcessing = Date.now() - searchProcessStart;
-    console.log('🟢 Chat API: Search processing completed in', timings.searchProcessing, 'ms');
 
     // Build RAG prompt with search results and context
-    console.log('🟡 Chat API: Building RAG prompt');
     const promptStart = Date.now();
     const ragPrompt = buildRAGPrompt(
       chatRequest.message,
@@ -236,7 +224,6 @@ export async function POST(request: NextRequest) {
     timings.promptBuilding = Date.now() - promptStart;
 
     // Generate response with OpenAI (with timeout and faster model)
-    console.log('🟡 Chat API: Generating AI response');
     const aiStart = Date.now();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout for OpenAI
@@ -251,11 +238,9 @@ export async function POST(request: NextRequest) {
       text = result.text;
       clearTimeout(timeoutId);
       timings.aiGeneration = Date.now() - aiStart;
-      console.log('🟢 Chat API: AI response generated in', timings.aiGeneration, 'ms');
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error('🔴 Chat API: OpenAI request timed out');
         return NextResponse.json(
           { error: 'Response generation timed out. Please try again.' },
           { status: 408 }
@@ -266,7 +251,6 @@ export async function POST(request: NextRequest) {
 
     // Store conversation in memory (non-blocking - fire and forget)
     // This improves response time from ~20s to ~3s
-    console.log('🟡 Chat API: Storing conversation in background');
     storeConversation(
       chatRequest.sessionId!,
       chatRequest.userId,
@@ -274,8 +258,7 @@ export async function POST(request: NextRequest) {
       chatRequest.message,
       text
     ).catch(error => {
-      // Log error but don't block the response
-      console.warn('Background memory storage failed:', error);
+      // Memory storage failed but don't block the response
     });
 
     // Calculate performance metrics
@@ -289,12 +272,7 @@ export async function POST(request: NextRequest) {
       parallelProcessing: true,
     };
 
-    // Log performance metrics for monitoring
-    console.log('🟢 Chat API: Complete! Total time:', totalTime, 'ms');
-    console.log('Chat performance breakdown:', {
-      ...performanceMetrics,
-      sessionId: chatRequest.sessionId,
-    });
+    // Performance metrics available for monitoring
 
     return NextResponse.json({
       response: text,
@@ -310,7 +288,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Chat API error:', error);
+    // Log error for debugging if needed
     return NextResponse.json(
       { error: 'Failed to generate response' },
       { status: 500 }
