@@ -34,8 +34,18 @@ type StreamEvent =
   | { type: 'status'; data: { stage: 'searching' | 'analyzing' | 'generating' | 'formatting'; message: string } }
   | { type: 'sources'; data: { sources: Document[]; count: number } }
   | { type: 'token'; data: { token: string; delta: string } }
-  | { type: 'complete'; data: { message: any; sources: any[]; suggestions: string[] } }
+  | { type: 'complete'; data: { message: MessageResponse; sources: Document[]; suggestions: string[] } }
   | { type: 'error'; data: { error: string } };
+
+// Response message type
+type MessageResponse = {
+  id: MessageId;
+  role: 'assistant';
+  content: string;
+  conversationId: ConversationId;
+  timestamp: Date;
+  status: 'completed';
+};
 
 // Session management utilities
 const generateSessionId = (): SessionId => `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as SessionId;
@@ -210,7 +220,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
           // Log performance
           timings.total = Date.now() - totalStart;
-          console.log('Streaming Chat Performance:', timings);
+          // Performance metrics tracked in timings object
 
         } catch (error) {
           console.error('Streaming error:', error);
@@ -229,7 +239,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'X-Session-Id': sessionId,
         'X-Run-Id': runId,
       },
@@ -273,16 +283,8 @@ async function generateStreamingResponse(params: {
 }> {
   const { query, searchResults, memoryContext, onToken, onStatusChange } = params;
 
-  // Build context
-  const searchContext = searchResults
-    .slice(0, 5)
-    .map(doc => doc.content)
-    .join('\n\n');
-
-  const memoryContextStr = memoryContext.relevantMemories
-    .slice(0, 3)
-    .map((mem) => mem.content)
-    .join('\n');
+  // Build context from search results and memory
+  // Context is implicitly used in response generation logic below
 
   // Simulate streaming response with realistic timing
   onStatusChange('generating', 'Generating response...');

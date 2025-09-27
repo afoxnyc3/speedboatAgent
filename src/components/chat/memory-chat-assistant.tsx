@@ -17,14 +17,7 @@ interface MemoryEnhancedChatProps {
   onMemoryUpdate?: (context: any) => void;
 }
 
-interface ChatResponse {
-  success: boolean;
-  message: ChatMessage;
-  conversationId: string;
-  suggestions?: string[];
-  relatedTopics?: string[];
-  error?: any;
-}
+// ChatResponse interface moved to types file to avoid duplication
 
 export default function MemoryChatAssistant({
   userId,
@@ -39,7 +32,15 @@ export default function MemoryChatAssistant({
   const [conversationId, setConversationId] = useState<ConversationId>(
     (initialConversationId as ConversationId) || generateConversationId()
   );
-  const [memoryContext, setMemoryContext] = useState<any>(null);
+  const [memoryContext, setMemoryContext] = useState<MemoryContext | null>(null);
+
+// Memory context type
+type MemoryContext = {
+  entityMentions: string[];
+  topicContinuity: string[];
+  relevantMemories: Array<{ content: string }>;
+  conversationStage: string;
+};
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   // Initialize conversation context on mount
@@ -47,7 +48,7 @@ export default function MemoryChatAssistant({
     if (enableMemory) {
       initializeMemoryContext();
     }
-  }, [conversationId, enableMemory]);
+  }, [conversationId, enableMemory, initializeMemoryContext]);
 
   const initializeMemoryContext = async () => {
     try {
@@ -320,21 +321,4 @@ function generateMessageId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function getSmartPlaceholder(memoryContext: any): string {
-  if (!memoryContext) {
-    return "Ask me anything about your codebase...";
-  }
-
-  const entities = memoryContext.entityMentions;
-  const topics = memoryContext.topicContinuity;
-
-  if (entities?.length > 0) {
-    return `Continue our discussion about ${entities[0]}...`;
-  }
-
-  if (topics?.length > 0) {
-    return `Ask more about ${topics[0]}...`;
-  }
-
-  return "What would you like to know?";
-}
+// getSmartPlaceholder function removed - functionality moved to ChatInterface
