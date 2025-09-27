@@ -14,6 +14,8 @@ import {
   createRunId
 } from '../../../src/types/memory';
 import { randomUUID } from 'crypto';
+import { ConversationMemoryContext, MemoryItem } from '../../../src/types/memory';
+import { SearchResponse } from '../../../src/types/search';
 
 interface ChatRequest {
   message: string;
@@ -25,16 +27,17 @@ interface ChatRequest {
 /**
  * Validates chat request parameters
  */
-function validateChatRequest(body: any): ChatRequest {
-  if (!body.message || typeof body.message !== 'string') {
+function validateChatRequest(body: unknown): ChatRequest {
+  const bodyObj = body as Record<string, unknown>;
+  if (!bodyObj.message || typeof bodyObj.message !== 'string') {
     throw new Error('Message is required');
   }
 
   return {
-    message: body.message.trim(),
-    sessionId: body.sessionId || randomUUID(),
-    userId: body.userId,
-    conversationId: body.conversationId || randomUUID(),
+    message: bodyObj.message.trim(),
+    sessionId: (bodyObj.sessionId as string) || randomUUID(),
+    userId: bodyObj.userId as string | undefined,
+    conversationId: (bodyObj.conversationId as string) || randomUUID(),
   };
 }
 
@@ -49,7 +52,7 @@ async function getConversationContext(
   try {
     const memClient = getMem0Client();
     const context = await memClient.getConversationContext(
-      conversationId as any,
+      conversationId,
       createSessionId(sessionId)
     );
 
@@ -68,7 +71,7 @@ async function getConversationContext(
  */
 function buildContextualQuery(
   originalQuery: string,
-  context: any
+  context: ConversationMemoryContext | null
 ): string {
   if (!context || context.relevantMemories.length === 0) {
     return originalQuery;
@@ -76,7 +79,7 @@ function buildContextualQuery(
 
   const recentContext = context.relevantMemories
     .slice(0, 3)
-    .map((m: any) => m.content)
+    .map((m: MemoryItem) => m.content)
     .join(' ');
 
   return `Context: ${recentContext}\n\nUser Question: ${originalQuery}`;
@@ -182,12 +185,12 @@ export async function POST(request: NextRequest) {
  */
 function buildRAGPrompt(
   userMessage: string,
-  searchResult: any,
-  context: any
+  searchResult: SearchResponse,
+  context: ConversationMemoryContext | null
 ): string {
   const sources = searchResult.results
     .slice(0, 3)
-    .map((r: any) => `Source: ${r.filepath}\nContent: ${r.content.slice(0, 500)}...`)
+    .map((r) => `Source: ${r.filepath}\nContent: ${r.content.slice(0, 500)}...`)
     .join('\n\n');
 
   let prompt = `You are a helpful AI assistant with access to a code repository and documentation.
@@ -202,7 +205,7 @@ Please provide a helpful answer based on the sources provided. Always cite sourc
   if (context && context.relevantMemories.length > 0) {
     const conversationHistory = context.relevantMemories
       .slice(-3)
-      .map((m: any) => `${m.type}: ${m.content}`)
+      .map((m: MemoryItem) => `${m.category}: ${m.content}`)
       .join('\n');
 
     prompt = `Previous conversation:

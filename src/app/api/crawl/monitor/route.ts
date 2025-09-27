@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     // Overall system status
     const systemHealthy = Object.values(results).every(
-      (component: any) => component.status === 'healthy'
+      (component) => (component as { status: string }).status === 'healthy'
     );
 
     return NextResponse.json({
