@@ -1,22 +1,5 @@
 {
-  "name": "speedboat-agent",
-  "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "regions": ["iad1"],
-  "env": {
-    "NODE_ENV": "production",
-    "NEXT_TELEMETRY_DISABLED": "1"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production",
-      "NEXT_TELEMETRY_DISABLED": "1"
-    }
-  },
   "functions": {
     "app/api/chat/route.ts": {
       "maxDuration": 30
@@ -27,8 +10,20 @@
     "app/api/ingest/web/route.ts": {
       "maxDuration": 60
     },
-    "src/app/api/crawl/schedule/route.ts": {
+    "app/api/health/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/feedback/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/cache/warm/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/cache/metrics/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/monitoring/costs/route.ts": {
+      "maxDuration": 10
     }
   },
   "headers": [
@@ -46,6 +41,10 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type, Authorization"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
         }
       ]
     },
@@ -63,6 +62,10 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
         }
       ]
     }
