@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue verification and project tracking procedures
 
 ### Fixed
+- **Issue #45**: Redis performance bottleneck - replaced blocking keys() with SCAN iterator (PR #57)
+- **Issue #46**: Type safety - removed all critical 'any' types from API routes (PR #58)
 - CI pipeline test failures with proper TextEncoder polyfill for Node.js environments
 - ESM module import issues in Jest configuration for @upstash/redis
 - Async/await handling in API key validation tests
