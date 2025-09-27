@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
         // Test validation error - trigger TypeError
         const invalidData: any = null;
         // This will throw a TypeError: Cannot read property of null
-        const _unused = invalidData.property;
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        invalidData.property;
         break;
 
       case 'database':

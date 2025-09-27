@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
     // Get cache metrics
     const cacheManager = getCacheManager();
     const cacheHealth = cacheManager.getCacheHealth();
-    const cacheMetrics = cacheManager.getCacheMetrics();
 
     // Get component health
     const connections = await checkComponentHealth();
