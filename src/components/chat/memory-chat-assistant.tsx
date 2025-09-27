@@ -90,11 +90,12 @@ export default function MemoryChatAssistant({
         conversationId,
         sessionId: enableMemory ? sessionId : undefined,
         userId: enableMemory ? userId : undefined,
-        streaming: false, // For simplicity, disable streaming initially
+        streaming: true, // Enable streaming for better perceived performance
         maxSources: 5,
       };
 
-      const response = await fetch("/api/chat", {
+      // Use streaming endpoint for better perceived performance
+      const response = await fetch("/api/chat/stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,29 +104,84 @@ export default function MemoryChatAssistant({
         body: JSON.stringify(requestPayload),
       });
 
-      const data: ChatResponse = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      if (data.success) {
-        // Update conversation ID if it changed
-        if (data.conversationId !== conversationId) {
-          setConversationId(data.conversationId as ConversationId);
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response stream');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let streamingMessage: ChatMessage | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6));
+
+              switch (event.type) {
+                case 'token':
+                  if (!streamingMessage) {
+                    streamingMessage = {
+                      id: generateMessageId(),
+                      role: 'assistant',
+                      content: '',
+                      timestamp: new Date(),
+                      streaming: true,
+                    };
+                  }
+                  streamingMessage.content = event.data.token;
+                  setMessages((prev) => {
+                    const filtered = prev.filter(m => m.id !== streamingMessage?.id);
+                    return [...filtered, streamingMessage!];
+                  });
+                  break;
+
+                case 'complete':
+                  if (streamingMessage) {
+                    // Finalize the streaming message
+                    const finalMessage = {
+                      ...streamingMessage,
+                      streaming: false,
+                      sources: event.data.sources,
+                      timestamp: new Date(),
+                    };
+                    setMessages((prev) => {
+                      const filtered = prev.filter(m => m.id !== streamingMessage?.id);
+                      return [...filtered, finalMessage];
+                    });
+                  }
+                  setSuggestions(event.data.suggestions || []);
+
+                  // Update conversation ID if it changed
+                  if (event.data.message.conversationId !== conversationId) {
+                    setConversationId(event.data.message.conversationId as ConversationId);
+                  }
+
+                  // Update memory context if available
+                  if (enableMemory) {
+                    await refreshMemoryContext();
+                  }
+                  break;
+
+                case 'error':
+                  throw new Error(event.data.error);
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse SSE event:', parseError);
+            }
+          }
         }
-
-        const assistantMessage: ChatMessage = {
-          ...data.message,
-          timestamp: new Date(data.message.timestamp),
-        };
-
-        setMessages((prev) => [...prev, assistantMessage]);
-        setSuggestions(data.suggestions || []);
-
-        // Update memory context if available
-        const memoryContextHeader = response.headers.get('X-Memory-Context');
-        if (memoryContextHeader && enableMemory) {
-          await refreshMemoryContext();
-        }
-      } else {
-        throw new Error(data.error?.message || "Failed to get response");
       }
     } catch (error) {
       const errorMessage: ChatMessage = {
@@ -202,7 +258,7 @@ export default function MemoryChatAssistant({
           isLoading={isLoading}
           error={error}
           showTimestamps={true}
-          placeholder={getSmartPlaceholder(memoryContext)}
+          enableStreaming={true}
         />
       </div>
 
