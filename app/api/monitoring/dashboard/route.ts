@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Determine overall system status
     const systemStatus = calculateSystemStatus(
-      performanceMetrics.errorRate.last5min,
+      performanceMetrics.errorRate.fiveMinute,
       performanceMetrics.responseTime.p95,
       cacheHealth.overall.hitRate
     );
@@ -70,13 +70,13 @@ export async function GET(request: NextRequest) {
       cache: {
         hitRate: {
           overall: cacheHealth.overall.hitRate,
-          embedding: cacheHealth.embedding.hitRate,
-          classification: cacheHealth.classification.hitRate,
-          searchResult: cacheHealth.searchResult.hitRate
+          embedding: cacheHealth.byType.embedding?.hitRate || 0,
+          classification: cacheHealth.byType.classification?.hitRate || 0,
+          searchResult: cacheHealth.byType.searchResult?.hitRate || 0
         },
         performance: {
-          averageLatency: cacheMetrics.averageLatency,
-          totalOperations: cacheMetrics.totalOperations
+          averageLatency: 0, // TODO: Calculate from cache metrics when available
+          totalOperations: cacheHealth.overall.totalRequests
         },
         health: cacheHealthStatus
       },

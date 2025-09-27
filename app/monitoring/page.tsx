@@ -39,8 +39,8 @@ interface DashboardMetrics {
     };
     errorRate: {
       current: number;
-      last5min: number;
-      last1hour: number;
+      fiveMinute: number;
+      oneHour: number;
     };
   };
   cache: {

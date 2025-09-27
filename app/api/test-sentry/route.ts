@@ -38,9 +38,10 @@ export async function GET(request: NextRequest) {
         break;
 
       case 'validation':
-        // Test validation error
-        const invalidData = null as Record<string, unknown>;
-        invalidData.property.nested.value = 'test';
+        // Test validation error - trigger TypeError
+        const invalidData: any = null;
+        // This will throw a TypeError: Cannot read property of null
+        const _unused = invalidData.property;
         break;
 
       case 'database':
