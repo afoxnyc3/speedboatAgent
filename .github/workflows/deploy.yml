@@ -16,6 +16,11 @@ jobs:
   preview:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      deployments: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,6 +73,11 @@ jobs:
   production:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      deployments: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
