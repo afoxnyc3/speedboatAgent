@@ -98,8 +98,8 @@ export async function POST(request: NextRequest): Promise<Response> {
             );
             memoryContext = await Promise.race([memoryPromise, memoryTimeout]) as ConversationMemoryContext;
             timings.memoryRetrieval = Date.now() - memoryStart;
-          } catch (error) {
-            console.warn('Memory retrieval failed, using empty context');
+          } catch {
+            // Memory retrieval failed, using empty context
             timings.memoryRetrieval = Date.now() - memoryStart;
             memoryContext = {
               conversationId,
@@ -281,10 +281,10 @@ async function generateStreamingResponse(params: {
   sources: Document[];
   suggestions: string[];
 }> {
-  const { query, searchResults, memoryContext, onToken, onStatusChange } = params;
+  const { query, searchResults, onToken, onStatusChange } = params;
+  // memoryContext available but not used in simulation - would be used in production OpenAI integration
 
-  // Build context from search results and memory
-  // Context is implicitly used in response generation logic below
+  // Build context from search results
 
   // Simulate streaming response with realistic timing
   onStatusChange('generating', 'Generating response...');

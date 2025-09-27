@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ChatInterface from "./ChatInterface";
 import type { ChatMessage } from "./types";
 import type { ConversationId, SessionId } from "../../types/memory";
@@ -14,7 +14,7 @@ interface MemoryEnhancedChatProps {
   userId?: string;
   conversationId?: string;
   enableMemory?: boolean;
-  onMemoryUpdate?: (context: any) => void;
+  onMemoryUpdate?: (context: MemoryContext) => void;
 }
 
 // ChatResponse interface moved to types file to avoid duplication
@@ -43,14 +43,10 @@ type MemoryContext = {
 };
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  // Initialize conversation context on mount
-  useEffect(() => {
-    if (enableMemory) {
-      initializeMemoryContext();
-    }
-  }, [conversationId, enableMemory, initializeMemoryContext]);
+  // Wrap initializeMemoryContext with useCallback to fix dependency issues
+  const initializeMemoryContext = useCallback(async () => {
+    if (!enableMemory) return;
 
-  const initializeMemoryContext = async () => {
     try {
       const response = await fetch('/api/memory/context', {
         method: 'POST',
@@ -67,10 +63,95 @@ type MemoryContext = {
         setMemoryContext(context);
         onMemoryUpdate?.(context);
       }
-    } catch (error) {
-      console.warn('Failed to initialize memory context:', error);
+    } catch {
+      // Failed to initialize memory context - continue without it
     }
-  };
+  }, [conversationId, sessionId, userId, enableMemory, onMemoryUpdate]);
+
+  // Refresh memory context helper
+  const refreshMemoryContext = useCallback(async () => {
+    if (!enableMemory) return;
+
+    try {
+      const response = await fetch('/api/memory/context', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          sessionId,
+          userId,
+        }),
+      });
+
+      if (response.ok) {
+        const context = await response.json();
+        setMemoryContext(context);
+        onMemoryUpdate?.(context);
+      }
+    } catch {
+      // Failed to refresh memory context - continue without it
+    }
+  }, [conversationId, sessionId, userId, enableMemory, onMemoryUpdate]);
+
+  // Initialize conversation context on mount
+  useEffect(() => {
+    initializeMemoryContext();
+  }, [initializeMemoryContext]);
+
+  // Helper function to process streaming events
+  const processStreamEvent = useCallback(async (
+    event: { type: string; data: { token?: string; sources?: any[]; suggestions?: string[]; message?: { conversationId: string }; error?: string } },
+    streamingMessage: ChatMessage | null,
+    setStreamingMessage: (msg: ChatMessage | null) => void
+  ) => {
+    switch (event.type) {
+      case 'token':
+        if (!streamingMessage) {
+          const newMessage = {
+            id: generateMessageId(),
+            role: 'assistant' as const,
+            content: '',
+            timestamp: new Date(),
+            streaming: true,
+          };
+          setStreamingMessage(newMessage);
+          streamingMessage = newMessage;
+        }
+        streamingMessage.content = event.data.token;
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.id !== streamingMessage?.id);
+          return [...filtered, streamingMessage!];
+        });
+        break;
+
+      case 'complete':
+        if (streamingMessage) {
+          const finalMessage = {
+            ...streamingMessage,
+            streaming: false,
+            sources: event.data.sources,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => {
+            const filtered = prev.filter(m => m.id !== streamingMessage?.id);
+            return [...filtered, finalMessage];
+          });
+        }
+        setSuggestions(event.data.suggestions || []);
+
+        if (event.data.message.conversationId !== conversationId) {
+          setConversationId(event.data.message.conversationId as ConversationId);
+        }
+
+        if (enableMemory) {
+          await refreshMemoryContext();
+        }
+        break;
+
+      case 'error':
+        throw new Error(event.data.error);
+    }
+  }, [conversationId, enableMemory, refreshMemoryContext]);
 
   const handleSendMessage = async (messageText: string) => {
     const userMessage: ChatMessage = {
@@ -86,30 +167,26 @@ type MemoryContext = {
     setSuggestions([]);
 
     try {
-      const requestPayload = {
-        message: messageText,
-        conversationId,
-        sessionId: enableMemory ? sessionId : undefined,
-        userId: enableMemory ? userId : undefined,
-        streaming: true, // Enable streaming for better perceived performance
-        maxSources: 5,
-      };
-
-      // Use streaming endpoint for better perceived performance
       const response = await fetch("/api/chat/stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Session-Id": sessionId,
         },
-        body: JSON.stringify(requestPayload),
+        body: JSON.stringify({
+          message: messageText,
+          conversationId,
+          sessionId: enableMemory ? sessionId : undefined,
+          userId: enableMemory ? userId : undefined,
+          streaming: true,
+          maxSources: 5,
+        }),
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Handle streaming response
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No response stream');
 
@@ -129,57 +206,9 @@ type MemoryContext = {
           if (line.startsWith('data: ')) {
             try {
               const event = JSON.parse(line.slice(6));
-
-              switch (event.type) {
-                case 'token':
-                  if (!streamingMessage) {
-                    streamingMessage = {
-                      id: generateMessageId(),
-                      role: 'assistant',
-                      content: '',
-                      timestamp: new Date(),
-                      streaming: true,
-                    };
-                  }
-                  streamingMessage.content = event.data.token;
-                  setMessages((prev) => {
-                    const filtered = prev.filter(m => m.id !== streamingMessage?.id);
-                    return [...filtered, streamingMessage!];
-                  });
-                  break;
-
-                case 'complete':
-                  if (streamingMessage) {
-                    // Finalize the streaming message
-                    const finalMessage = {
-                      ...streamingMessage,
-                      streaming: false,
-                      sources: event.data.sources,
-                      timestamp: new Date(),
-                    };
-                    setMessages((prev) => {
-                      const filtered = prev.filter(m => m.id !== streamingMessage?.id);
-                      return [...filtered, finalMessage];
-                    });
-                  }
-                  setSuggestions(event.data.suggestions || []);
-
-                  // Update conversation ID if it changed
-                  if (event.data.message.conversationId !== conversationId) {
-                    setConversationId(event.data.message.conversationId as ConversationId);
-                  }
-
-                  // Update memory context if available
-                  if (enableMemory) {
-                    await refreshMemoryContext();
-                  }
-                  break;
-
-                case 'error':
-                  throw new Error(event.data.error);
-              }
-            } catch (parseError) {
-              console.warn('Failed to parse SSE event:', parseError);
+              await processStreamEvent(event, streamingMessage, (msg) => { streamingMessage = msg; });
+            } catch {
+              // Failed to parse SSE event - continue processing
             }
           }
         }
@@ -195,31 +224,8 @@ type MemoryContext = {
 
       setMessages((prev) => [...prev, errorMessage]);
       setError(error instanceof Error ? error.message : "Unknown error occurred");
-      console.error("Chat error:", error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const refreshMemoryContext = async () => {
-    try {
-      const response = await fetch('/api/memory/context', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId,
-          sessionId,
-          userId,
-        }),
-      });
-
-      if (response.ok) {
-        const context = await response.json();
-        setMemoryContext(context);
-        onMemoryUpdate?.(context);
-      }
-    } catch (error) {
-      console.warn('Failed to refresh memory context:', error);
     }
   };
 
