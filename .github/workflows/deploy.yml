@@ -1,0 +1,152 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  NODE_VERSION: '20'
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel Preview
+        run: |
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} | tee deploy-output.txt
+          echo "PREVIEW_URL=$(cat deploy-output.txt | tail -1)" >> $GITHUB_ENV
+
+      - name: Comment PR with Preview URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const preview_url = process.env.PREVIEW_URL;
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployment ready!\n\n🔗 **Preview URL**: ${preview_url}\n\n✅ All checks passed`
+            });
+
+  production:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel Production
+        run: |
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} | tee deploy-output.txt
+          echo "PRODUCTION_URL=$(cat deploy-output.txt | tail -1)" >> $GITHUB_ENV
+
+      - name: Verify Deployment Health
+        run: |
+          sleep 10
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.PRODUCTION_URL }}/api/health")
+          if [ $response -eq 200 ]; then
+            echo "✅ Health check passed"
+          else
+            echo "❌ Health check failed with status: $response"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const production_url = process.env.PRODUCTION_URL;
+            const date = new Date().toISOString().split('T')[0];
+
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `deploy-${date}-${context.sha.substring(0, 7)}`,
+              name: `Production Deployment - ${date}`,
+              body: `## 🚀 Production Deployment\n\n**URL**: ${production_url}\n**Commit**: ${context.sha}\n\n✅ All tests passed\n✅ Health check verified`,
+              draft: false,
+              prerelease: false
+            });
+
+      - name: Notify Deployment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅ Success' : '❌ Failed';
+            const color = '${{ job.status }}' === 'success' ? '28a745' : 'dc3545';
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: '${{ job.status }}' === 'success' ? 'success' : 'failure',
+              target_url: process.env.PRODUCTION_URL || '',
+              description: `Production deployment ${status}`,
+              context: 'vercel/production'
+            });
