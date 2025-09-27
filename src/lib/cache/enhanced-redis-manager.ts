@@ -8,6 +8,7 @@ import { createHash } from 'crypto';
 import { getTTLManager, type CacheMetrics as TTLCacheMetrics } from './advanced-ttl-manager';
 import { getCompressionManager, type CompressedEntry } from './compression-utils';
 import type { QueryClassification } from '../../types/query-classification';
+import { countKeys } from './scan-utils';
 
 export interface EnhancedCacheConfig {
   keyPrefix: string;
@@ -489,9 +490,9 @@ export class EnhancedRedisCacheManager {
     const sizes: Record<string, number> = {};
 
     try {
+      // Use SCAN-based counting for non-blocking operation
       for (const [type, config] of Object.entries(this.configs)) {
-        const keys = await this.client.keys(`${config.keyPrefix}*`);
-        sizes[type] = keys.length;
+        sizes[type] = await countKeys(this.client, `${config.keyPrefix}*`);
       }
     } catch (error) {
       console.error('Error getting cache sizes:', error);

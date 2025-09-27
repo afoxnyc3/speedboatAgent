@@ -38,6 +38,24 @@ jest.mock('@upstash/redis', () => ({
       const regex = new RegExp(pattern.replace('*', '.*'));
       return Array.from(mockRedisStorage.keys()).filter(key => regex.test(key));
     }),
+    scan: jest.fn().mockImplementation(async (cursor: number | string, options?: { match?: string; count?: number }) => {
+      await new Promise(resolve => setTimeout(resolve, mockLatency));
+      const pattern = options?.match || '*';
+      const count = options?.count || 10;
+      const numericCursor = typeof cursor === 'string' ? parseInt(cursor) : cursor;
+
+      // Get all matching keys
+      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+      const allKeys = Array.from(mockRedisStorage.keys()).filter(key => regex.test(key));
+
+      // Simulate pagination
+      const start = numericCursor;
+      const end = Math.min(start + count, allKeys.length);
+      const keys = allKeys.slice(start, end);
+      const nextCursor = end >= allKeys.length ? 0 : end;
+
+      return [String(nextCursor), keys];
+    }),
     del: jest.fn().mockImplementation(async (...keys: string[]) => {
       await new Promise(resolve => setTimeout(resolve, mockLatency));
       let deletedCount = 0;

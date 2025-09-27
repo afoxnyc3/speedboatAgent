@@ -5,6 +5,7 @@
 import { Redis } from '@upstash/redis';
 import { createHash } from 'crypto';
 import { QueryClassification } from '../../types/query-classification';
+import { scanKeys, batchDeleteKeys, countKeys } from './scan-utils';
 
 // Cache configuration interface
 interface CacheConfig {
@@ -157,10 +158,9 @@ export class RedisClassificationCache {
     if (!this.client) return false;
 
     try {
-      const keys = await this.client.keys(`${this.prefix}*`);
-      if (keys.length > 0) {
-        await this.client.del(...keys);
-      }
+      // Use SCAN-based batch delete for non-blocking operation
+      const deletedCount = await batchDeleteKeys(this.client, `${this.prefix}*`);
+      console.log(`Cleared ${deletedCount} classification cache keys`);
       return true;
     } catch (error) {
       console.error('Redis cache clear error:', error);
@@ -175,10 +175,11 @@ export class RedisClassificationCache {
     if (!this.client) return null;
 
     try {
-      const keys = await this.client.keys(`${this.prefix}*`);
+      // Use SCAN to get keys without blocking
+      const keys = await scanKeys(this.client, `${this.prefix}*`);
       return {
         count: keys.length,
-        keys: keys.map(key => key.replace(this.prefix, ''))
+        keys: keys.slice(0, 100).map(key => key.replace(this.prefix, '')) // Return sample of first 100 keys
       };
     } catch (error) {
       console.error('Redis cache stats error:', error);
@@ -537,16 +538,15 @@ export class RedisCacheManager {
     if (!this.client) return false;
 
     try {
-      const allKeys: string[] = [];
+      let totalDeleted = 0;
 
+      // Use SCAN-based batch delete for each cache type
       for (const config of Object.values(this.configs)) {
-        const keys = await this.client.keys(`${config.keyPrefix}*`);
-        allKeys.push(...keys);
+        const deletedCount = await batchDeleteKeys(this.client, `${config.keyPrefix}*`);
+        totalDeleted += deletedCount;
       }
 
-      if (allKeys.length > 0) {
-        await this.client.del(...allKeys);
-      }
+      console.log(`Cleared ${totalDeleted} total cache keys`);
 
       // Reset metrics
       this.initializeMetrics();
@@ -589,9 +589,9 @@ export class RedisCacheManager {
     const sizes: Record<string, number> = {};
 
     try {
+      // Use SCAN-based counting for non-blocking operation
       for (const [type, config] of Object.entries(this.configs)) {
-        const keys = await this.client.keys(`${config.keyPrefix}*`);
-        sizes[type] = keys.length;
+        sizes[type] = await countKeys(this.client, `${config.keyPrefix}*`);
       }
     } catch (error) {
       console.error('Error getting cache sizes:', error);
