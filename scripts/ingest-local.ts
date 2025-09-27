@@ -12,7 +12,10 @@ const ConfigSchema = z.object({
   localRepoPath: z.string(),
   dryRun: z.boolean().default(false),
   maxFiles: z.number().optional(),
-  verbose: z.boolean().default(false)
+  verbose: z.boolean().default(false),
+  source: z.string().default('local'),
+  baseUrl: z.string().optional(),
+  priority: z.number().default(1.2)
 })
 
 async function main() {
@@ -20,21 +23,53 @@ async function main() {
   const localRepoPath = args[0] || process.env.LOCAL_REPO_PATH
 
   if (!localRepoPath) {
-    console.error('Usage: npm run ingest-local <local-repo-path> [--dry-run] [--verbose]')
+    console.error('Usage: npm run ingest-local <local-repo-path> [options]')
+    console.error('')
+    console.error('Options:')
+    console.error('  --source <type>     Source type (default: "local", e.g., "github", "company")')
+    console.error('  --base-url <url>    Base URL for generating document URLs (e.g., GitHub repo URL)')
+    console.error('  --priority <num>    Priority weight for documents (default: 1.2)')
+    console.error('  --max-files <num>   Maximum number of files to process')
+    console.error('  --dry-run           Show what would be ingested without writing to Weaviate')
+    console.error('  --verbose           Show detailed progress information')
+    console.error('')
+    console.error('Example:')
+    console.error('  npm run ingest-local ./company-repo --source github --base-url https://github.com/company/repo --priority 1.5')
+    console.error('')
     console.error('Or set LOCAL_REPO_PATH environment variable')
     process.exit(1)
   }
+
+  // Parse source argument
+  const sourceIndex = args.indexOf('--source')
+  const source = sourceIndex >= 0 ? args[sourceIndex + 1] : 'local'
+
+  // Parse base URL argument
+  const baseUrlIndex = args.indexOf('--base-url')
+  const baseUrl = baseUrlIndex >= 0 ? args[baseUrlIndex + 1] : undefined
+
+  // Parse priority argument
+  const priorityIndex = args.indexOf('--priority')
+  const priority = priorityIndex >= 0 ? parseFloat(args[priorityIndex + 1]) : 1.2
 
   const config = ConfigSchema.parse({
     localRepoPath,
     dryRun: args.includes('--dry-run'),
     verbose: args.includes('--verbose'),
     maxFiles: args.includes('--max-files') ?
-      parseInt(args[args.indexOf('--max-files') + 1]) : undefined
+      parseInt(args[args.indexOf('--max-files') + 1]) : undefined,
+    source,
+    baseUrl,
+    priority
   })
 
   console.log('🚀 Starting local repository ingestion...')
   console.log(`📁 Repository path: ${config.localRepoPath}`)
+  console.log(`🏷️  Source type: ${config.source}`)
+  if (config.baseUrl) {
+    console.log(`🔗 Base URL: ${config.baseUrl}`)
+  }
+  console.log(`⚡ Priority: ${config.priority}`)
 
   if (config.dryRun) {
     console.log('🧪 DRY RUN MODE - No data will be written to Weaviate')
@@ -97,13 +132,23 @@ async function main() {
 
       for (const file of files) {
         try {
+          // Generate URL based on configuration
+          let url: string
+          if (config.baseUrl) {
+            // Use base URL if provided (e.g., GitHub URL)
+            url = `${config.baseUrl}/blob/main/${file.relativePath}`
+          } else {
+            // Fall back to local:// URL
+            url = `${config.source}://${file.relativePath}`
+          }
+
           const document = {
             content: file.content,
-            source: 'local',
+            source: config.source,
             filepath: file.relativePath,
-            url: `local://${file.relativePath}`,
+            url: url,
             lastModified: file.lastModified.toISOString(),
-            priority: 1.2, // GitHub source priority
+            priority: config.priority,
             language: file.language,
             isCode: file.metadata.isCode,
             isDocumentation: file.metadata.isDocumentation,
