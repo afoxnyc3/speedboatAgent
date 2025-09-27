@@ -213,7 +213,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         ['largest-contentful-paint', 'first-input', 'layout-shift'].forEach(type => {
           try {
             webVitalsObserver.observe({ type, buffered: true });
-          } catch (e) {
+          } catch {
             // Type might not be supported
           }
         });

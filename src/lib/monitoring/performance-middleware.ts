@@ -75,11 +75,11 @@ class PerformanceTracker {
    */
   private getThreshold(eventName: string): number {
     const thresholds: Record<string, number> = {
-      'api_response_time': 5000, // 5 seconds
-      'cache_operation': 1000,   // 1 second
-      'db_query': 2000,          // 2 seconds
-      'embedding_generation': 3000, // 3 seconds
-      'search_operation': 4000   // 4 seconds
+      api_response_time: 5000, // 5 seconds
+      cache_operation: 1000,   // 1 second
+      db_query: 2000,          // 2 seconds
+      embedding_generation: 3000, // 3 seconds
+      search_operation: 4000   // 4 seconds
     };
 
     return thresholds[eventName] || 1000;
