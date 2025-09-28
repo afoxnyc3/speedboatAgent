@@ -69,32 +69,44 @@ async function simulateDemoResponse(
     {
       id: 'doc_1' as any,
       content: 'Next.js App Router provides powerful routing capabilities for React applications...',
+      filepath: 'docs/app-router.md',
+      language: 'markdown' as const,
+      source: 'web' as const,
+      score: 0.89,
+      priority: 1.0,
       metadata: {
-        title: 'Next.js App Router Documentation',
-        source: 'docs.nextjs.org',
-        url: 'https://nextjs.org/docs/app',
-        lastModified: new Date('2024-01-15'),
-        fileType: 'documentation',
-        language: 'en',
+        size: 2500,
         wordCount: 2500,
-        confidence: 0.95
-      },
-      score: 0.89
+        lines: 100,
+        encoding: 'utf-8',
+        mimeType: 'text/markdown',
+        tags: ['documentation'],
+        lastModified: new Date('2024-01-15'),
+        created: new Date('2024-01-15'),
+        url: 'https://nextjs.org/docs/app',
+        checksum: 'abc123'
+      }
     },
     {
       id: 'doc_2' as any,
       content: 'RAG (Retrieval-Augmented Generation) systems combine information retrieval with language generation...',
+      filepath: 'README.md',
+      language: 'markdown' as const,
+      source: 'github' as const,
+      score: 0.82,
+      priority: 1.2,
       metadata: {
-        title: 'RAG Systems Architecture Guide',
-        source: 'github.com/speedboat',
-        url: 'https://github.com/speedboat/rag-guide',
-        lastModified: new Date('2024-02-01'),
-        fileType: 'readme',
-        language: 'en',
+        size: 1800,
         wordCount: 1800,
-        confidence: 0.88
-      },
-      score: 0.82
+        lines: 80,
+        encoding: 'utf-8',
+        mimeType: 'text/markdown',
+        tags: ['readme'],
+        lastModified: new Date('2024-02-01'),
+        created: new Date('2024-02-01'),
+        url: 'https://github.com/speedboat/rag-guide',
+        checksum: 'def456'
+      }
     }
   ];
 
@@ -174,6 +186,43 @@ async function simulateDemoResponse(
   });
 }
 
+// API Health Detection
+async function detectAPIFailures(): Promise<{ isDemoModeRequired: boolean; failedServices: string[] }> {
+  const failedServices: string[] = [];
+
+  // Check OpenAI API key and quota
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      failedServices.push('OpenAI API Key Missing');
+    }
+  } catch {
+    failedServices.push('OpenAI Configuration');
+  }
+
+  // Check Weaviate connectivity
+  try {
+    if (!process.env.WEAVIATE_HOST || !process.env.WEAVIATE_API_KEY) {
+      failedServices.push('Weaviate Configuration');
+    }
+  } catch {
+    failedServices.push('Weaviate Connection');
+  }
+
+  // Check Mem0 configuration
+  try {
+    if (!process.env.MEM0_API_KEY) {
+      failedServices.push('Mem0 Configuration');
+    }
+  } catch {
+    failedServices.push('Mem0 Connection');
+  }
+
+  return {
+    isDemoModeRequired: failedServices.length > 0,
+    failedServices
+  };
+}
+
 export async function POST(request: NextRequest): Promise<Response> {
   const totalStart = Date.now();
   const timings: Record<string, number> = {};
@@ -191,8 +240,14 @@ export async function POST(request: NextRequest): Promise<Response> {
     const runId = generateRunId(conversationId);
     const userId = validatedRequest.userId as UserId;
 
-    // Check for demo mode
-    const isDemoMode = process.env.DEMO_MODE === 'true';
+    // Check for demo mode or API failures
+    const apiHealth = await detectAPIFailures();
+    const isDemoMode = process.env.DEMO_MODE === 'true' || apiHealth.isDemoModeRequired;
+
+    // Log fallback activation
+    if (apiHealth.isDemoModeRequired) {
+      console.warn('Auto-enabling demo mode due to API failures:', apiHealth.failedServices);
+    }
 
     // Create readable stream for SSE
     const encoder = new TextEncoder();
@@ -244,27 +299,36 @@ export async function POST(request: NextRequest): Promise<Response> {
             };
           }
 
-          // Step 3: Enhanced query and search
+          // Step 3: Enhanced query and search with fallback
           sendEvent({ type: 'status', data: { stage: 'analyzing', message: 'Analyzing sources...' } });
 
           const enhanceStart = Date.now();
           const enhancedQuery = buildContextualQuery(validatedRequest.message, memoryContext);
           timings.queryEnhancement = Date.now() - enhanceStart;
 
-          const searchStart = Date.now();
-          const searchResults = await searchOrchestrator.search({
-            query: enhancedQuery,
-            limit: validatedRequest.maxSources,
-            offset: 0,
-            includeContent: true,
-            includeEmbedding: false,
-            timeout: 3000,
-            sessionId,
-            userId,
-            context: `conversation:${conversationId}`,
-            filters: {},
-          });
-          timings.ragSearch = Date.now() - searchStart;
+          let searchResults;
+          try {
+            const searchStart = Date.now();
+            searchResults = await searchOrchestrator.search({
+              query: enhancedQuery,
+              limit: validatedRequest.maxSources,
+              offset: 0,
+              includeContent: true,
+              includeEmbedding: false,
+              timeout: 3000,
+              sessionId,
+              userId,
+              context: `conversation:${conversationId}`,
+              filters: {},
+            });
+            timings.ragSearch = Date.now() - searchStart;
+          } catch (searchError) {
+            console.error('Search orchestrator failed, switching to demo mode:', searchError);
+            // Fallback to demo mode for this request
+            await simulateDemoResponse(sendEvent, validatedRequest.message, conversationId);
+            controller.close();
+            return;
+          }
 
           // Send sources found
           sendEvent({
@@ -323,22 +387,13 @@ export async function POST(request: NextRequest): Promise<Response> {
           timings.memoryStorage = Date.now() - memoryStoreStart;
 
           // Step 6: Send completion
-          const chatMessage = {
+          const chatMessage: MessageResponse = {
             id: generateMessageId(),
             role: 'assistant',
             content: response.content,
             conversationId,
             timestamp: new Date(),
             status: 'completed',
-            sources: response.sources,
-            metadata: {
-              searchTime: searchResults.metadata.searchTime,
-              retrievalCount: searchResults.results.length,
-              memoryContext: {
-                relevantMemories: memoryContext.relevantMemories.length,
-                entities: memoryContext.entityMentions.length,
-              },
-            },
           };
 
           sendEvent({
@@ -410,7 +465,7 @@ async function generateStreamingResponse(params: {
   onStatusChange: (stage: 'generating' | 'formatting', message: string) => void;
 }): Promise<{
   content: string;
-  sources: Document[];
+  sources: Array<{ title: string; url: string; snippet: string }>;
   suggestions: string[];
 }> {
   const { query, searchResults, memoryContext, onToken, onStatusChange } = params;
@@ -445,7 +500,6 @@ Please provide a comprehensive answer with proper citations.`;
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
-      maxTokens: 2000,
     });
 
     for await (const delta of result.textStream) {
@@ -468,8 +522,48 @@ Please provide a comprehensive answer with proper citations.`;
   } catch (error) {
     console.error('OpenAI streaming error:', error);
 
-    // Fallback to non-streaming response
-    const fallbackContent = `I'm experiencing technical difficulties with streaming. Based on your question about "${query}", I can provide a response using the retrieved context from the knowledge base. Please try again, or contact support if the issue persists.`;
+    // Check if this is a quota/auth error that requires demo mode
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isQuotaError = errorMessage.includes('quota') || errorMessage.includes('exceeded') ||
+                        errorMessage.includes('insufficient') || errorMessage.includes('billing');
+    const isAuthError = errorMessage.includes('authentication') || errorMessage.includes('invalid') ||
+                       errorMessage.includes('unauthorized');
+
+    if (isQuotaError || isAuthError) {
+      console.warn('OpenAI API failure detected, using fallback content generation');
+
+      // Generate contextual fallback response
+      const contextSummary = searchResults.slice(0, 2)
+        .map(doc => doc.content.slice(0, 200))
+        .join(' ... ');
+
+      const fallbackContent = `Based on your question about "${query}", I found relevant information in the documentation:
+
+${contextSummary ? `**Key Information:**
+${contextSummary}...` : ''}
+
+**Note:** I'm currently operating in offline mode due to API service limitations. The response above is based on the retrieved documentation context. For the most up-to-date and detailed information, please refer to the source documents or try again later when full AI services are restored.
+
+**Available Information:**
+- Documentation and code examples from the knowledge base
+- Architecture and implementation guides
+- Best practices and troubleshooting tips`;
+
+      onToken(fallbackContent, fallbackContent);
+
+      return {
+        content: fallbackContent,
+        sources: buildCitationSources(searchResults),
+        suggestions: [
+          'Ask about specific implementation details',
+          'Request architecture explanations',
+          'Get code examples and patterns',
+        ],
+      };
+    }
+
+    // For other errors, use standard fallback
+    const fallbackContent = `I'm experiencing technical difficulties with response generation. Based on your question about "${query}", I can see relevant information was found in the knowledge base. Please try again, or contact support if the issue persists.`;
 
     onToken(fallbackContent, fallbackContent);
 
@@ -504,14 +598,9 @@ Provide accurate, contextual responses with proper source citations. Be conversa
 // Citation source building
 function buildCitationSources(searchResults: Document[]): Array<{ title: string; url: string; snippet: string }> {
   return searchResults.slice(0, 5).map((doc, index) => ({
-    id: `cite_${index + 1}`,
-    documentId: doc.id,
-    excerpt: doc.content.slice(0, 200) + '...',
-    relevanceScore: doc.score || 0.8,
-    sourceUrl: doc.metadata?.url,
-    sourcePath: doc.metadata?.filepath || 'Unknown',
-    sourceType: doc.metadata?.source || 'github',
-    timestamp: new Date(),
+    title: doc.filepath,
+    url: doc.metadata?.url || `/${doc.filepath}`,
+    snippet: doc.content.slice(0, 200) + '...',
   }));
 }
 

@@ -85,6 +85,13 @@ export default function ChatAssistant() {
     }
   };
 
+  // Handle completed streaming messages
+  const handleMessageComplete = (message: ChatMessage) => {
+    setMessages((prev) => [...prev, message]);
+    setIsLoading(false);
+    setError("");
+  };
+
   // Simple fallback response generator
   const generateFallbackResponse = (query: string): string => {
     const lowerQuery = query.toLowerCase();
@@ -107,6 +114,7 @@ export default function ChatAssistant() {
   return (
     <ChatInterface
       onSendMessage={handleSendMessage}
+      onMessageComplete={handleMessageComplete}
       messages={messages}
       isLoading={isLoading}
       error={error}

@@ -48,6 +48,8 @@ export interface ChatMessage {
 export interface ChatInterfaceProps {
   /** Callback for sending new messages */
   onSendMessage: (message: string) => void;
+  /** Callback for completed streaming messages */
+  onMessageComplete?: (message: ChatMessage) => void;
   /** Array of chat messages */
   messages: ChatMessage[];
   /** Loading state indicator */

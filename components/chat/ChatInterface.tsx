@@ -41,6 +41,7 @@ type StreamingState = {
  */
 export default function ChatInterface({
   onSendMessage,
+  onMessageComplete,
   messages,
   isLoading = false,
   error,
@@ -175,10 +176,26 @@ export default function ChatInterface({
                   break;
 
                 case 'complete':
-                  // Clear optimistic messages and add the final message to the conversation
+                  // Clear optimistic messages and notify parent with the completed message
                   setOptimisticMessages([]);
                   setStreamingState({ isStreaming: false });
-                  // The streaming is complete - don't resend the message!
+
+                  // Pass the completed message to the parent component
+                  if (event.data.message) {
+                    // Create a ChatMessage from the streaming response data
+                    const completedMessage: ChatMessage = {
+                      id: event.data.message.id,
+                      role: 'assistant',
+                      content: event.data.message.content,
+                      timestamp: new Date(event.data.message.timestamp),
+                      sources: event.data.sources,
+                      suggestions: event.data.suggestions,
+                    };
+
+                    // Notify parent component with the completed message
+                    // This ensures the message persists in the conversation
+                    onMessageComplete?.(completedMessage);
+                  }
                   break;
 
                 case 'error':
@@ -197,7 +214,7 @@ export default function ChatInterface({
       // Fallback to non-streaming - but don't retrigger, let parent handle
       console.warn('Streaming failed, parent component should handle with non-streaming API');
     }
-  }, [onSendMessage, enableStreaming]);
+  }, [onSendMessage, onMessageComplete, enableStreaming]);
 
   const formatTimestamp = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {

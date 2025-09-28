@@ -14,6 +14,8 @@ import type {
   ChatMessage,
   ConversationId,
   MessageId,
+  Citation,
+  CitationId,
 } from '@/types/chat';
 import type { Document } from '@/types/search';
 import type { ConversationMemoryContext } from '@/types/memory';
@@ -199,10 +201,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       metadata: {
         searchTime: searchResults.metadata.searchTime,
         retrievalCount: searchResults.results.length,
-        memoryContext: {
-          relevantMemories: memoryContext.relevantMemories.length,
-          entities: memoryContext.entityMentions.length,
-        },
       },
     };
 
@@ -258,7 +256,7 @@ async function generateContextualResponse(params: {
   conversationId: ConversationId;
 }): Promise<{
   content: string;
-  sources: Document[];
+  sources: Citation[];
   suggestions: string[];
 }> {
   const { query, searchResults, memoryContext } = params;
@@ -336,15 +334,15 @@ function extractTopics(message: string): string[] {
 }
 
 // Citation source building
-function buildCitationSources(searchResults: Document[]): Array<{ title: string; url: string; snippet: string }> {
+function buildCitationSources(searchResults: Document[]): Citation[] {
   return searchResults.slice(0, 5).map((doc, index) => ({
-    id: `cite_${index + 1}`,
+    id: `cite_${index + 1}` as CitationId,
     documentId: doc.id,
     excerpt: doc.content.slice(0, 200) + '...',
     relevanceScore: doc.score || 0.8,
     sourceUrl: doc.metadata?.url,
-    sourcePath: doc.metadata?.filepath || 'Unknown',
-    sourceType: doc.metadata?.source || 'github',
+    sourcePath: doc.filepath,
+    sourceType: doc.source,
     timestamp: new Date(),
   }));
 }
@@ -360,7 +358,6 @@ async function generateOpenAIResponse(systemPrompt: string, userPrompt: string):
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
-      maxTokens: 2000,
     });
 
     return {
