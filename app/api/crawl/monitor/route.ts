@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = MonitoringQuerySchema.parse({
-      component: searchParams.get('component') as any || 'all',
+      component: (searchParams.get('component') as 'all' | 'scheduler' | 'crawler' | 'queue') || 'all',
       includeMetrics: searchParams.get('includeMetrics') === 'true',
     });
 
-    const results: Record<string, any> = {};
+    const results: Record<string, { status: string; timestamp: string; metrics?: unknown }> = {};
 
     // Check scheduler health
     if (query.component === 'all' || query.component === 'scheduler') {

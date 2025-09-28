@@ -4,7 +4,8 @@ import {
   FeedbackRequestSchema,
   createFeedbackId,
   type Feedback,
-  type FeedbackResponse
+  type FeedbackResponse,
+  type FeedbackType
 } from '@/types/feedback';
 import { FeedbackFileStore } from '@/lib/feedback/feedback-store';
 
@@ -22,8 +23,8 @@ export async function POST(request: NextRequest) {
       id: createFeedbackId(generateId()),
       type: validatedData.type,
       category: validatedData.category,
-      messageId: validatedData.messageId as any,
-      conversationId: validatedData.conversationId as any,
+      messageId: validatedData.messageId,
+      conversationId: validatedData.conversationId,
       timestamp: new Date(),
       context: {
         query: validatedData.context?.query || '',
@@ -87,8 +88,8 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
 
     const options = {
-      conversationId: conversationId as any,
-      type: type as any,
+      conversationId: conversationId || undefined,
+      type: (type as FeedbackType) || undefined,
       limit: limit ? parseInt(limit, 10) : 50,
     };
 
