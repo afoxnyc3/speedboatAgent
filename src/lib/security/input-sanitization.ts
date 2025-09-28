@@ -149,8 +149,8 @@ export async function validateRequest<T>(
     const data = schema.parse(requestBody);
     return { success: true, data };
   } catch (error) {
-    if (error instanceof z.ZodError && Array.isArray(error.errors)) {
-      const errorMessage = error.errors
+    if (error instanceof z.ZodError && Array.isArray(error.issues)) {
+      const errorMessage = error.issues
         .map(err => `${err.path.join('.')}: ${err.message}`)
         .join(', ');
       return { success: false, error: `Validation failed: ${errorMessage}` };

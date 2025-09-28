@@ -43,7 +43,6 @@ export type {
   // Core entity IDs from memory
   MemoryId,
   UserId,
-  SessionId,
   RunId,
   AgentId,
 } from './memory';

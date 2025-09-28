@@ -6,6 +6,9 @@
 import { z } from 'zod';
 import type { ConversationId, MessageId, MessageRole } from './chat';
 
+// Re-export from chat types
+export type { ConversationId, MessageId, MessageRole };
+
 // Branded types for memory system
 export type MemoryId = string & { readonly __brand: 'MemoryId' };
 export type UserId = string & { readonly __brand: 'UserId' };

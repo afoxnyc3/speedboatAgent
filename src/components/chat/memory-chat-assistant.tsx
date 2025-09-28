@@ -6,9 +6,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import ChatInterface from "./ChatInterface";
-import type { ChatMessage } from "./types";
-import type { ConversationId, SessionId } from "../../types/memory";
+import ChatInterface from "../../../components/chat/ChatInterface";
+import type { ChatMessage } from "../../../components/chat/types";
+import type { ConversationId, SessionId } from "@/types/memory";
 
 interface MemoryEnhancedChatProps {
   userId?: string;
