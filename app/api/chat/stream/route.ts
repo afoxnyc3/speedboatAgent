@@ -5,8 +5,8 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getMem0Client } from '../../src/lib/memory/mem0-client';
-import { getSearchOrchestrator } from '../../src/lib/search/cached-search-orchestrator';
+import { getMem0Client } from '../../../../src/lib/memory/mem0-client';
+import { getSearchOrchestrator } from '../../../../src/lib/search/cached-search-orchestrator';
 import type {
   ConversationId,
   MessageId,

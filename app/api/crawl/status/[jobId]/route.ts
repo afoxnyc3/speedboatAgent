@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCrawlScheduler } from '@/lib/ingestion/crawl-scheduler';
+import { getCrawlScheduler } from '../../../../../src/lib/ingestion/crawl-scheduler';
 
 interface RouteParams {
   params: Promise<{ jobId: string }>;

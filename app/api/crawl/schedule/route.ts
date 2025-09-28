@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCrawlScheduler, CrawlJobDataSchema } from '@/lib/ingestion/crawl-scheduler';
+import { getCrawlScheduler, CrawlJobDataSchema } from '../../../../src/lib/ingestion/crawl-scheduler';
 
 // Request schemas
 const ScheduleCrawlRequestSchema = z.object({

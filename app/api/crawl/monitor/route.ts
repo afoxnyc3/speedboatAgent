@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCrawlScheduler } from '@/lib/ingestion/crawl-scheduler';
-import { getWebCrawler } from '@/lib/ingestion/web-crawler';
+import { getCrawlScheduler } from '../../../../src/lib/ingestion/crawl-scheduler';
+import { getWebCrawler } from '../../../../src/lib/ingestion/web-crawler';
 
 // Monitoring query schema
 const MonitoringQuerySchema = z.object({

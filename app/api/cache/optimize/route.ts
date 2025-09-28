@@ -5,10 +5,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getEnhancedCacheManager } from '../../src/lib/cache/enhanced-redis-manager';
-import { getIntelligentCacheWarmer } from '../../src/lib/cache/intelligent-cache-warmer';
-import { getTTLManager } from '../../src/lib/cache/advanced-ttl-manager';
-import { getCompressionManager } from '../../src/lib/cache/compression-utils';
+import { getEnhancedCacheManager } from '../../../../src/lib/cache/enhanced-redis-manager';
+import { getIntelligentCacheWarmer } from '../../../../src/lib/cache/intelligent-cache-warmer';
+import { getTTLManager } from '../../../../src/lib/cache/advanced-ttl-manager';
+import { getCompressionManager } from '../../../../src/lib/cache/compression-utils';
 import {
   handleAnalyze,
   handleIntelligentWarming,
@@ -17,14 +17,14 @@ import {
   handleHealthCheck,
   handleCleanup,
   handleRecommendations,
-} from '../../src/lib/cache/optimization-handlers';
+} from '../../../../src/lib/cache/optimization-handlers';
 import {
   calculatePerformanceScore,
   generateCompressionRecommendations,
   generateImmediateRecommendations,
   generateOptimizationRecommendations,
   generatePerformanceRecommendations,
-} from '../../src/lib/cache/optimization-recommendations';
+} from '../../../../src/lib/cache/optimization-recommendations';
 
 // Validation schemas
 const OptimizationRequestSchema = z.object({

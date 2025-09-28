@@ -5,10 +5,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
-import { AlertSystemStatus } from '../../src/lib/monitoring/alerts/types';
-import { DEFAULT_ALERT_RULES } from '../../src/lib/monitoring/alerts/default-rules';
-import { AlertManager } from '../../src/lib/monitoring/alerts/alert-manager';
-import { collectMetrics } from '../../src/lib/monitoring/alerts/metrics-collector';
+import { AlertSystemStatus } from '../../../../src/lib/monitoring/alerts/types';
+import { DEFAULT_ALERT_RULES } from '../../../../src/lib/monitoring/alerts/default-rules';
+import { AlertManager } from '../../../../src/lib/monitoring/alerts/alert-manager';
+import { collectMetrics } from '../../../../src/lib/monitoring/alerts/metrics-collector';
 
 export async function GET(_request: NextRequest) {
   try {

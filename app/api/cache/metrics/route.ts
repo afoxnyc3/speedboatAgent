@@ -4,9 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCacheManager, type CacheMetrics } from '../../src/lib/cache/redis-cache';
-import { getEmbeddingService } from '../../src/lib/cache/embedding-service';
-import { getSearchOrchestrator } from '../../src/lib/search/cached-search-orchestrator';
+import { getCacheManager, type CacheMetrics } from '../../../../src/lib/cache/redis-cache';
+import { getEmbeddingService } from '../../../../src/lib/cache/embedding-service';
+import { getSearchOrchestrator } from '../../../../src/lib/search/cached-search-orchestrator';
 
 // Type definitions for cache health
 interface CacheHealth {
