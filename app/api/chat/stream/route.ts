@@ -52,6 +52,126 @@ const generateSessionId = (): SessionId => `sess_${Date.now()}_${Math.random().t
 const generateRunId = (conversationId: string): RunId => `run_${conversationId}_${Date.now()}` as RunId;
 const generateMessageId = (): MessageId => `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as MessageId;
 
+// Demo mode simulation function
+async function simulateDemoResponse(
+  sendEvent: (event: StreamEvent) => void,
+  userMessage: string,
+  conversationId: ConversationId
+) {
+  // Simulate search phase
+  sendEvent({ type: 'status', data: { stage: 'searching', message: 'Searching knowledge base...' } });
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  // Mock search results
+  const mockSources: Document[] = [
+    {
+      id: 'doc_1' as any,
+      content: 'Next.js App Router provides powerful routing capabilities for React applications...',
+      metadata: {
+        title: 'Next.js App Router Documentation',
+        source: 'docs.nextjs.org',
+        url: 'https://nextjs.org/docs/app',
+        lastModified: new Date('2024-01-15'),
+        fileType: 'documentation',
+        language: 'en',
+        wordCount: 2500,
+        confidence: 0.95
+      },
+      score: 0.89
+    },
+    {
+      id: 'doc_2' as any,
+      content: 'RAG (Retrieval-Augmented Generation) systems combine information retrieval with language generation...',
+      metadata: {
+        title: 'RAG Systems Architecture Guide',
+        source: 'github.com/speedboat',
+        url: 'https://github.com/speedboat/rag-guide',
+        lastModified: new Date('2024-02-01'),
+        fileType: 'readme',
+        language: 'en',
+        wordCount: 1800,
+        confidence: 0.88
+      },
+      score: 0.82
+    }
+  ];
+
+  sendEvent({ type: 'sources', data: { sources: mockSources, count: mockSources.length } });
+
+  // Simulate analysis phase
+  sendEvent({ type: 'status', data: { stage: 'analyzing', message: 'Analyzing sources...' } });
+  await new Promise(resolve => setTimeout(resolve, 600));
+
+  // Simulate generation phase
+  sendEvent({ type: 'status', data: { stage: 'generating', message: 'Generating response...' } });
+  await new Promise(resolve => setTimeout(resolve, 400));
+
+  // Generate contextual response based on user query
+  const responses = {
+    location: "Based on the documentation, here are the key locations and routing concepts:\n\n**App Router Structure:**\n- `/app` directory for new App Router (recommended)\n- `/pages` directory for legacy Pages Router\n- Each folder represents a route segment\n\n**Dynamic Routes:**\n- `[slug]` for dynamic segments\n- `[...slug]` for catch-all routes\n- `[[...slug]]` for optional catch-all\n\n**Special Files:**\n- `page.tsx` - Makes route publicly accessible\n- `layout.tsx` - Shared UI for segments\n- `loading.tsx` - Loading UI\n- `error.tsx` - Error boundaries\n\nFor your RAG application, I recommend using the App Router with organized feature-based routing.",
+
+    button: "Here are the different Button component variants available:\n\n```tsx\nimport { Button } from '@/components/ui/button'\n\n// Primary (default)\n<Button>Click me</Button>\n\n// Secondary\n<Button variant=\"secondary\">Secondary</Button>\n\n// Outline\n<Button variant=\"outline\">Outline</Button>\n\n// Destructive\n<Button variant=\"destructive\">Delete</Button>\n\n// Ghost\n<Button variant=\"ghost\">Ghost</Button>\n\n// Link style\n<Button variant=\"link\">Link Button</Button>\n```\n\n**Size Variants:**\n```tsx\n<Button size=\"sm\">Small</Button>\n<Button size=\"default\">Default</Button>\n<Button size=\"lg\">Large</Button>\n<Button size=\"icon\">🔍</Button>\n```\n\nThe Button component is built with `class-variance-authority` for type-safe variants and supports all standard HTML button props.",
+
+    default: `I understand you're asking about "${userMessage}". Based on the documentation and codebase analysis:\n\n**Key Points:**\n- This RAG system uses Next.js 15 with App Router for modern React development\n- Vector search is powered by Weaviate for semantic understanding\n- OpenAI embeddings provide high-quality text representations\n- Streaming responses ensure real-time user experience\n\n**Architecture Overview:**\n1. **Query Processing** - User input is analyzed and classified\n2. **Retrieval** - Relevant documents are found using hybrid search\n3. **Generation** - AI generates contextual responses using retrieved context\n4. **Streaming** - Responses are delivered in real-time chunks\n\n**Current Status:**\n- ✅ Frontend: React components with Tailwind CSS\n- ✅ Backend: API routes with TypeScript validation\n- ✅ Search: Weaviate vector database integration\n- ✅ Monitoring: Sentry error tracking and performance\n\nWould you like me to explain any specific aspect in more detail?`
+  };
+
+  // Determine response type
+  let responseText = responses.default;
+  const query = userMessage.toLowerCase();
+  if (query.includes('location') || query.includes('route') || query.includes('open')) {
+    responseText = responses.location;
+  } else if (query.includes('button') || query.includes('component')) {
+    responseText = responses.button;
+  }
+
+  // Stream response word by word
+  const words = responseText.split(' ');
+  let accumulated = '';
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i] + (i < words.length - 1 ? ' ' : '');
+    accumulated += word;
+
+    sendEvent({
+      type: 'token',
+      data: {
+        token: accumulated,
+        delta: word
+      }
+    });
+
+    // Variable delay for realistic typing
+    const delay = word.includes('\n') ? 100 : Math.random() * 50 + 20;
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  // Final completion event
+  const messageResponse: MessageResponse = {
+    id: generateMessageId(),
+    role: 'assistant',
+    content: accumulated,
+    conversationId,
+    timestamp: new Date(),
+    status: 'completed'
+  };
+
+  const suggestions = [
+    "How do I implement routing in Next.js?",
+    "What are the available UI components?",
+    "Explain the RAG system architecture",
+    "How does the search functionality work?"
+  ];
+
+  sendEvent({
+    type: 'complete',
+    data: {
+      message: messageResponse,
+      sources: mockSources,
+      suggestions
+    }
+  });
+}
+
 export async function POST(request: NextRequest): Promise<Response> {
   const totalStart = Date.now();
   const timings: Record<string, number> = {};
@@ -69,6 +189,9 @@ export async function POST(request: NextRequest): Promise<Response> {
     const runId = generateRunId(conversationId);
     const userId = validatedRequest.userId as UserId;
 
+    // Check for demo mode
+    const isDemoMode = process.env.DEMO_MODE === 'true';
+
     // Create readable stream for SSE
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -79,6 +202,13 @@ export async function POST(request: NextRequest): Promise<Response> {
             const data = `data: ${JSON.stringify(event)}\n\n`;
             controller.enqueue(encoder.encode(data));
           };
+
+          // Demo mode - simulate complete RAG flow with mock data
+          if (isDemoMode) {
+            await simulateDemoResponse(sendEvent, validatedRequest.message, conversationId);
+            controller.close();
+            return;
+          }
 
           // Step 1: Initialize clients and search
           sendEvent({ type: 'status', data: { stage: 'searching', message: 'Searching knowledge base...' } });
