@@ -48,7 +48,7 @@ export async function executeSearchWorkflow(
   try {
     const { classification, metrics } = await classifyQueryWithMetrics(
       params.query,
-      { timeout: Math.min(params.timeout / 3, 2000) }
+      { timeout: Math.max(1000, Math.min(params.timeout / 3, 2000)) }
     );
 
     const sourceWeights = params.weights || classification.weights;

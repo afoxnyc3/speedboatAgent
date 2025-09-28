@@ -137,7 +137,12 @@ export class RedisClassificationCache {
 
       if (!value) return null;
 
-      return JSON.parse(value as string) as QueryClassification;
+      try {
+        return JSON.parse(value as string) as QueryClassification;
+      } catch (parseError) {
+        console.error('Failed to parse classification cache:', parseError, 'Value:', value);
+        return null;
+      }
     } catch (error) {
       console.error('Redis cache get error:', error);
       return null;
@@ -330,7 +335,13 @@ export class RedisCacheManager {
       }
 
       this.updateMetrics('embedding', true);
-      return JSON.parse(value as string) as EmbeddingCacheEntry;
+      try {
+        return JSON.parse(value as string) as EmbeddingCacheEntry;
+      } catch (parseError) {
+        console.error('Failed to parse embedding cache:', parseError, 'Value type:', typeof value);
+        this.updateMetrics('embedding', false);
+        return null;
+      }
     } catch (error) {
       console.error('Redis embedding cache get error:', error);
       this.updateMetrics('embedding', false);
@@ -395,7 +406,13 @@ export class RedisCacheManager {
       }
 
       this.updateMetrics('searchResult', true);
-      return JSON.parse(value as string) as SearchResultCacheEntry;
+      try {
+        return JSON.parse(value as string) as SearchResultCacheEntry;
+      } catch (parseError) {
+        console.error('Failed to parse search result cache:', parseError, 'Value type:', typeof value);
+        this.updateMetrics('searchResult', false);
+        return null;
+      }
     } catch (error) {
       console.error('Redis search cache get error:', error);
       this.updateMetrics('searchResult', false);

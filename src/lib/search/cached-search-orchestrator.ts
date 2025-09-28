@@ -94,7 +94,7 @@ export class CachedSearchOrchestrator {
       // 2. Query classification (with its own cache)
       const { classification, metrics } = await classifyQueryWithMetrics(
         params.query,
-        { timeout: Math.min(params.timeout / 3, 2000) }
+        { timeout: Math.max(1000, Math.min(params.timeout / 3, 2000)) }
       );
 
       // 3. Generate embedding with cache
