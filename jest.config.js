@@ -12,6 +12,9 @@ const config = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',
+    // E2E tests use Playwright, not Jest
+    '/tests/e2e/',
+    'tests/e2e/',
     // Temporarily ignore tests with mocking/component issues for Week 2 merge
     // TODO: Fix test setup issues in these test files
     'tests/unit/api/search.test.ts',

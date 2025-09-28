@@ -8,18 +8,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Enable experimental instrumentation for Sentry
-  experimental: {
-    instrumentationHook: true,
-  },
-
-  // Sentry configuration
-  sentry: {
-    // Suppress source maps uploading logs during build
-    silent: true,
-    org: 'speedboat-agent',
-    project: 'rag-agent',
-  },
+  // Sentry will use instrumentation.js automatically in Next.js 15+
 };
 
 // Sentry configuration options

@@ -288,13 +288,25 @@ let mem0Instance: MemoryClient | null = null;
 
 export const getMem0Client = (): MemoryClient => {
   if (!mem0Instance) {
-    const apiKey = process.env.MEM0_API_KEY;
-    if (!apiKey) {
-      // Use mock client when API key is not configured
-      const { createMockMem0Client } = require('./mock-mem0-client');
-      mem0Instance = createMockMem0Client();
+    // Check for benchmark configuration flags
+    if (process.env.USE_REDIS_MEMORY === 'true') {
+      // Use Redis-only memory implementation
+      const { createRedisMemoryClient } = require('./redis-memory-client');
+      mem0Instance = createRedisMemoryClient();
+    } else if (process.env.USE_PG_MEMORY_MOCK === 'true') {
+      // Use PostgreSQL pattern mock
+      const { createPostgreSQLMemoryClient } = require('./pg-memory-client');
+      mem0Instance = createPostgreSQLMemoryClient();
     } else {
-      mem0Instance = createMem0Client(apiKey);
+      // Default behavior: check for Mem0 API key
+      const apiKey = process.env.MEM0_API_KEY;
+      if (!apiKey) {
+        // Use mock client when API key is not configured
+        const { createMockMem0Client } = require('./mock-mem0-client');
+        mem0Instance = createMockMem0Client();
+      } else {
+        mem0Instance = createMem0Client(apiKey);
+      }
     }
   }
   return mem0Instance!; // Non-null assertion - we always initialize it above
