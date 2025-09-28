@@ -20,8 +20,8 @@ import { SearchResponse } from '../../../../src/types/search';
 // Reuse the circuit breaker settings from main chat route
 let memoryFailureCount = 0;
 let memoryDisabledUntil = 0;
-const MAX_MEMORY_FAILURES = 3;
-const MEMORY_DISABLE_DURATION = 60000;
+const MAX_MEMORY_FAILURES = 10; // Increased from 3 to be more tolerant
+const MEMORY_DISABLE_DURATION = 30000; // Reduced from 60s to 30s
 
 interface ChatRequest {
   message: string;
@@ -50,12 +50,14 @@ async function getConversationContext(
   query: string
 ) {
   if (Date.now() < memoryDisabledUntil) {
+    console.log('[Memory] Circuit breaker active, skipping memory retrieval');
     return { context: null, contextualQuery: query };
   }
 
   try {
+    console.log('[Memory] Attempting to retrieve conversation context');
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Memory timeout')), 2000)
+      setTimeout(() => reject(new Error('Memory timeout')), 5000)
     );
 
     const memClient = getMem0Client();
@@ -70,19 +72,24 @@ async function getConversationContext(
     ]) as ConversationMemoryContext;
 
     const contextualQuery = buildContextualQuery(query, context);
-    memoryFailureCount = 0;
+    // Reset failure count on successful retrieval
+    if (memoryFailureCount > 0) {
+      console.log('[Memory] Successfully retrieved context, resetting failure count');
+      memoryFailureCount = 0;
+    }
 
     return { context, contextualQuery };
   } catch (error) {
     memoryFailureCount++;
 
+    console.error(`[Memory] Retrieval failed (attempt ${memoryFailureCount}/${MAX_MEMORY_FAILURES}):`, error);
+
     if (memoryFailureCount >= MAX_MEMORY_FAILURES) {
       memoryDisabledUntil = Date.now() + MEMORY_DISABLE_DURATION;
-      console.error(`Memory circuit breaker activated after ${memoryFailureCount} failures`);
+      console.error(`[Memory] Circuit breaker activated for ${MEMORY_DISABLE_DURATION/1000}s after ${memoryFailureCount} failures`);
       memoryFailureCount = 0;
     }
 
-    console.warn('Memory retrieval failed or timed out:', error);
     return { context: null, contextualQuery: query };
   }
 }

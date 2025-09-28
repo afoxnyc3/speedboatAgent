@@ -19,8 +19,8 @@ import type {
 } from '../../types/memory';
 
 const DEFAULT_CONFIG: Partial<MemoryConfig> = {
-  timeout: 2000, // Reduced from 10s to 2s for production performance
-  retryAttempts: 1, // Reduced from 3 to 1 - fail fast in production
+  timeout: 5000, // 5 second timeout for API calls
+  retryAttempts: 2, // Try twice before giving up
   defaultScope: 'session',
   retention: {
     sessionMemoryTtl: 24 * 60 * 60 * 1000, // 24 hours
@@ -188,10 +188,12 @@ export class Mem0Client implements MemoryClient {
 
   private async makeRequest(method: string, endpoint: string, data?: any) {
     let url = `${this.baseUrl}${endpoint}`;
+
+    // Mem0 uses X-API-Key header for authentication
     const config: RequestInit = {
       method,
       headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
+        'X-API-Key': this.config.apiKey,
         'Content-Type': 'application/json',
       },
       signal: process.env.NODE_ENV === 'test' ? undefined : AbortSignal.timeout(this.config.timeout!),
@@ -209,7 +211,13 @@ export class Mem0Client implements MemoryClient {
         const response = await fetch(url, config);
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          // Log detailed error for debugging
+          if (response.status === 401) {
+            console.error('[Mem0] Authentication failed (401). Check API key in .env.local');
+          }
+          const errorText = await response.text().catch(() => response.statusText);
+          console.error(`[Mem0] API Error ${response.status}: ${errorText}`);
+          throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
         }
 
         return await response.json();
@@ -300,11 +308,13 @@ export const getMem0Client = (): MemoryClient => {
     } else {
       // Default behavior: check for Mem0 API key
       const apiKey = process.env.MEM0_API_KEY;
-      if (!apiKey) {
-        // Use mock client when API key is not configured
+      if (!apiKey || process.env.DISABLE_MEM0 === 'true') {
+        // Use mock client when API key is not configured or Mem0 is disabled
+        console.log('[Mem0] Using mock client (API key issues or disabled)');
         const { createMockMem0Client } = require('./mock-mem0-client');
         mem0Instance = createMockMem0Client();
       } else {
+        console.log('[Mem0] Initializing with API key');
         mem0Instance = createMem0Client(apiKey);
       }
     }

@@ -78,7 +78,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         try {
           const memoryPromise = memoryClient.getConversationContext(conversationId, sessionId);
           const memoryTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Memory timeout')), 200) // Super aggressive: 200ms
+            setTimeout(() => reject(new Error('Memory timeout')), 5000) // 5 second timeout for API calls
           );
 
           const context = await Promise.race([memoryPromise, memoryTimeout]) as ConversationMemoryContext;
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         offset: 0,
         includeContent: true,
         includeEmbedding: false,
-        timeout: 1500, // Ultra-aggressive: 1500ms
+        timeout: 5000, // 5 second timeout for search
         sessionId,
         userId,
         context: `conversation:${conversationId}`,
