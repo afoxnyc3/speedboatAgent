@@ -1,28 +1,28 @@
 {
   "regions": ["iad1"],
   "functions": {
-    "src/app/api/chat/route.ts": {
+    "app/api/chat/route.ts": {
       "maxDuration": 30
     },
-    "src/app/api/search/route.ts": {
+    "app/api/search/route.ts": {
       "maxDuration": 30
     },
-    "src/app/api/ingest/web/route.ts": {
+    "app/api/ingest/web/route.ts": {
       "maxDuration": 60
     },
-    "src/app/api/health/route.ts": {
+    "app/api/health/route.ts": {
       "maxDuration": 10
     },
-    "src/app/api/feedback/route.ts": {
+    "app/api/feedback/route.ts": {
       "maxDuration": 10
     },
-    "src/app/api/cache/warm/route.ts": {
+    "app/api/cache/warm/route.ts": {
       "maxDuration": 30
     },
-    "src/app/api/cache/metrics/route.ts": {
+    "app/api/cache/metrics/route.ts": {
       "maxDuration": 10
     },
-    "src/app/api/monitoring/costs/route.ts": {
+    "app/api/monitoring/costs/route.ts": {
       "maxDuration": 10
     }
   },

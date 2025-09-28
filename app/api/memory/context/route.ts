@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getMem0Client } from '../../../../lib/memory/mem0-client';
+import { getMem0Client } from '../../src/lib/memory/mem0-client';
 import type { ConversationId, SessionId, UserId } from '../../../../types/memory';
 
 const ContextRequestSchema = z.object({

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCacheManager } from '../../../../src/lib/cache/redis-cache';
+import { getCacheManager } from '../../src/lib/cache/redis-cache';
 
 // Cost interfaces
 interface ServiceCost {

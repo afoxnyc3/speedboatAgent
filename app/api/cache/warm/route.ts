@@ -5,9 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getSearchOrchestrator } from '../../../../lib/search/cached-search-orchestrator';
-import { getEmbeddingService } from '../../../../lib/cache/embedding-service';
-import { type CacheMetrics } from '../../../../lib/cache/redis-cache';
+import { getSearchOrchestrator } from '../../src/lib/search/cached-search-orchestrator';
+import { getEmbeddingService } from '../../src/lib/cache/embedding-service';
+import { type CacheMetrics } from '../../src/lib/cache/redis-cache';
 
 // Cache stats interface for warming decisions
 interface CacheStats {

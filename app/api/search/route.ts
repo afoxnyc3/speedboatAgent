@@ -4,17 +4,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { testWeaviateConnection } from '../../../src/lib/search/hybrid-search';
-import { validateAndProcessRequest } from '../../../src/lib/search/search-validation';
-import { createPerformanceHeaders } from '../../../src/lib/search/search-utils';
-import { processSearchError, createErrorResponse } from '../../../src/lib/search/error-handler';
-import { SearchResponse } from '../../../src/types/search';
-import { ValidatedSearchRequest } from '../../../src/lib/search/search-validation';
+import { testWeaviateConnection } from '../../src/lib/search/hybrid-search';
+import { validateAndProcessRequest } from '../../src/lib/search/search-validation';
+import { createPerformanceHeaders } from '../../src/lib/search/search-utils';
+import { processSearchError, createErrorResponse } from '../../src/lib/search/error-handler';
+import { SearchResponse } from '../../src/types/search';
+import { ValidatedSearchRequest } from '../../src/lib/search/search-validation';
 import {
   executeSearchWorkflow,
   createHealthResponse,
   createUnhealthyResponse
-} from '../../../src/lib/search/search-orchestrator';
+} from '../../src/lib/search/search-orchestrator';
 
 /**
  * Extracts search parameters from validated request
