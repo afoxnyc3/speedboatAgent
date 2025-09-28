@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **CI/CD Pipeline Issues**: Resolved multiple CI/CD pipeline failures
+  - Created missing `/api/health` endpoint for health checks
+  - Fixed Playwright configuration to prevent port conflicts with `reuseExistingServer: true`
+  - Added `uptime` field to health response for E2E test compatibility
+  - Main CI pipeline (lint, typecheck, build) now passing consistently
+
 ### Added
 - **PR #68-72 Merged**: Major production improvements integrated
   - PR #68: Comprehensive E2E tests with Playwright
