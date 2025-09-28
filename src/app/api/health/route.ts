@@ -33,6 +33,7 @@ export async function GET() {
     return NextResponse.json({
       status: allHealthy ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
       checks,
       environment: process.env.NODE_ENV || 'development',
     }, {
@@ -45,6 +46,7 @@ export async function GET() {
     return NextResponse.json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
       checks,
       error: error instanceof Error ? error.message : 'Unknown error',
     }, {
