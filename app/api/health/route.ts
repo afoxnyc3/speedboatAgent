@@ -67,10 +67,11 @@ async function checkRedisHealth(): Promise<ComponentHealth> {
   try {
     const cacheManager = getCacheManager();
 
+    // If Redis is not available, return degraded (not unhealthy) to allow app to start
     if (!cacheManager.isAvailable()) {
       return {
-        status: 'unhealthy',
-        error: 'Redis client not available'
+        status: 'degraded',
+        error: 'Redis client not available - using in-memory cache'
       };
     }
 
@@ -78,8 +79,8 @@ async function checkRedisHealth(): Promise<ComponentHealth> {
 
     if (!healthCheck.healthy) {
       return {
-        status: 'unhealthy',
-        error: healthCheck.error || 'Redis ping failed'
+        status: 'degraded',
+        error: healthCheck.error || 'Redis ping failed - using in-memory cache'
       };
     }
 
@@ -93,9 +94,10 @@ async function checkRedisHealth(): Promise<ComponentHealth> {
       }
     };
   } catch (error) {
+    // Return degraded instead of unhealthy for Redis issues
     return {
-      status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Unknown Redis error'
+      status: 'degraded',
+      error: error instanceof Error ? error.message : 'Redis unavailable - using in-memory cache'
     };
   }
 }
@@ -110,8 +112,8 @@ async function checkWeaviateHealth(): Promise<ComponentHealth> {
 
     if (!weaviateHost) {
       return {
-        status: 'unhealthy',
-        error: 'Weaviate host not configured'
+        status: 'degraded',
+        error: 'Weaviate host not configured - search features limited'
       };
     }
 
@@ -141,8 +143,8 @@ async function checkOpenAIHealth(): Promise<ComponentHealth> {
 
     if (!apiKey) {
       return {
-        status: 'unhealthy',
-        error: 'OpenAI API key not configured'
+        status: 'degraded',
+        error: 'OpenAI API key not configured - AI features limited'
       };
     }
 
@@ -171,8 +173,8 @@ async function checkMemoryHealth(): Promise<ComponentHealth> {
 
     if (!apiKey) {
       return {
-        status: 'unhealthy',
-        error: 'Mem0 API key not configured'
+        status: 'degraded',
+        error: 'Mem0 API key not configured - memory features disabled'
       };
     }
 

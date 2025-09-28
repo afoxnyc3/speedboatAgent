@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
 const sentryWebpackPluginOptions = {
   // Additional config options for the Sentry Webpack plugin
   silent: true, // Suppresses source map uploading logs
+  org: 'speedboat-agent',
+  project: 'rag-agent',
 
   // Only upload source maps in production
   dryRun: process.env.NODE_ENV !== 'production',
