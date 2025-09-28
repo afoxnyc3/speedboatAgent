@@ -30,11 +30,13 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/types/*": ["./src/types/*"],
       "@/types": ["./src/types"],
       "@/lib": ["./src/lib"],
-      "@/components": ["./components"],
-      "@/app": ["./app"]
+      "@/components/*": ["./components/*"],
+      "@/app/*": ["./app/*"],
+      "@/*": ["./*"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,

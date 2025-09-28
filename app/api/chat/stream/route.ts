@@ -5,20 +5,20 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getMem0Client } from '../../../../src/lib/memory/mem0-client';
-import { getSearchOrchestrator } from '../../../../src/lib/search/cached-search-orchestrator';
+import { getMem0Client } from '@/lib/memory/mem0-client';
+import { getSearchOrchestrator } from '@/lib/search/cached-search-orchestrator';
 import type {
   ConversationId,
   MessageId,
-} from '../../../../types/chat';
-import type { Document } from '../../../../types/search';
-import type { ConversationMemoryContext } from '../../../../types/memory';
+} from '@/types/chat';
+import type { Document } from '@/types/search';
+import type { ConversationMemoryContext } from '@/types/memory';
 import type {
   MemoryMessage,
   SessionId,
   RunId,
   UserId,
-} from '../../../../types/memory';
+} from '@/types/memory';
 
 // Request validation schema
 const StreamChatRequestSchema = z.object({

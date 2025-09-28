@@ -4,11 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCacheManager } from '../../../../src/lib/cache/redis-cache';
-import { DashboardMetrics } from '../../../../src/lib/monitoring/dashboard/types';
-import { PerformanceTracker } from '../../../../src/lib/monitoring/dashboard/performance-tracker';
-import { checkComponentHealth, generateAlerts } from '../../../../src/lib/monitoring/dashboard/utils';
-import { calculateSystemStatus, calculateCacheHealthStatus } from '../../../../src/lib/monitoring/dashboard/status-calculator';
+import { getCacheManager } from '@/lib/cache/redis-cache';
+import { DashboardMetrics } from '@/lib/monitoring/dashboard/types';
+import { PerformanceTracker } from '@/lib/monitoring/dashboard/performance-tracker';
+import { checkComponentHealth, generateAlerts } from '@/lib/monitoring/dashboard/utils';
+import { calculateSystemStatus, calculateCacheHealthStatus } from '@/lib/monitoring/dashboard/status-calculator';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();

@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getWebCrawler } from '../../../src/lib/ingestion/web-crawler';
-import { createWeaviateClient } from '../../../src/lib/weaviate/client';
+import { getWebCrawler } from '@/lib/ingestion/web-crawler';
+import { createWeaviateClient } from '@/lib/weaviate/client';
 
 // API request validation
 const APIWebCrawlRequestSchema = z.object({
