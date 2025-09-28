@@ -241,6 +241,8 @@ const routeQuery = async (query: string) => {
 - `fix/<issue-id>-<description>`
 - `chore/<description>`
 
+**IMPORTANT**: All new work MUST be done on a new branch, never directly on main. This ensures proper code review, CI/CD validation, and clean history.
+
 ### Commits
 ```
 <type>: #<issue-id> <imperative-summary>
@@ -290,12 +292,13 @@ The `/work` command provides a streamlined development workflow that automatical
 - **P3 (Low)**: Nice-to-have features, documentation
 
 #### Complete Workflow Cycle
-1. **Auto-Selection**: Chooses highest priority pending issue from roadmap
-2. **Implementation**: TDD cycle with atomic commits
-3. **Validation**: Tests, CI, requirements verification
-4. **Documentation**: Auto-update roadmap, progress tracking
-5. **GitHub Issue Closure**: Automatic via PR merge or manual with implementation summary
-6. **Cleanup**: PR merge, branch cleanup, ready for next issue
+1. **Branch Creation**: Create new branch using pattern `fix/<issue-id>-<description>` or `feature/<issue-id>-<description>`
+2. **Auto-Selection**: Chooses highest priority pending issue from roadmap
+3. **Implementation**: TDD cycle with atomic commits
+4. **Validation**: Tests, CI, requirements verification
+5. **Documentation**: Auto-update roadmap, progress tracking
+6. **GitHub Issue Closure**: Automatic via PR merge or manual with implementation summary
+7. **Cleanup**: PR merge, branch cleanup, ready for next issue
 
 #### Benefits
 - **Zero Decision Fatigue**: Just run `/work` to start
