@@ -19,8 +19,7 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
-      # TODO: Re-enable after resolving TypeScript strict mode issues
-      # - run: npm run typecheck
+      - run: npm run typecheck
 
   test:
     runs-on: ubuntu-latest
