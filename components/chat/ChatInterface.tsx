@@ -175,10 +175,10 @@ export default function ChatInterface({
                   break;
 
                 case 'complete':
-                  // Clear optimistic messages and let parent handle the final message
+                  // Clear optimistic messages and add the final message to the conversation
                   setOptimisticMessages([]);
                   setStreamingState({ isStreaming: false });
-                  onSendMessage(messageText); // Trigger parent to update with final state
+                  // The streaming is complete - don't resend the message!
                   break;
 
                 case 'error':
@@ -194,8 +194,8 @@ export default function ChatInterface({
       console.error('Streaming error:', error);
       setStreamingState({ isStreaming: false });
       setOptimisticMessages([]);
-      // Fallback to non-streaming
-      onSendMessage(messageText);
+      // Fallback to non-streaming - but don't retrigger, let parent handle
+      console.warn('Streaming failed, parent component should handle with non-streaming API');
     }
   }, [onSendMessage, enableStreaming]);
 
