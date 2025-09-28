@@ -38,9 +38,11 @@ export async function GET(request: NextRequest) {
         break;
 
       case 'validation':
-        // Test validation error
-        const invalidData = null as any;
-        invalidData.property.nested.value = 'test';
+        // Test validation error - trigger TypeError
+        const invalidData: any = null;
+        // This will throw a TypeError: Cannot read property of null
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        invalidData.property;
         break;
 
       case 'database':

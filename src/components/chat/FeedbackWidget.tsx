@@ -61,7 +61,7 @@ export function FeedbackWidget({
       // Submit positive feedback immediately
       await submitFeedback(type);
     }
-  }, [feedbackGiven, isSubmitting]);
+  }, [feedbackGiven, isSubmitting, submitFeedback]);
 
   const submitFeedback = useCallback(async (
     type: FeedbackType,

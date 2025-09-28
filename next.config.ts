@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // No experimental features needed - instrumentation.js is available by default
+  // Sentry will use instrumentation.js automatically in Next.js 15+
 };
 
 // Sentry configuration options
