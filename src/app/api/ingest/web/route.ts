@@ -5,9 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getWebCrawler, WebCrawlRequestSchema } from '../../../../src/lib/ingestion/web-crawler';
-import { deduplicateDocuments } from '../../../../src/lib/ingestion/deduplication';
-import { createWeaviateClient } from '../../../../src/lib/weaviate/client';
+import { getWebCrawler } from '../../../lib/ingestion/web-crawler';
+import { createWeaviateClient } from '../../../lib/weaviate/client';
 
 // API request validation
 const APIWebCrawlRequestSchema = z.object({
@@ -30,7 +29,7 @@ const APIWebCrawlRequestSchema = z.object({
   }).optional(),
 }).strict();
 
-type APIWebCrawlRequest = z.infer<typeof APIWebCrawlRequestSchema>;
+// type APIWebCrawlRequest = z.infer<typeof APIWebCrawlRequestSchema>;
 
 // API response interfaces
 interface WebCrawlAPIResponse {
@@ -199,15 +198,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<WebCrawlA
       forceRecrawl: validatedRequest.config?.forceRecrawl || false,
     });
 
-    // Collect all documents for deduplication
-    let allDocuments = crawlResults
-      .filter(result => result.success)
-      .flatMap(result => result.pages.map(page => {
-        // This would be converted to Document in the crawler
-        // For now, we'll trust the crawler handles this conversion
-        return null; // Documents are already indexed by crawler
-      }))
-      .filter(Boolean);
+    // Documents are already indexed by crawler, no need for deduplication here
 
     // Build response data
     const results = crawlResults.map(result => ({
@@ -319,7 +310,7 @@ export async function OPTIONS(): Promise<NextResponse> {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Allow': 'GET, POST, OPTIONS',
+      Allow: 'GET, POST, OPTIONS',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
