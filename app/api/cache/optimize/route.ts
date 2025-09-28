@@ -91,7 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Invalid request format', details: error.errors },
+        { success: false, error: 'Invalid request format', details: error.issues },
         { status: 400 }
       );
     }

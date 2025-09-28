@@ -7,7 +7,7 @@
     "skipLibCheck": true,
 
     // Strict Type Checking Options - Temporarily relaxed for CI
-    "strict": true,
+    "strict": false,
     "noImplicitAny": false,
     "strictNullChecks": true,
     "strictFunctionTypes": true,

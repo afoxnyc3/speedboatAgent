@@ -139,7 +139,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid warming request',
-          details: error.errors
+          details: error.issues
         }
       }, { status: 400 });
     }
