@@ -5,6 +5,8 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
 import { getMem0Client } from '@/lib/memory/mem0-client';
 import { getSearchOrchestrator } from '@/lib/search/cached-search-orchestrator';
 import type {
@@ -411,53 +413,92 @@ async function generateStreamingResponse(params: {
   sources: Document[];
   suggestions: string[];
 }> {
-  const { query, searchResults, onToken, onStatusChange } = params;
-  // memoryContext available but not used in simulation - would be used in production OpenAI integration
+  const { query, searchResults, memoryContext, onToken, onStatusChange } = params;
 
   // Build context from search results
+  const searchContext = searchResults
+    .map((doc, index) => `[${index + 1}] ${doc.content.slice(0, 500)}...`)
+    .join('\n\n');
 
-  // Simulate streaming response with realistic timing
-  onStatusChange('generating', 'Generating response...');
+  // Build system prompt
+  const systemPrompt = buildSystemPrompt(memoryContext);
 
-  // Simulate progressive response building
-  const fullResponse = `I understand your question about "${query}". Based on the provided context and our conversation history, here's a comprehensive answer with relevant citations.
+  const userPrompt = `Based on the following context and our conversation history:
 
-This is a detailed response that would normally come from OpenAI's API with proper streaming. The response includes information from the knowledge base and maintains conversation context through memory integration.
+SEARCH CONTEXT:
+${searchContext}
 
-Key points covered:
-- Context from search results
-- Memory-enhanced understanding
-- Proper source citations
-- Conversational continuity`;
+MEMORY CONTEXT:
+${JSON.stringify(memoryContext, null, 2)}
 
-  let accumulatedContent = '';
+QUESTION: ${query}
 
-  // Stream tokens with realistic delays
-  const words = fullResponse.split(' ');
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const token = i === 0 ? word : ` ${word}`;
-    accumulatedContent += token;
+Please provide a comprehensive answer with proper citations.`;
 
-    onToken(accumulatedContent, token);
+  try {
+    onStatusChange('generating', 'Generating response...');
 
-    // Variable delay to simulate natural response timing
-    const delay = Math.random() * 50 + 20; // 20-70ms delay
-    await new Promise(resolve => setTimeout(resolve, delay));
+    let accumulatedContent = '';
+
+    const result = await streamText({
+      model: openai('gpt-4-turbo'),
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.7,
+      maxTokens: 2000,
+    });
+
+    for await (const delta of result.textStream) {
+      accumulatedContent += delta;
+      onToken(accumulatedContent, delta);
+    }
+
+    onStatusChange('formatting', 'Formatting citations...');
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    return {
+      content: accumulatedContent,
+      sources: buildCitationSources(searchResults),
+      suggestions: [
+        'Would you like more details on this topic?',
+        'Can I help clarify any specific aspect?',
+        'Are there related questions I can answer?',
+      ],
+    };
+  } catch (error) {
+    console.error('OpenAI streaming error:', error);
+
+    // Fallback to non-streaming response
+    const fallbackContent = `I'm experiencing technical difficulties with streaming. Based on your question about "${query}", I can provide a response using the retrieved context from the knowledge base. Please try again, or contact support if the issue persists.`;
+
+    onToken(fallbackContent, fallbackContent);
+
+    return {
+      content: fallbackContent,
+      sources: buildCitationSources(searchResults),
+      suggestions: [
+        'Try asking your question again',
+        'Check if the issue persists',
+        'Contact support if the problem continues',
+      ],
+    };
   }
+}
 
-  onStatusChange('formatting', 'Formatting citations...');
-  await new Promise(resolve => setTimeout(resolve, 200));
+// System prompt with memory awareness
+function buildSystemPrompt(memoryContext: ConversationMemoryContext): string {
+  const stage = memoryContext.conversationStage;
+  const preferences = Object.entries(memoryContext.userPreferences)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(', ');
 
-  return {
-    content: accumulatedContent,
-    sources: buildCitationSources(searchResults),
-    suggestions: [
-      'Would you like more details on this topic?',
-      'Can I help clarify any specific aspect?',
-      'Are there related questions I can answer?',
-    ],
-  };
+  return `You are a helpful AI assistant with access to conversation memory and documentation.
+
+Conversation Stage: ${stage}
+User Preferences: ${preferences || 'None specified'}
+Entities Mentioned: ${memoryContext.entityMentions.join(', ')}
+
+Provide accurate, contextual responses with proper source citations. Be conversational but precise.`;
 }
 
 // Citation source building

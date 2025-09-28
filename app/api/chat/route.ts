@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { openai } from '@ai-sdk/openai';
+import { generateText } from 'ai';
 import { getMem0Client } from '@/lib/memory/mem0-client';
 import { getSearchOrchestrator } from '@/lib/search/cached-search-orchestrator';
 import type {
@@ -295,7 +297,7 @@ Please provide a comprehensive answer with proper citations.`;
 
   // Run LLM call and citation building in parallel
   const [response, sources] = await Promise.all([
-    simulateOpenAIResponse(systemPrompt, userPrompt),
+    generateOpenAIResponse(systemPrompt, userPrompt),
     Promise.resolve(buildCitationSources(searchResults)),
   ]);
 
@@ -347,28 +349,41 @@ function buildCitationSources(searchResults: Document[]): Array<{ title: string;
   }));
 }
 
-// Optimized OpenAI response with timeout and caching
-async function simulateOpenAIResponse(systemPrompt: string, userPrompt: string): Promise<{
+// Real OpenAI response generation with context
+async function generateOpenAIResponse(systemPrompt: string, userPrompt: string): Promise<{
   content: string;
   suggestions: string[];
 }> {
-  // TODO: Replace with actual OpenAI API call
-  // For now, simulate a fast response to test other bottlenecks
+  try {
+    const result = await generateText({
+      model: openai('gpt-4-turbo'),
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.7,
+      maxTokens: 2000,
+    });
 
-  // Extract question for better mock response
-  const question = userPrompt.split('QUESTION: ')[1]?.split('\n')[0] || 'your question';
+    return {
+      content: result.text,
+      suggestions: [
+        'Would you like more details on this topic?',
+        'Can I help clarify any specific aspect?',
+        'Are there related questions I can answer?',
+      ],
+    };
+  } catch (error) {
+    console.error('OpenAI API error:', error);
 
-  // Simulate minimal processing time
-  await new Promise(resolve => setTimeout(resolve, 100));
-
-  return {
-    content: `Based on the provided context, here's a comprehensive answer about ${question}. [This would contain the actual LLM response with citations from the search results.]`,
-    suggestions: [
-      'Would you like more details?',
-      'Any specific aspect to explore?',
-      'Related questions?',
-    ],
-  };
+    // Fallback response with error handling
+    return {
+      content: "I'm experiencing technical difficulties connecting to the AI service. Please try again in a moment.",
+      suggestions: [
+        'Try asking your question again',
+        'Check if the issue persists',
+        'Contact support if the problem continues',
+      ],
+    };
+  }
 }
 
 // Error handling
