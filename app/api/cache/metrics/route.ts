@@ -25,15 +25,16 @@ interface OverallMetrics {
 /**
  * Build overall performance metrics
  */
-function buildOverallMetrics(cacheHealth: CacheHealth, systemHealth: { cache: { healthy: boolean; latency: number } }, cacheManager: { isAvailable(): boolean }) {
+function buildOverallMetrics(cacheHealth: CacheHealth, systemHealth: { cache: { healthy: boolean; latency: number } }, cacheManager: { isAvailable(): boolean }, cacheSize: number = 0): OverallMetrics {
   return {
     hitRate: cacheHealth.overall.hitRate,
     totalRequests: cacheHealth.overall.totalRequests,
-    cacheEnabled: cacheManager.isAvailable(),
-    healthStatus: systemHealth.cache.healthy ? 'healthy' : 'unhealthy',
+    cacheSize,
+    cacheEnabled: cacheManager.isAvailable() ? 1 : 0,
+    healthStatus: systemHealth.cache.healthy ? 1 : 0,
     latency: systemHealth.cache.latency,
     targetHitRate: 0.7,
-    performanceGrade: getPerformanceGrade(cacheHealth.overall.hitRate)
+    performanceGrade: getPerformanceGrade(cacheHealth.overall.hitRate).charCodeAt(0)
   };
 }
 
@@ -84,7 +85,7 @@ function buildAnalysis(cacheHealth: CacheHealth, overallMetrics: OverallMetrics)
     recommendations: cacheHealth.recommendations,
     issues: identifyPerformanceIssues(cacheHealth),
     optimizations: suggestOptimizations(cacheHealth, overallMetrics),
-    costSavings: estimateCostSavings(cacheHealth.overall)
+    costSavings: estimateCostSavings(overallMetrics)
   };
 }
 
@@ -116,7 +117,8 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
     const cacheSize = await cacheManager.getCacheSize();
 
     // Build metrics components
-    const overallMetrics = buildOverallMetrics(cacheHealth, systemHealth, cacheManager);
+    const totalCacheSize = Object.values(cacheSize).reduce((acc, val) => acc + (val || 0), 0);
+    const overallMetrics = buildOverallMetrics(cacheHealth, { cache: { healthy: systemHealth.cache.healthy, latency: systemHealth.cache.latency || 0 } }, cacheManager, totalCacheSize);
     const detailedMetrics = buildDetailedMetrics(cacheHealth, embeddingStats, cacheSize);
     const analysis = buildAnalysis(cacheHealth, overallMetrics);
     const system = buildSystemInfo(systemHealth);
@@ -124,7 +126,16 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
     const response = {
       success: true,
       timestamp: new Date(),
-      overall: overallMetrics,
+      overall: {
+        hitRate: overallMetrics.hitRate,
+        totalRequests: overallMetrics.totalRequests,
+        cacheSize: overallMetrics.cacheSize,
+        cacheEnabled: overallMetrics.cacheEnabled === 1,
+        healthStatus: overallMetrics.healthStatus === 1 ? 'healthy' : 'unhealthy',
+        latency: overallMetrics.latency,
+        targetHitRate: overallMetrics.targetHitRate,
+        performanceGrade: String.fromCharCode(overallMetrics.performanceGrade)
+      },
       detailed: detailedMetrics,
       analysis,
       system
@@ -134,7 +145,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'X-Cache-Hit-Rate': overallMetrics.hitRate.toString(),
-        'X-Cache-Enabled': overallMetrics.cacheEnabled.toString()
+        'X-Cache-Enabled': (overallMetrics.cacheEnabled === 1).toString()
       }
     });
 

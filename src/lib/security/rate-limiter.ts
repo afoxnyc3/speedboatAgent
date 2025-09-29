@@ -70,7 +70,7 @@ export class RateLimiter {
       const pipeline = this.redis.pipeline();
 
       // Remove expired entries from sorted set
-      pipeline.zremrangebyscore(key, '-inf', windowStart);
+      pipeline.zremrangebyscore(key, -Infinity, windowStart);
 
       // Count current requests in window
       pipeline.zcard(key);
@@ -87,7 +87,7 @@ export class RateLimiter {
         throw new Error('Pipeline execution failed');
       }
 
-      const currentCount = (results[1].result as number) || 0;
+      const currentCount = (results[1] && typeof (results[1] as any).result === 'number' ? (results[1] as any).result : 0) || 0;
       const remaining = Math.max(0, this.config.maxRequests - currentCount - 1);
       const resetTime = now + this.config.windowMs;
 

@@ -73,8 +73,9 @@ export class PostgreSQLMemoryClient implements MemoryClient {
           const memoryItem: MemoryItem = {
             id: id as MemoryId,
             content: message.content,
-            role: message.role,
-            timestamp,
+            scope: 'session',
+            createdAt: timestamp,
+            updatedAt: timestamp,
             metadata: {
               sessionId: options.sessionId,
               conversationId: options.conversationId,
@@ -153,7 +154,7 @@ export class PostgreSQLMemoryClient implements MemoryClient {
       const sortedMemories = candidateIds
         .map(id => memoryStore.get(id)!)
         .filter(Boolean)
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
         .slice(0, limit);
 
       // Apply relevance threshold if specified
@@ -199,11 +200,13 @@ export class PostgreSQLMemoryClient implements MemoryClient {
       }
 
       // Simulate UPDATE with RETURNING
-      memory.content = content;
-      if (metadata) {
-        memory.metadata = { ...memory.metadata, ...metadata };
-      }
-      memory.timestamp = new Date();
+      const updatedMemory: MemoryItem = {
+        ...memory,
+        content,
+        metadata: metadata ? { ...memory.metadata, ...metadata } : memory.metadata,
+        updatedAt: new Date(),
+      };
+      memoryStore.set(memoryId, updatedMemory);
 
       return {
         success: true,
@@ -295,7 +298,7 @@ export class PostgreSQLMemoryClient implements MemoryClient {
           shouldDelete = true;
         }
 
-        if (options.olderThan && memory.timestamp < options.olderThan) {
+        if (options.olderThan && memory.updatedAt < options.olderThan) {
           shouldDelete = true;
         }
 

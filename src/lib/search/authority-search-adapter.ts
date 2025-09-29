@@ -9,7 +9,8 @@ import {
   calculateEnhancedWeight,
   generateEnhancedSourceWeights,
   applyAuthorityWeighting,
-  type WeightingContext
+  type WeightingContext,
+  type EnhancedSourceWeights
 } from './enhanced-authority-weighting';
 import type { Document } from '../../types/search';
 import type { SourceAuthority } from '../../types/source-attribution';
@@ -87,9 +88,9 @@ export async function performAuthoritySearch(
     classification: {
       type: classification.type,
       confidence: classification.confidence,
-      weights: classification.weights
+      weights: classification.weights as unknown as Record<string, number>
     },
-    authorityWeights: params.useEnhancedWeighting ? sourceWeights.authority : undefined
+    authorityWeights: params.useEnhancedWeighting ? (sourceWeights as EnhancedSourceWeights).authority : undefined
   };
 }
 

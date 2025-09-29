@@ -4,16 +4,34 @@
  */
 
 import { z } from 'zod';
-import type {
-  Document,
-  SearchRequest,
-  Citation,
-  DocumentId,
-  MessageId,
-  ConversationId,
-  QueryId,
-  RequestId,
-} from './index';
+
+// Forward declarations to avoid circular dependencies
+interface Document {
+  readonly id: string;
+  readonly content: string;
+  readonly filepath: string;
+  readonly language: string;
+  readonly source: string;
+  readonly score: number;
+  readonly metadata: Record<string, unknown>;
+}
+
+interface SearchRequest {
+  readonly query: string;
+  readonly limit?: number;
+  readonly offset?: number;
+  readonly includeContent?: boolean;
+  readonly includeEmbedding?: boolean;
+}
+
+interface Citation {
+  readonly id: string;
+  readonly documentId: string;
+  readonly excerpt: string;
+  readonly relevanceScore: number;
+  readonly sourcePath: string;
+  readonly timestamp: Date;
+}
 
 // Type transformation utilities
 export type DeepReadonly<T> = {
@@ -173,9 +191,9 @@ export const validateSchema = <T>(
         expected: 'expected' in err ? String(err.expected) : undefined,
         received: 'received' in err ? err.received : undefined,
       }));
-      return createValidationResult(false, undefined, errors);
+      return createValidationResult<T>(false, undefined, errors);
     }
-    return createValidationResult(false, undefined, [
+    return createValidationResult<T>(false, undefined, [
       {
         path,
         message: error instanceof Error ? error.message : 'Unknown validation error',

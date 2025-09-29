@@ -10,6 +10,14 @@ import ChatInterface from "../../../components/chat/ChatInterface";
 import type { ChatMessage } from "../../../components/chat/types";
 import type { ConversationId, SessionId } from "@/types/memory";
 
+interface MemoryContext {
+  userId?: string;
+  conversationId: string;
+  sessionId: string;
+  messageCount: number;
+  lastInteraction: Date;
+}
+
 interface MemoryEnhancedChatProps {
   userId?: string;
   conversationId?: string;
@@ -117,7 +125,7 @@ type MemoryContext = {
           setStreamingMessage(newMessage);
           streamingMessage = newMessage;
         }
-        streamingMessage.content = event.data.token;
+        streamingMessage.content = event.data.token || '';
         setMessages((prev) => {
           const filtered = prev.filter(m => m.id !== streamingMessage?.id);
           return [...filtered, streamingMessage!];
@@ -139,8 +147,8 @@ type MemoryContext = {
         }
         setSuggestions(event.data.suggestions || []);
 
-        if (event.data.message.conversationId !== conversationId) {
-          setConversationId(event.data.message.conversationId as ConversationId);
+        if (event.data.message?.conversationId !== conversationId) {
+          setConversationId(event.data.message?.conversationId as ConversationId);
         }
 
         if (enableMemory) {

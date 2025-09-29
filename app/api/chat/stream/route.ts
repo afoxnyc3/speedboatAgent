@@ -400,7 +400,7 @@ export async function POST(request: NextRequest): Promise<Response> {
             type: 'complete',
             data: {
               message: chatMessage,
-              sources: response.sources,
+              sources: response.sources as any,
               suggestions: response.suggestions
             }
           });

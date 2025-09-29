@@ -28,6 +28,7 @@ import type {
   SessionId,
   MemoryItem,
 } from '../../types/memory';
+import { toChatRole } from '../../types/memory';
 
 
 export class RedisMemoryClient implements MemoryClient {
@@ -91,21 +92,21 @@ export class RedisMemoryClient implements MemoryClient {
       const pipeline = this.redis.pipeline();
 
       for (const message of messages) {
-        const entry = createMemoryEntry(memoryId, message, options, timestamp);
+        const entry = createMemoryEntry(memoryId, { content: message.content, role: toChatRole(message.role) }, options, timestamp);
         const key = this.generateKey('message', entry.id);
         pipeline.setex(key, this.ttl, JSON.stringify(entry));
 
         // Add to conversation index
         if (options.conversationId) {
           const indexKey = this.generateKey('conversation', options.conversationId as string);
-          pipeline.zadd(indexKey, timestamp, entry.id);
+          (pipeline as any).zadd(indexKey, timestamp, entry.id);
           pipeline.expire(indexKey, this.ttl);
         }
 
         // Add to session index
         if (options.sessionId) {
           const indexKey = this.generateKey('session', options.sessionId as string);
-          pipeline.zadd(indexKey, timestamp, entry.id);
+          (pipeline as any).zadd(indexKey, timestamp, entry.id);
           pipeline.expire(indexKey, this.ttl);
         }
       }
@@ -170,8 +171,8 @@ export class RedisMemoryClient implements MemoryClient {
         const results = await pipeline.exec();
 
         for (const result of results) {
-          if (result[1]) {
-            const entry = JSON.parse(result[1] as string) as RedisMemoryEntry;
+          if (Array.isArray(result) && result[1] && typeof result[1] === 'string') {
+            const entry = JSON.parse(result[1]) as RedisMemoryEntry;
 
             // Apply relevance filtering if specified
             if (!options.relevanceThreshold || Math.random() > options.relevanceThreshold) {

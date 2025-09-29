@@ -43,26 +43,6 @@ export function FeedbackWidget({
   const [category, setCategory] = useState<FeedbackCategory>('other');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleFeedback = useCallback(async (type: FeedbackType) => {
-    if (isSubmitting) return;
-
-    if (type === feedbackGiven) {
-      // Toggle off if same button clicked
-      setFeedbackGiven(null);
-      setShowComment(false);
-      return;
-    }
-
-    setFeedbackGiven(type);
-
-    if (type === 'thumbs_down') {
-      setShowComment(true);
-    } else {
-      // Submit positive feedback immediately
-      await submitFeedback(type);
-    }
-  }, [feedbackGiven, isSubmitting, submitFeedback]);
-
   const submitFeedback = useCallback(async (
     type: FeedbackType,
     includeComment = false
@@ -102,6 +82,26 @@ export function FeedbackWidget({
       setIsSubmitting(false);
     }
   }, [messageId, conversationId, query, response, sources, comment, category, onFeedbackSubmit]);
+
+  const handleFeedback = useCallback(async (type: FeedbackType) => {
+    if (isSubmitting) return;
+
+    if (type === feedbackGiven) {
+      // Toggle off if same button clicked
+      setFeedbackGiven(null);
+      setShowComment(false);
+      return;
+    }
+
+    setFeedbackGiven(type);
+
+    if (type === 'thumbs_down') {
+      setShowComment(true);
+    } else {
+      // Submit positive feedback immediately
+      await submitFeedback(type);
+    }
+  }, [feedbackGiven, isSubmitting, submitFeedback]);
 
   const handleCommentSubmit = useCallback(async () => {
     if (!feedbackGiven || !comment.trim()) return;
