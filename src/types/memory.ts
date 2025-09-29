@@ -5,14 +5,18 @@
 
 import { z } from 'zod';
 import type { ConversationId, MessageId, MessageRole } from './chat';
+import type { SessionId } from './search';
+import { SessionIdSchema, createSessionId } from './search';
 
 // Re-export from chat types
 export type { ConversationId, MessageId, MessageRole };
+// Re-export from search types
+export type { SessionId };
+export { SessionIdSchema, createSessionId };
 
 // Branded types for memory system
 export type MemoryId = string & { readonly __brand: 'MemoryId' };
 export type UserId = string & { readonly __brand: 'UserId' };
-export type SessionId = string & { readonly __brand: 'SessionId' };
 export type RunId = string & { readonly __brand: 'RunId' };
 export type AgentId = string & { readonly __brand: 'AgentId' };
 
@@ -172,7 +176,6 @@ export type MemoryErrorCode =
 // Zod schemas for validation
 export const MemoryIdSchema = z.string().brand('MemoryId');
 export const UserIdSchema = z.string().brand('UserId');
-export const SessionIdSchema = z.string().brand('SessionId');
 export const RunIdSchema = z.string().brand('RunId');
 export const AgentIdSchema = z.string().brand('AgentId');
 
@@ -200,7 +203,6 @@ export const MemorySearchOptionsSchema = z.object({
 // Type utility functions
 export const createMemoryId = (id: string): MemoryId => id as MemoryId;
 export const createUserId = (id: string): UserId => id as UserId;
-export const createSessionId = (id: string): SessionId => id as SessionId;
 export const createRunId = (id: string): RunId => id as RunId;
 export const createAgentId = (id: string): AgentId => id as AgentId;
 

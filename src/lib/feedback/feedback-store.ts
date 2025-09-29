@@ -9,6 +9,7 @@ import {
   type FeedbackAnalysisOptions,
   type FeedbackId,
   type FeedbackIssue,
+  type FeedbackCategory,
   FEEDBACK_CONSTANTS,
 } from '@/types/feedback';
 

@@ -91,7 +91,7 @@ export class RedisMemoryClient implements MemoryClient {
       const pipeline = this.redis.pipeline();
 
       for (const message of messages) {
-        const entry = createMemoryEntry(memoryId, message, options, timestamp);
+        const entry = createMemoryEntry(memoryId, { content: message.content, role: message.role }, options, timestamp);
         const key = this.generateKey('message', entry.id);
         pipeline.setex(key, this.ttl, JSON.stringify(entry));
 

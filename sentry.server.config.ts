@@ -109,23 +109,7 @@ Sentry.init({
   // Enhanced integrations for production monitoring
   integrations: [
     // HTTP integration for API monitoring
-    Sentry.httpIntegration({
-      tracing: {
-        ignoreIncomingRequests: (url: string) => {
-          // More specific filtering for production
-          return url.includes('/health') ||
-                 url.includes('/_next/') ||
-                 url.includes('/favicon') ||
-                 url.includes('/_vercel/') ||
-                 url.includes('/api/monitoring/dashboard'); // Don't trace monitoring itself
-        },
-        ignoreOutgoingRequests: (url: string) => {
-          // Don't trace Sentry requests
-          return url.includes('sentry.io') ||
-                 url.includes('ingest.sentry.io');
-        }
-      }
-    }) as any
+    Sentry.httpIntegration()
   ],
 
   // Enhanced scope configuration
