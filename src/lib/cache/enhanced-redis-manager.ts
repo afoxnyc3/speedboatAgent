@@ -10,6 +10,8 @@ import { getCompressionManager, type CompressedEntry } from './compression-utils
 import type { QueryClassification } from '../../types/query-classification';
 import { countKeys } from './scan-utils';
 
+export type CacheType = 'embedding' | 'search' | 'classification' | 'contextual';
+
 export interface EnhancedCacheConfig {
   keyPrefix: string;
   enableCompression: boolean;
@@ -334,7 +336,7 @@ export class EnhancedRedisCacheManager {
     queries: Array<{
       key: string;
       data: any;
-      type: keyof typeof this.configs;
+      type: CacheType;
       priority?: number;
       sessionId?: string;
     }>
@@ -355,7 +357,7 @@ export class EnhancedRedisCacheManager {
     for (const query of sortedQueries) {
       try {
         // Check if already cached
-        const existing = await this.getOptimized(query.key, query.type, {
+        const existing = await this.getOptimized(query.key, query.type as string, {
           sessionId: query.sessionId
         });
 
@@ -365,7 +367,7 @@ export class EnhancedRedisCacheManager {
         }
 
         // Check if worth caching based on estimated value
-        const shouldCache = await this.shouldWarmEntry(query.key, query.type, query.priority || 5);
+        const shouldCache = await this.shouldWarmEntry(query.key, query.type as string, query.priority || 5);
         if (!shouldCache) {
           skipped++;
           continue;
@@ -375,7 +377,7 @@ export class EnhancedRedisCacheManager {
         const success = await this.setOptimized(
           query.key,
           query.data,
-          query.type,
+          query.type as string,
           {
             sessionId: query.sessionId,
             priority: query.priority
@@ -630,7 +632,7 @@ export class EnhancedRedisCacheManager {
    */
   async getDetailedMetrics(): Promise<unknown> {
     const metrics = this.getMetrics();
-    const cacheSize = await this.getCacheSize();
+    const cacheSize = await this.getCacheSizes();
     const health = await this.healthCheck();
 
     return {
@@ -662,7 +664,7 @@ export class EnhancedRedisCacheManager {
       totalMisses,
       hitRate: totalHits / (totalHits + totalMisses || 1),
       ttlPatterns: ttlStats.totalPatterns,
-      ttlHits: ttlStats.totalHits,
+      ttlHits: (ttlStats as any).totalHits || 0,
       timestamp: new Date()
     };
   }
