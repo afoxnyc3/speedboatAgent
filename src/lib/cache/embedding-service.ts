@@ -8,6 +8,47 @@ import { embed } from 'ai';
 import { getCacheManager, createCacheContext } from './redis-cache';
 import type { EmbeddingCacheEntry } from './redis-cache';
 
+function isValidEmbeddingArray(value: unknown): value is number[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every(element => typeof element === 'number' && Number.isFinite(element))
+  );
+}
+
+function extractEmbeddingFromPayload(payload: unknown): number[] {
+  if (typeof payload === 'string') {
+    try {
+      const parsed = JSON.parse(payload);
+      return extractEmbeddingFromPayload(parsed);
+    } catch (error) {
+      throw new Error('Invalid JSON response from embedding provider');
+    }
+  }
+
+  if (isValidEmbeddingArray(payload)) {
+    return payload;
+  }
+
+  if (payload && typeof payload === 'object') {
+    const payloadRecord = payload as Record<string, unknown>;
+
+    if (isValidEmbeddingArray(payloadRecord.embedding)) {
+      return payloadRecord.embedding;
+    }
+
+    if (Array.isArray(payloadRecord.data)) {
+      for (const item of payloadRecord.data) {
+        if (isValidEmbeddingArray((item as Record<string, unknown> | undefined)?.embedding)) {
+          return (item as Record<string, unknown>).embedding as number[];
+        }
+      }
+    }
+  }
+
+  throw new Error('Invalid embedding payload from provider');
+}
+
 export interface EmbeddingOptions {
   model?: string;
   dimensions?: number;
@@ -70,10 +111,23 @@ export class EmbeddingService {
 
     // Generate fresh embedding
     try {
-      const { embedding } = await embed({
+      const rawResponse = await embed({
         model: openai.embedding(model),
         value: text
       });
+
+      const embedding = extractEmbeddingFromPayload(rawResponse);
+
+      if (dimensions && embedding.length && dimensions !== embedding.length) {
+        console.warn(
+          'Embedding dimensions mismatch detected',
+          {
+            expected: dimensions,
+            received: embedding.length,
+            model
+          }
+        );
+      }
 
       // Cache the result
       if (this.cacheManager.isAvailable()) {
@@ -89,8 +143,15 @@ export class EmbeddingService {
       };
 
     } catch (error) {
-      console.error('Embedding generation error:', error);
-      throw new Error(`Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+
+      console.error('Embedding generation error:', {
+        message,
+        cause: error instanceof Error ? error : undefined,
+        model
+      });
+
+      throw new Error(`Failed to generate embedding: ${message}`);
     }
   }
 
