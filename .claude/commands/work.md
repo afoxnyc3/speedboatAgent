@@ -34,6 +34,68 @@ Start development on a specific issue from the roadmap.
 - If issue-id provided: Validate issue exists and proceed
 - Display selected issue and rationale
 
+### 0.5. Issue Verification & Impact Analysis
+**Purpose**: Prevent duplicate work and ensure changes won't break existing functionality
+
+#### GitHub Issue State Verification
+- Check current issue status: `gh issue view <issue-id>`
+- Review issue comments for recent updates or resolutions
+- Look for linked PRs that may have already addressed the issue
+- Check if issue has been labeled as resolved or duplicate
+
+#### Codebase Analysis for Existing Solutions
+- Search commit history for issue references:
+  ```bash
+  git log --grep="<issue-id>" --oneline
+  git log --grep="<issue-keywords>" --oneline --since="1 month ago"
+  ```
+- Check for hotfix branches that may have addressed the issue:
+  ```bash
+  git branch -a | grep -E "(hotfix|emergency|fix).*<issue-keywords>"
+  ```
+- Review recent changes in related files:
+  ```bash
+  git log --oneline --since="2 weeks ago" -- <related-file-paths>
+  ```
+
+#### Requirement Validation
+- Verify issue requirements are still current and valid
+- Check if dependencies or prerequisites have changed
+- Confirm issue priority hasn't been superseded by newer requirements
+- Review related issues for context changes
+
+#### Impact Analysis
+- Identify files and components that will be modified
+- Check for potential conflicts with ongoing work:
+  ```bash
+  git branch -a | grep -E "(feature|fix)" | head -10
+  ```
+- Review recent commits in target areas for potential conflicts
+- Assess backward compatibility requirements
+- Identify test coverage needs
+
+#### Verification Report
+Generate a verification report with decision points:
+```
+🔍 Issue Verification Report for #<issue-id>
+
+✅ GitHub Status: Open, no blocking PRs found
+✅ Commit History: No existing solutions detected
+✅ Hotfix Check: No emergency fixes found
+✅ Requirements: Current and valid (last updated: <date>)
+⚠️  Impact Analysis: Will modify <file-list>, low conflict risk
+
+🎯 Decision: PROCEED with implementation
+📋 Files to modify: <file-list>
+🧪 Test coverage needed: <test-areas>
+```
+
+#### Decision Points
+- **PROCEED**: No conflicts detected, safe to implement
+- **INVESTIGATE**: Potential conflicts found, need manual review
+- **SKIP**: Issue already resolved or superseded
+- **ESCALATE**: Complex conflicts require discussion
+
 ### 1. Initialize
 - Check `roadmap.md` for issue details
 - Create feature branch per `branching.md` strategy
@@ -88,6 +150,20 @@ Before starting:
 - [ ] Check current tasks in `todo.md`
 - [ ] Review recent `change-log.md`
 - [ ] Verify priorities in `roadmap.md`
+
+## Enhanced Pre-Flight Validation (Phase 0.5)
+Run these checks during Issue Verification & Impact Analysis:
+- [ ] **GitHub Issue Status**: `gh issue view <issue-id>` (verify still open/valid)
+- [ ] **Recent Comments**: Check for resolution updates or blocking information
+- [ ] **Linked PRs**: Look for existing solutions via `gh pr list --search "<issue-id>"`
+- [ ] **Commit History Search**: `git log --grep="<issue-id>" --oneline --since="1 month ago"`
+- [ ] **Hotfix Branch Check**: `git branch -a | grep -E "(hotfix|emergency)" | head -5`
+- [ ] **Recent Changes**: `git log --oneline --since="2 weeks ago" | head -10`
+- [ ] **Active Branches**: `git branch -a | grep -E "(feature|fix)" | head -10`
+- [ ] **Requirement Currency**: Confirm issue description matches current needs
+- [ ] **Dependency Check**: Verify prerequisites haven't changed
+- [ ] **Impact Assessment**: Identify files to modify and potential conflicts
+- [ ] **Test Coverage Plan**: Determine what tests will be needed
 
 ## Code Standards
 - Functions: 15 lines max
