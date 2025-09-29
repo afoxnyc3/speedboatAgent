@@ -72,6 +72,12 @@ jobs:
           echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env.local
           echo "NODE_ENV=test" >> .env.local
 
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+          npx wait-on http://localhost:3000/api/health --timeout 60000
+
       - name: Run E2E tests (All)
         if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
         run: npx playwright test --project=${{ matrix.browser }}
@@ -173,13 +179,17 @@ jobs:
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env.local
           echo "WEAVIATE_HOST=${{ secrets.WEAVIATE_HOST }}" >> .env.local
           echo "WEAVIATE_API_KEY=${{ secrets.WEAVIATE_API_KEY }}" >> .env.local
+          echo "UPSTASH_REDIS_URL=${{ secrets.UPSTASH_REDIS_URL }}" >> .env.local
+          echo "UPSTASH_REDIS_TOKEN=${{ secrets.UPSTASH_REDIS_TOKEN }}" >> .env.local
+          echo "MEM0_API_KEY=${{ secrets.MEM0_API_KEY }}" >> .env.local
+          echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env.local
           echo "NODE_ENV=test" >> .env.local
 
       - name: Start application
         run: |
           npm start &
           sleep 10
-          npx wait-on http://localhost:3000/api/health --timeout 30000
+          npx wait-on http://localhost:3000/api/health --timeout 60000
 
       - name: Critical path smoke test
         run: |
