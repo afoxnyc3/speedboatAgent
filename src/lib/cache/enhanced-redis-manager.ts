@@ -624,6 +624,48 @@ export class EnhancedRedisCacheManager {
   isAvailable(): boolean {
     return this.client !== null;
   }
+
+  /**
+   * Get detailed metrics
+   */
+  async getDetailedMetrics(): Promise<unknown> {
+    const metrics = this.getMetrics();
+    const cacheSize = await this.getCacheSize();
+    const health = await this.healthCheck();
+
+    return {
+      metrics,
+      cacheSize,
+      health,
+      timestamp: new Date()
+    };
+  }
+
+  /**
+   * Get usage statistics
+   */
+  async getUsageStatistics(): Promise<unknown> {
+    const metrics = this.getMetrics();
+    const ttlStats = this.ttlManager.getUsageStats();
+
+    let totalHits = 0;
+    let totalMisses = 0;
+
+    Object.values(metrics).forEach(m => {
+      totalHits += m.hits;
+      totalMisses += m.misses;
+    });
+
+    return {
+      totalRequests: totalHits + totalMisses,
+      totalHits,
+      totalMisses,
+      hitRate: totalHits / (totalHits + totalMisses || 1),
+      ttlPatterns: ttlStats.totalPatterns,
+      ttlHits: ttlStats.totalHits,
+      timestamp: new Date()
+    };
+  }
 }
 
 // Singleton instance

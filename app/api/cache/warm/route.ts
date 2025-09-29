@@ -289,12 +289,12 @@ function selectQueriesForWarming(cacheStats: CacheStats): string[] {
   const queries: string[] = [];
 
   // If embedding cache is low, focus on technical queries
-  if (cacheStats.byType.embedding?.hitRate < 0.6) {
+  if (cacheStats.byType.embedding && cacheStats.byType.embedding.hitRate < 0.6) {
     queries.push(...COMMON_QUERIES.technical.slice(0, 5));
   }
 
   // If search result cache is low, add business queries
-  if (cacheStats.byType.searchResult?.hitRate < 0.6) {
+  if (cacheStats.byType.searchResult && cacheStats.byType.searchResult.hitRate < 0.6) {
     queries.push(...COMMON_QUERIES.business.slice(0, 5));
   }
 

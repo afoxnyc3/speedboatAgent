@@ -112,17 +112,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { searchParams } = new URL(request.url);
     const includeRecommendations = searchParams.get('recommendations') === 'true';
 
-    interface CacheManager {
-      getDetailedMetrics(): Promise<unknown>;
-      healthCheck(): Promise<unknown>;
-      getUsageStatistics(): Promise<unknown>;
-    }
-
     const enhancedCache = getEnhancedCacheManager();
-    const cache = enhancedCache as CacheManager;
-    const metrics = await cache.getDetailedMetrics();
-    const health = await cache.healthCheck();
-    const usageStats = await cache.getUsageStatistics();
+    const metrics = await enhancedCache.getDetailedMetrics();
+    const health = await enhancedCache.healthCheck();
+    const usageStats = await enhancedCache.getUsageStatistics();
 
     const performanceScore = calculatePerformanceScore(metrics, health, usageStats);
 
