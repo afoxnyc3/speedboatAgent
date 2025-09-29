@@ -15,6 +15,9 @@ import { createWeaviateClient } from '../../weaviate/client';
 import { DEFAULT_SEARCH_CONFIG, DocumentSource, DocumentLanguage } from '../../../types/search';
 import { createDocumentHash } from '../search-utils';
 
+// Mock global fetch for Weaviate client
+global.fetch = jest.fn();
+
 // Mock dependencies
 const mockCreateWeaviateClientFn = jest.fn();
 const mockCreateDocumentHashFn = jest.fn();
@@ -82,6 +85,7 @@ describe('HybridSearch', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    (global.fetch as jest.Mock).mockClear();
   });
 
   describe('performHybridSearch', () => {
