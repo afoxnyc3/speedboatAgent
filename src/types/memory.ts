@@ -206,6 +206,16 @@ export const createUserId = (id: string): UserId => id as UserId;
 export const createRunId = (id: string): RunId => id as RunId;
 export const createAgentId = (id: string): AgentId => id as AgentId;
 
+// Additional branded type helpers for safe string conversion
+export const asSessionId = (id: string): SessionId => id as SessionId;
+export const asConversationId = (id: string): ConversationId => id as ConversationId;
+export const asUserId = (id: string): UserId => id as UserId;
+
+// Message role normalization utilities
+export type ChatRole = 'user' | 'assistant';
+export const toChatRole = (role: MessageRole): ChatRole =>
+  role === 'assistant' ? 'assistant' : 'user';
+
 // Type guards
 export const isMemoryError = (result: MemoryOperationResult): boolean => !result.success;
 

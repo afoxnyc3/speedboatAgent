@@ -88,7 +88,7 @@ export async function performAuthoritySearch(
     classification: {
       type: classification.type,
       confidence: classification.confidence,
-      weights: classification.weights
+      weights: classification.weights as unknown as Record<string, number>
     },
     authorityWeights: params.useEnhancedWeighting ? (sourceWeights as EnhancedSourceWeights).authority : undefined
   };

@@ -168,7 +168,7 @@ export class ApiKeyManager {
       return createHash('sha256').update(data).digest('hex');
     }
 
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data as BufferSource);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }

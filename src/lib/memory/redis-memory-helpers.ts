@@ -4,6 +4,7 @@
  */
 
 import type { MemoryItem, MemoryId, MemoryOperationResult, MemoryCategory, MemoryErrorCode } from '../../types/memory';
+import { asSessionId, asConversationId, asUserId } from '../../types/memory';
 
 export function extractTopics(memories: readonly MemoryItem[]): string[] {
   // Simple topic extraction - in production, use NLP
@@ -83,9 +84,9 @@ export function convertEntryToMemoryItem(entry: RedisMemoryEntry): MemoryItem {
     createdAt: timestamp,
     updatedAt: timestamp,
     metadata: {
-      sessionId: entry.sessionId,
-      conversationId: entry.conversationId,
-      userId: entry.userId,
+      sessionId: entry.sessionId ? asSessionId(entry.sessionId) : undefined,
+      conversationId: entry.conversationId ? asConversationId(entry.conversationId) : undefined,
+      userId: entry.userId ? asUserId(entry.userId) : undefined,
       ...entry.metadata,
     },
   };

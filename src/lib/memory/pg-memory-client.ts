@@ -77,7 +77,6 @@ export class PostgreSQLMemoryClient implements MemoryClient {
             createdAt: timestamp,
             updatedAt: timestamp,
             metadata: {
-              role: message.role,
               sessionId: options.sessionId,
               conversationId: options.conversationId,
               userId: options.userId,
