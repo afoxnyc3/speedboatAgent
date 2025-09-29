@@ -15,6 +15,36 @@
 - ✅ Chat response <3s (achieved 8-12s from 20s baseline, 60% improvement with parallel processing)
 - ⏳ Company content properly categorized (scripts ready, needs execution)
 
+## 🧪 Testing Strategy (Updated 2025-09-29)
+
+### Current Focus: Unit + Integration Testing
+**Rationale**: E2E tests temporarily paused to maximize development velocity while core APIs stabilize.
+
+### Testing Pyramid Implementation
+- **Unit Tests (70%)**: Core business logic, utilities, components
+- **Integration Tests (25%)**: API endpoints, service connections, database operations
+- **E2E Tests (5%)**: Critical user journeys - **PAUSED until re-enablement criteria met**
+
+### E2E Test Status
+- **Status**: Temporarily disabled in CI/CD (manual-only via workflow_dispatch)
+- **Infrastructure**: Playwright test suite preserved and ready
+- **Timeline**: 2-3 weeks pause (target re-enablement mid-October 2025)
+- **Tracking**: Issues #85 (browser optimization) and #86 (pause strategy)
+
+### Re-enablement Criteria
+E2E tests will be restored to CI when:
+- ✅ Core APIs stable (no breaking changes for 1 week)
+- ⏳ Unit test coverage > 70% for critical paths
+- ⏳ Integration tests passing consistently
+- ⏳ No P0 issues remaining
+- ⏳ Performance baselines established
+
+### Quality Assurance During E2E Pause
+- Manual smoke tests before production deployments
+- Feature flags and staged rollouts
+- Enhanced monitoring with Sentry
+- Quick rollback procedures in place
+
 ---
 
 ## Phase 0: Critical Production Fixes 🚨 ✅ COMPLETE
@@ -104,6 +134,7 @@
   - CI/CD integration with GitHub Actions
   - Production testing completed with 28/55 tests passing
   - **Completed**: PR #68, Production validation complete
+  - **Update 2025-09-29**: Temporarily paused in CI for development velocity (Issues #85, #86)
 
 ### P1 - Production Documentation
 - [x] **Issue #50**: Emergency Procedures & Documentation ✅
@@ -151,9 +182,11 @@
   - Apply single responsibility
   - **Time**: 6 hours
 
-- [ ] **Issue #56**: Missing Critical Tests
-  - Unit tests for search components
-  - 80% coverage target
+- [ ] **Issue #56**: Missing Critical Tests **[PRIORITY INCREASED]**
+  - Unit tests for search components, memory clients, cache layers
+  - Integration tests for all API endpoints
+  - **Target**: 70% unit test coverage (requirement for E2E re-enablement)
+  - **Focus**: Core business logic and API contracts
   - **Time**: 4 hours
 
 ---
@@ -171,7 +204,7 @@
 ## Completed Issues ✅ (28 total)
 
 ### Recently Completed (PR Merges)
-- ✅ **PR #68**: Comprehensive E2E Tests with Playwright
+- ✅ **PR #68**: Comprehensive E2E Tests with Playwright (now manual-only)
 - ✅ **PR #69**: Production Monitoring with Sentry Integration
 - ✅ **PR #70**: Emergency Procedures and Fallback Systems
 - ✅ **PR #71**: 50%+ Performance Improvements in Chat Responses
