@@ -85,7 +85,7 @@ function buildAnalysis(cacheHealth: CacheHealth, overallMetrics: OverallMetrics)
     recommendations: cacheHealth.recommendations,
     issues: identifyPerformanceIssues(cacheHealth),
     optimizations: suggestOptimizations(cacheHealth, overallMetrics),
-    costSavings: estimateCostSavings(cacheHealth.overall)
+    costSavings: estimateCostSavings(overallMetrics)
   };
 }
 

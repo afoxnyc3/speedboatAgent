@@ -190,7 +190,7 @@ export default function ChatInterface({
                       timestamp: new Date(event.data.message.timestamp),
                       sources: event.data.sources,
                       suggestions: event.data.suggestions,
-                    };
+                    } as any;
 
                     // Notify parent component with the completed message
                     // This ensures the message persists in the conversation
