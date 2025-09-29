@@ -34,6 +34,17 @@ jobs:
       - run: npm ci
       - run: npm run test:ci
 
+      - name: Log external service configuration
+        if: always()
+        run: |
+          for var in UPSTASH_REDIS_URL UPSTASH_REDIS_TOKEN WEAVIATE_HOST WEAVIATE_API_KEY OPENAI_API_KEY; do
+            if [ -n "${!var:-}" ]; then
+              echo "$var configured: true"
+            else
+              echo "$var configured: false"
+            fi
+          done
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:

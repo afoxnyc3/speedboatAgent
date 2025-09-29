@@ -27,6 +27,69 @@ const ClassificationResponseSchema = z.object({
 });
 
 /**
+ * Enhanced error handling with structured error responses
+ */
+export class QueryClassificationError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly details?: unknown
+  ) {
+    super(message);
+    this.name = 'QueryClassificationError';
+  }
+}
+
+function normalizeClassificationError(
+  error: unknown,
+  context: { timeout?: number } = {}
+): QueryClassificationError {
+  if (error instanceof QueryClassificationError) {
+    return error;
+  }
+
+  if (error instanceof z.ZodError) {
+    return new QueryClassificationError('Classification response validation failed', 'INVALID_RESPONSE', {
+      issues: error.issues
+    });
+  }
+
+  if (error instanceof Error && error.name === 'AbortError') {
+    return new QueryClassificationError(
+      `Classification timeout after ${context.timeout ?? 0}ms`,
+      'TIMEOUT',
+      {
+        timeout: context.timeout
+      }
+    );
+  }
+
+  if (error instanceof SyntaxError || (error instanceof Error && /Invalid JSON response/i.test(error.message))) {
+    return new QueryClassificationError(
+      'Invalid JSON response from classification provider',
+      'INVALID_RESPONSE',
+      {
+        originalError: error
+      }
+    );
+  }
+
+  if (error instanceof Error) {
+    return new QueryClassificationError(
+      `Classification provider error: ${error.message}`,
+      'PROVIDER_ERROR',
+      {
+        originalError: error
+      }
+    );
+  }
+
+  return new QueryClassificationError('Classification provider error: Unknown error', 'PROVIDER_ERROR', {
+    originalError: error
+  });
+}
+
+/**
  * System prompt for consistent query classification
  */
 const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert at classifying user queries for a RAG system containing code repositories and business documentation.
@@ -131,7 +194,7 @@ async function classifyWithGPT(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const { object } = await generateObject({
+    const result = await generateObject({
       model: openai('gpt-4o-mini'),
       system: CLASSIFICATION_SYSTEM_PROMPT,
       prompt: `Classify this query: "${query}"`,
@@ -140,13 +203,23 @@ async function classifyWithGPT(
     });
 
     clearTimeout(timeoutId);
-    return object as GPTClassificationResponse;
+    const parsed = ClassificationResponseSchema.safeParse(result?.object);
+
+    if (!parsed.success) {
+      throw new QueryClassificationError(
+        'Classification response validation failed',
+        'INVALID_RESPONSE',
+        {
+          issues: parsed.error.issues,
+          response: result?.object
+        }
+      );
+    }
+
+    return parsed.data as GPTClassificationResponse;
   } catch (error) {
     clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`Classification timeout after ${timeout}ms`);
-    }
-    throw error;
+    throw normalizeClassificationError(error, { timeout });
   }
 }
 
@@ -211,14 +284,14 @@ function createFallbackClassification(
   query: string,
   error: unknown
 ): QueryClassification {
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  const classificationError = normalizeClassificationError(error);
 
   return {
     query,
     type: 'operational',
     confidence: 0.0,
     weights: DEFAULT_WEIGHTS,
-    reasoning: `Fallback classification due to error: ${errorMessage}`,
+    reasoning: `Fallback classification due to error: ${classificationError.message}`,
     cached: false
   };
 }
@@ -251,12 +324,14 @@ export async function classifyQuery(
     return classification;
 
   } catch (error) {
+    const classificationError = normalizeClassificationError(error, { timeout });
+
     if (fallbackWeights) {
-      console.warn('Classification failed, using fallback weights:', error);
-      return createFallbackClassification(trimmedQuery, error);
+      console.warn('Classification failed, using fallback weights:', classificationError);
+      return createFallbackClassification(trimmedQuery, classificationError);
     }
 
-    throw error;
+    throw classificationError;
   }
 }
 
@@ -310,20 +385,6 @@ export function validateClassification(
 }
 
 /**
- * Enhanced error handling with structured error responses
- */
-export class QueryClassificationError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly details?: unknown
-  ) {
-    super(message);
-    this.name = 'QueryClassificationError';
-  }
-}
-
-/**
  * Classify with enhanced error handling and telemetry
  */
 export async function classifyQueryWithMetrics(
@@ -352,13 +413,15 @@ export async function classifyQueryWithMetrics(
 
     return { classification, metrics };
   } catch (error) {
+    const classificationError = normalizeClassificationError(error);
+
     // Fallback classification with metrics
     const fallbackClassification: QueryClassification = {
       query: query.trim(),
       type: 'operational',
       confidence: 0.0,
       weights: DEFAULT_WEIGHTS,
-      reasoning: `Fallback due to error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      reasoning: `Fallback due to error: ${classificationError.message}`,
       cached: false
     };
 
