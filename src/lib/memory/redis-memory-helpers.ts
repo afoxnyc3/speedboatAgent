@@ -3,7 +3,7 @@
  * Extracted from redis-memory-client.ts to reduce file size
  */
 
-import type { MemoryItem, MemoryId, MemoryOperationResult } from '../../types/memory';
+import type { MemoryItem, MemoryId, MemoryOperationResult, MemoryCategory, MemoryErrorCode } from '../../types/memory';
 
 export function extractTopics(memories: readonly MemoryItem[]): string[] {
   // Simple topic extraction - in production, use NLP
@@ -74,20 +74,21 @@ export function createMemoryEntry(
 }
 
 export function convertEntryToMemoryItem(entry: RedisMemoryEntry): MemoryItem {
+  const timestamp = new Date(entry.timestamp);
   return {
     id: entry.id as MemoryId,
     content: entry.content,
-    role: entry.role,
-    timestamp: new Date(entry.timestamp),
+    scope: 'session' as const,
+    category: (entry.category as MemoryCategory) || 'context',
+    createdAt: timestamp,
+    updatedAt: timestamp,
     metadata: {
       sessionId: entry.sessionId,
       conversationId: entry.conversationId,
       userId: entry.userId,
-      category: entry.category,
       ...entry.metadata,
     },
-    category: entry.category || 'context',
-  } as MemoryItem;
+  };
 }
 
 // Custom error codes for Redis memory operations
@@ -109,7 +110,7 @@ export function createErrorResult(
     operationType,
     timestamp: new Date(),
     error: {
-      code: code as RedisMemoryErrorCode & string,
+      code: code as MemoryErrorCode,
       message,
       timestamp: new Date(),
       retryable,

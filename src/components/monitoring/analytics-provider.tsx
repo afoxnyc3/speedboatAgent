@@ -135,7 +135,7 @@ class AnalyticsManager {
   /**
    * Core tracking function
    */
-  private track(event: string, properties?: Record<string, any>): void {
+  public track(event: string, properties?: Record<string, any>): void {
     try {
       // Vercel Analytics
       if (typeof window !== 'undefined' && window.analytics) {
@@ -191,9 +191,10 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           for (const entry of list.getEntries()) {
             if (entry.entryType === 'navigation') {
               const navEntry = entry as PerformanceNavigationTiming;
-              analytics.trackPerformance('page_load_time', navEntry.loadEventEnd - navEntry.navigationStart);
-              analytics.trackPerformance('dom_content_loaded', navEntry.domContentLoadedEventEnd - navEntry.navigationStart);
-              analytics.trackPerformance('first_paint', navEntry.loadEventStart - navEntry.navigationStart);
+              const t0 = performance.timeOrigin + navEntry.startTime;
+              analytics.trackPerformance('page_load_time', navEntry.loadEventEnd - t0);
+              analytics.trackPerformance('dom_content_loaded', navEntry.domContentLoadedEventEnd - t0);
+              analytics.trackPerformance('first_paint', navEntry.loadEventStart - t0);
             }
           }
         });
@@ -202,10 +203,13 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         // Observe Core Web Vitals
         const webVitalsObserver = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
-            analytics.trackPerformance(entry.name, entry.value, {
-              metric_type: 'core_web_vital',
-              rating: entry.value < 2500 ? 'good' : entry.value < 4000 ? 'needs_improvement' : 'poor'
-            });
+            // Type guard for entries with value property (like LayoutShift, LargestContentfulPaint)
+            if ('value' in entry && typeof entry.value === 'number') {
+              analytics.trackPerformance(entry.name, entry.value, {
+                metric_type: 'core_web_vital',
+                rating: entry.value < 2500 ? 'good' : entry.value < 4000 ? 'needs_improvement' : 'poor'
+              });
+            }
           }
         });
 

@@ -121,30 +121,35 @@ export class FeedbackFileStore implements FeedbackStore {
       const satisfactionRate = total > 0 ? thumbsUp / (thumbsUp + thumbsDown) : 0;
 
       // Identify top issues
-      const issueCategories: Record<string, FeedbackIssue> = {};
+      const issueCategoriesBuilder: Record<string, { count: number; examples: string[] }> = {};
 
       filtered
         .filter(f => f.type === 'thumbs_down' && f.category)
         .forEach(f => {
           const category = f.category!;
-          if (!issueCategories[category]) {
-            issueCategories[category] = {
-              category,
+          if (!issueCategoriesBuilder[category]) {
+            issueCategoriesBuilder[category] = {
               count: 0,
-              percentage: 0,
               examples: [],
             };
           }
-          issueCategories[category].count++;
-          if (f.comment && issueCategories[category].examples.length < 3) {
-            issueCategories[category].examples.push(f.comment);
+          issueCategoriesBuilder[category].count++;
+          if (f.comment && issueCategoriesBuilder[category].examples.length < 3) {
+            issueCategoriesBuilder[category].examples.push(f.comment);
           }
         });
 
-      // Calculate percentages
+      // Calculate percentages and create readonly FeedbackIssue objects
       const negativeTotal = thumbsDown || 1;
-      Object.values(issueCategories).forEach(issue => {
-        issue.percentage = (issue.count / negativeTotal) * 100;
+      const issueCategories: Record<string, FeedbackIssue> = {};
+
+      Object.entries(issueCategoriesBuilder).forEach(([category, builder]) => {
+        issueCategories[category] = {
+          category: category as FeedbackCategory,
+          count: builder.count,
+          percentage: (builder.count / negativeTotal) * 100,
+          examples: builder.examples as readonly string[],
+        };
       });
 
       // Sort by count and get top issues
