@@ -6,7 +6,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { createHash } from 'crypto';
 import {
-  ContentDeduplicator,
   DEFAULT_DEDUP_CONFIG,
   DeduplicationConfig,
   DeduplicationResult,
@@ -16,7 +15,8 @@ import {
   checkDocumentExists,
   getContentDeduplicator,
   DeduplicationConfigSchema,
-  DeduplicationRequestSchema
+  DeduplicationRequestSchema,
+  type ContentDeduplicator
 } from '../deduplication';
 import { createWeaviateClient } from '../../weaviate/client';
 import { createDocumentHash } from '../../search/search-utils';
@@ -224,13 +224,17 @@ describe('Deduplication', () => {
     describe('Constructor', () => {
       it('should use default config when no config provided', () => {
         const defaultDedup = getContentDeduplicator();
-        expect(defaultDedup).toBeInstanceOf(ContentDeduplicator);
+        expect(defaultDedup).toBeDefined();
+        expect(typeof defaultDedup.deduplicate).toBe('function');
+        expect(typeof defaultDedup.batchDeduplicate).toBe('function');
       });
 
       it('should merge custom config with defaults', () => {
         const customConfig = { contentThreshold: 200, batchSize: 50 };
         const customDedup = getContentDeduplicator(customConfig);
-        expect(customDedup).toBeInstanceOf(ContentDeduplicator);
+        expect(customDedup).toBeDefined();
+        expect(typeof customDedup.deduplicate).toBe('function');
+        expect(typeof customDedup.batchDeduplicate).toBe('function');
       });
     });
 
