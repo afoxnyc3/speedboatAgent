@@ -56,7 +56,8 @@ describe('RateLimiter', () => {
         { result: 1 }, // expire result
       ]);
 
-      const result = await rateLimiter.checkLimit('127.0.0.1');
+      // Use a public IP to avoid internal IP bypass
+      const result = await rateLimiter.checkLimit('8.8.8.8');
 
       expect(result.success).toBe(true);
       expect(result.remaining).toBe(94); // 100 - 5 - 1 = 94
@@ -72,7 +73,8 @@ describe('RateLimiter', () => {
         { result: 1 }, // expire result
       ]);
 
-      const result = await rateLimiter.checkLimit('127.0.0.1');
+      // Use a public IP to avoid internal IP bypass
+      const result = await rateLimiter.checkLimit('8.8.8.8');
 
       expect(result.success).toBe(false);
       expect(result.remaining).toBe(0);
@@ -183,5 +185,68 @@ describe('Rate Limit Configuration', () => {
         keyPrefix: 'test:',
       });
     }).toThrow();
+  });
+});
+
+describe('Internal IP Bypass', () => {
+  it('should identify internal IP ranges', () => {
+    const { isInternalIP } = require('../rate-limiter');
+
+    // Private IP ranges
+    expect(isInternalIP('10.0.0.1')).toBe(true);
+    expect(isInternalIP('192.168.1.1')).toBe(true);
+    expect(isInternalIP('172.16.0.1')).toBe(true);
+    expect(isInternalIP('127.0.0.1')).toBe(true);
+
+    // Public IPs
+    expect(isInternalIP('8.8.8.8')).toBe(false);
+    expect(isInternalIP('1.1.1.1')).toBe(false);
+  });
+
+  it('should support custom trusted IPs', () => {
+    const { TrustedIPChecker } = require('../rate-limiter');
+
+    const checker = new TrustedIPChecker(['8.8.8.8', '1.1.1.1']);
+
+    expect(checker.isTrusted('8.8.8.8')).toBe(true);
+    expect(checker.isTrusted('1.1.1.1')).toBe(true);
+    expect(checker.isTrusted('4.4.4.4')).toBe(false);
+  });
+
+  it('should bypass rate limiting for trusted IPs', async () => {
+    const trustedIPs = ['8.8.4.4']; // Public IP set as trusted
+    const rateLimiter = new RateLimiter({ trustedIPs });
+
+    const result = await rateLimiter.checkLimit('8.8.4.4');
+
+    expect(result.success).toBe(true);
+    expect(result.bypassReason).toBe('trusted_ip');
+  });
+
+  it('should bypass rate limiting for internal IPs', async () => {
+    const rateLimiter = new RateLimiter();
+
+    const result = await rateLimiter.checkLimit('192.168.1.100');
+
+    expect(result.success).toBe(true);
+    expect(result.bypassReason).toBe('internal_ip');
+  });
+});
+
+describe('Endpoint-Specific Limits', () => {
+  it('should apply different limits per endpoint', () => {
+    const { getEndpointConfig } = require('../rate-limiter');
+
+    // Health check should have no limit
+    expect(getEndpointConfig('/api/health').maxRequests).toBe(Infinity);
+
+    // Chat should have lower limits (resource intensive)
+    expect(getEndpointConfig('/api/chat').maxRequests).toBe(20);
+
+    // Search should have medium limits
+    expect(getEndpointConfig('/api/search').maxRequests).toBe(50);
+
+    // Cache operations should have higher limits
+    expect(getEndpointConfig('/api/cache/metrics').maxRequests).toBe(200);
   });
 });

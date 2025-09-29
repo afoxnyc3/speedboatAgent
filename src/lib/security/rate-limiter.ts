@@ -11,6 +11,7 @@ export interface RateLimitConfig {
   readonly windowMs: number;
   readonly maxRequests: number;
   readonly keyPrefix: string;
+  readonly trustedIPs?: readonly string[];
 }
 
 // Default configuration: 100 requests per minute
@@ -26,14 +27,130 @@ export interface RateLimitResult {
   readonly remaining: number;
   readonly resetTime: number;
   readonly retryAfter?: number;
+  readonly bypassReason?: 'trusted_ip' | 'internal_ip';
 }
+
+// IP validation regex
+const IP_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
 // Rate limit validation schema
 export const RateLimitConfigSchema = z.object({
   windowMs: z.number().min(1000).max(3600000), // 1s to 1hour
   maxRequests: z.number().min(1).max(10000),
   keyPrefix: z.string().min(1).max(50),
+  trustedIPs: z.array(z.string().regex(IP_REGEX, 'Invalid IP address')).optional(),
 }).strict();
+
+/**
+ * Check if an IP address is in a private/internal range
+ */
+export function isInternalIP(ip: string): boolean {
+  // Private IP ranges (RFC 1918 and loopback)
+  const privateRanges = [
+    { start: '10.0.0.0', end: '10.255.255.255' },     // 10.0.0.0/8
+    { start: '172.16.0.0', end: '172.31.255.255' },   // 172.16.0.0/12
+    { start: '192.168.0.0', end: '192.168.255.255' }, // 192.168.0.0/16
+    { start: '127.0.0.0', end: '127.255.255.255' },   // 127.0.0.0/8 (loopback)
+  ];
+
+  function ipToInt(ip: string): number {
+    return ip.split('.').reduce((acc, octet) => acc * 256 + parseInt(octet, 10), 0);
+  }
+
+  const ipInt = ipToInt(ip);
+
+  return privateRanges.some(range => {
+    const startInt = ipToInt(range.start);
+    const endInt = ipToInt(range.end);
+    return ipInt >= startInt && ipInt <= endInt;
+  });
+}
+
+/**
+ * Trusted IP checker for custom allowlists
+ */
+export class TrustedIPChecker {
+  private trustedIPs: Set<string>;
+
+  constructor(trustedIPs: readonly string[] = []) {
+    this.trustedIPs = new Set(trustedIPs);
+  }
+
+  isTrusted(ip: string): boolean {
+    return this.trustedIPs.has(ip) || isInternalIP(ip);
+  }
+
+  addTrustedIP(ip: string): void {
+    this.trustedIPs.add(ip);
+  }
+
+  removeTrustedIP(ip: string): void {
+    this.trustedIPs.delete(ip);
+  }
+}
+
+/**
+ * Endpoint-specific rate limit configuration
+ */
+export interface EndpointConfig {
+  readonly maxRequests: number;
+  readonly windowMs: number;
+}
+
+/**
+ * Get rate limit configuration for specific endpoint
+ */
+export function getEndpointConfig(pathname: string): EndpointConfig {
+  // Environment-based configuration with fallbacks
+  const defaultWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10);
+  const defaultMax = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10);
+
+  // Health checks should never be rate limited
+  if (pathname === '/api/health') {
+    return {
+      maxRequests: Infinity,
+      windowMs: defaultWindow,
+    };
+  }
+
+  // Resource-intensive endpoints get lower limits
+  if (pathname.startsWith('/api/chat')) {
+    return {
+      maxRequests: parseInt(process.env.RATE_LIMIT_CHAT_MAX || '20', 10),
+      windowMs: defaultWindow,
+    };
+  }
+
+  // Search endpoints get medium limits
+  if (pathname.startsWith('/api/search')) {
+    return {
+      maxRequests: parseInt(process.env.RATE_LIMIT_SEARCH_MAX || '50', 10),
+      windowMs: defaultWindow,
+    };
+  }
+
+  // Cache operations are lightweight, higher limits
+  if (pathname.startsWith('/api/cache/')) {
+    return {
+      maxRequests: parseInt(process.env.RATE_LIMIT_CACHE_MAX || '200', 10),
+      windowMs: defaultWindow,
+    };
+  }
+
+  // Memory operations are also lightweight
+  if (pathname.startsWith('/api/memory/')) {
+    return {
+      maxRequests: parseInt(process.env.RATE_LIMIT_MEMORY_MAX || '100', 10),
+      windowMs: defaultWindow,
+    };
+  }
+
+  // Default limits for all other endpoints
+  return {
+    maxRequests: defaultMax,
+    windowMs: defaultWindow,
+  };
+}
 
 /**
  * Redis-based sliding window rate limiter
@@ -41,10 +158,14 @@ export const RateLimitConfigSchema = z.object({
 export class RateLimiter {
   private readonly redis: Redis;
   private readonly config: RateLimitConfig;
+  private readonly trustedIPChecker: TrustedIPChecker;
 
   constructor(config: Partial<RateLimitConfig> = {}) {
     this.config = { ...DEFAULT_RATE_LIMIT_CONFIG, ...config };
     RateLimitConfigSchema.parse(this.config);
+
+    // Initialize trusted IP checker
+    this.trustedIPChecker = new TrustedIPChecker(this.config.trustedIPs || []);
 
     // Initialize Redis client
     if (!process.env.UPSTASH_REDIS_URL || !process.env.UPSTASH_REDIS_TOKEN) {
@@ -61,6 +182,20 @@ export class RateLimiter {
    * Check rate limit for IP address
    */
   async checkLimit(ip: string): Promise<RateLimitResult> {
+    // Check if IP is trusted (bypass rate limiting)
+    if (this.trustedIPChecker.isTrusted(ip)) {
+      // Determine bypass reason: explicit trusted IP takes precedence
+      const isExplicitlyTrusted = this.config.trustedIPs?.includes(ip) ?? false;
+      const bypassReason = isExplicitlyTrusted ? 'trusted_ip' : 'internal_ip';
+
+      return {
+        success: true,
+        remaining: this.config.maxRequests - 1,
+        resetTime: Date.now() + this.config.windowMs,
+        bypassReason,
+      };
+    }
+
     const key = `${this.config.keyPrefix}${ip}`;
     const now = Date.now();
     const windowStart = now - this.config.windowMs;
