@@ -14,15 +14,9 @@ import {
 } from '../client';
 
 // Mock the weaviate-ts-client module
-jest.mock('weaviate-ts-client', () => ({
-  __esModule: true,
-  default: {
-    client: jest.fn(),
-    ApiKey: jest.fn()
-  }
-}));
+jest.mock('weaviate-ts-client');
 
-const mockWeaviate = weaviate as jest.Mocked<typeof weaviate>;
+const mockWeaviate = jest.mocked(weaviate);
 
 describe('Weaviate Client', () => {
   let mockClient: any;
@@ -31,9 +25,6 @@ describe('Weaviate Client', () => {
   beforeEach(() => {
     // Store original environment variables
     originalEnv = { ...process.env };
-
-    // Reset all mocks
-    jest.clearAllMocks();
 
     // Mock Weaviate client instance
     mockClient = {
@@ -58,11 +49,9 @@ describe('Weaviate Client', () => {
       }
     };
 
-    // Mock weaviate.client() to return our mock client
-    mockWeaviate.client.mockReturnValue(mockClient);
-
-    // Mock ApiKey constructor
-    mockWeaviate.ApiKey.mockImplementation((key: string) => ({ apiKey: key }));
+    // Setup mocks
+    mockWeaviate.client = jest.fn().mockReturnValue(mockClient);
+    mockWeaviate.ApiKey = jest.fn().mockImplementation((key: string) => ({ apiKey: key }));
 
     // Reset the singleton client
     // Note: In a real scenario, we might need to reset the module's internal state

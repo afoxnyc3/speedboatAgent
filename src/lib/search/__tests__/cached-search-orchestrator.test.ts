@@ -34,7 +34,10 @@ import { getCacheManager, createCacheContext } from '../../cache/redis-cache';
 import { getEmbeddingService } from '../../cache/embedding-service';
 
 // Mock all dependencies
-jest.mock('crypto');
+const mockRandomUUIDFn = jest.fn();
+jest.mock('crypto', () => ({
+  randomUUID: mockRandomUUIDFn
+}));
 jest.mock('../query-classifier');
 jest.mock('../hybrid-search');
 jest.mock('../search-utils');
@@ -46,7 +49,7 @@ jest.mock('../../../types/search', () => ({
   createQueryId: jest.fn()
 }));
 
-const mockRandomUUID = randomUUID as jest.MockedFunction<typeof randomUUID>;
+const mockRandomUUID = mockRandomUUIDFn;
 const mockCreateQueryId = createQueryId as jest.MockedFunction<typeof createQueryId>;
 const mockClassifyQueryWithMetrics = classifyQueryWithMetrics as jest.MockedFunction<typeof classifyQueryWithMetrics>;
 const mockPerformHybridSearch = performHybridSearch as jest.MockedFunction<typeof performHybridSearch>;
@@ -100,9 +103,6 @@ describe('Cached Search Orchestrator', () => {
   };
 
   beforeEach(() => {
-    // Reset all mocks
-    jest.clearAllMocks();
-
     // Mock UUID generation
     mockRandomUUID.mockReturnValue('test-uuid-123');
     mockCreateQueryId.mockReturnValue('query-id-123' as any);
