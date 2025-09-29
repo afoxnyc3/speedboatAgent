@@ -16,8 +16,9 @@ import type {
   MessageId,
   Citation,
   CitationId,
+  MessageMetadata,
 } from '@/types/chat';
-import type { Document } from '@/types/search';
+import type { Document, SearchResponse, SearchResult } from '@/types/search';
 import type { ConversationMemoryContext } from '@/types/memory';
 import type {
   MemoryMessage,
@@ -64,9 +65,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const searchOrchestrator = getSearchOrchestrator();
     timings.clientInit = Date.now() - clientStart;
 
-    // Run memory retrieval and search preparation in parallel
-    const [memoryContext] = await Promise.all([
-      // Step 1: Retrieve conversation memory context (with aggressive timeout and fallback)
+    // OPTIMIZATION: Run memory retrieval and search completely in parallel
+    const parallelStart = Date.now();
+    const [memoryContext, searchResults] = await Promise.allSettled([
+      // Step 1: Retrieve conversation memory context (with timeout and fallback)
       (async () => {
         const memoryStart = Date.now();
         const emptyContext: ConversationMemoryContext = {
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         try {
           const memoryPromise = memoryClient.getConversationContext(conversationId, sessionId);
           const memoryTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Memory timeout')), 5000) // 5 second timeout for API calls
+            setTimeout(() => reject(new Error('Memory timeout')), 3000) // Reduced to 3s for parallel execution
           );
 
           const context = await Promise.race([memoryPromise, memoryTimeout]) as ConversationMemoryContext;
@@ -94,59 +96,99 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       })(),
 
-      // Pre-warm any caches or prepare resources
-      Promise.resolve(),
+      // Step 2: Perform initial RAG search with base query (parallel to memory retrieval)
+      (async () => {
+        const searchStart = Date.now();
+        try {
+          const searchPromise = searchOrchestrator.search({
+            query: validatedRequest.message, // Use original query for parallel execution
+            limit: validatedRequest.maxSources + 2, // Get extra results for potential reranking
+            offset: 0,
+            includeContent: true,
+            includeEmbedding: false,
+            timeout: 4000, // 4 second timeout for search
+            sessionId,
+            userId,
+            context: `conversation:${conversationId}`,
+            filters: {},
+          });
+
+          const searchTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Search timeout')), 2000) // 2s external timeout
+          );
+
+          const results = await Promise.race([searchPromise, searchTimeout]);
+          timings.ragSearch = Date.now() - searchStart;
+          return results;
+        } catch (error) {
+          timings.ragSearch = Date.now() - searchStart;
+          // Return empty results on search failure
+          return {
+            success: false,
+            results: [],
+            metadata: {
+              searchTime: Date.now() - searchStart,
+              totalResults: 0,
+              queryId: '',
+            },
+            query: validatedRequest.message,
+            suggestions: [],
+          };
+        }
+      })(),
     ]);
 
-    // Step 2: Enhance query with memory context (fast operation)
+    // Extract results from Promise.allSettled
+    const resolvedMemoryContext = memoryContext.status === 'fulfilled'
+      ? memoryContext.value
+      : {
+          conversationId,
+          sessionId,
+          relevantMemories: [],
+          entityMentions: [],
+          topicContinuity: [],
+          userPreferences: {},
+          conversationStage: 'greeting' as const,
+        };
+
+    const resolvedSearchResults: SearchResponse = searchResults.status === 'fulfilled'
+      ? searchResults.value as SearchResponse
+      : {
+          success: true,
+          results: [],
+          metadata: {
+            searchTime: 0,
+            totalResults: 0,
+            queryId: '',
+          } as any, // Simplified metadata for fallback
+          query: validatedRequest.message as any,
+          suggestions: [],
+        } as SearchResponse;
+
+    timings.parallelOperations = Date.now() - parallelStart;
+
+    // Step 3: Post-process search results with memory context (fast reranking if needed)
     const enhanceStart = Date.now();
-    const enhancedQuery = buildContextualQuery(validatedRequest.message, memoryContext);
-    timings.queryEnhancement = Date.now() - enhanceStart;
+    let finalSearchResults: SearchResponse = resolvedSearchResults;
 
-    // Step 3: Perform RAG search with enhanced query (with aggressive timeout)
-    const searchStart = Date.now();
-    let searchResults;
-    try {
-      const searchPromise = searchOrchestrator.search({
-        query: enhancedQuery,
-        limit: validatedRequest.maxSources,
-        offset: 0,
-        includeContent: true,
-        includeEmbedding: false,
-        timeout: 5000, // 5 second timeout for search
-        sessionId,
-        userId,
-        context: `conversation:${conversationId}`,
-        filters: {},
-      });
-
-      const searchTimeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Search timeout')), 2000) // 2s external timeout
-      );
-
-      searchResults = await Promise.race([searchPromise, searchTimeout]);
-    } catch {
-      // Return empty results on search failure
-      searchResults = {
-        success: false,
-        results: [],
-        metadata: {
-          searchTime: Date.now() - searchStart,
-          totalResults: 0,
-          queryId: '',
-        },
-        query: enhancedQuery,
-        suggestions: [],
+    // If memory context is available and provides useful context, enhance the results
+    if (resolvedMemoryContext.entityMentions.length > 0 || resolvedMemoryContext.topicContinuity.length > 0) {
+      // Apply context-aware reranking to the search results
+      finalSearchResults = {
+        ...resolvedSearchResults,
+        results: enhanceSearchResultsWithMemory([...resolvedSearchResults.results], resolvedMemoryContext),
+        query: buildContextualQuery(validatedRequest.message, resolvedMemoryContext) as any,
       };
     }
-    timings.ragSearch = Date.now() - searchStart;
 
-    // Step 4: Generate contextual response
+    timings.queryEnhancement = Date.now() - enhanceStart;
+
+    // Step 4: Generate contextual response with optimized results
     const responseStart = Date.now();
     const response = await generateContextualResponse({
       query: validatedRequest.message,
-      searchResults: searchResults.results,
-      memoryContext,
+      searchResults: [...finalSearchResults.results],
+      memoryContext: resolvedMemoryContext,
       conversationId,
     });
     timings.responseGeneration = Date.now() - responseStart;
@@ -173,8 +215,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       conversationId,
       category: 'context',
       metadata: {
-        sourcesUsed: searchResults.results.length,
-        searchTime: searchResults.metadata.searchTime,
+        sourcesUsed: finalSearchResults.results.length,
+        searchTime: finalSearchResults.metadata.searchTime,
         topics: extractTopics(validatedRequest.message),
       },
     }).catch(() => {
@@ -199,9 +241,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       status: 'completed',
       sources: response.sources,
       metadata: {
-        searchTime: searchResults.metadata.searchTime,
-        retrievalCount: searchResults.results.length,
-      },
+        searchTime: finalSearchResults.metadata.searchTime,
+        retrievalCount: finalSearchResults.results.length,
+        ...({ parallelOptimization: true } as any), // Type assertion for extended metadata
+      } as MessageMetadata,
     };
 
     const chatResponse: ChatResponse = {
@@ -209,7 +252,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       message: chatMessage,
       conversationId,
       suggestions: response.suggestions,
-      relatedTopics: memoryContext.topicContinuity.slice(0, 3),
+      relatedTopics: resolvedMemoryContext.topicContinuity.slice(0, 3),
     };
     timings.responsePreparation = Date.now() - prepareStart;
 
@@ -222,11 +265,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       headers: {
         'X-Session-Id': sessionId,
         'X-Run-Id': runId,
-        'X-Memory-Context': memoryContext.relevantMemories.length.toString(),
+        'X-Memory-Context': resolvedMemoryContext.relevantMemories.length.toString(),
         'X-Performance-Total': timings.total.toString(),
         'X-Performance-Memory': (timings.memoryRetrieval + timings.memoryStorage).toString(),
         'X-Performance-Search': timings.ragSearch.toString(),
         'X-Performance-LLM': timings.responseGeneration.toString(),
+        'X-Performance-Parallel': timings.parallelOperations.toString(),
+        'X-Optimization-Applied': 'parallel-memory-search',
       },
     });
 
@@ -401,6 +446,47 @@ function handleChatError(error: unknown): NextResponse {
   return NextResponse.json(errorResponse, { status });
 }
 
+/**
+ * Enhanced search results with memory context-aware reranking
+ * Applies memory context to improve result relevance without blocking parallel execution
+ */
+function enhanceSearchResultsWithMemory(
+  searchResults: Document[],
+  memoryContext: ConversationMemoryContext
+): Document[] {
+  const entityMentions = new Set(memoryContext.entityMentions.map(entity => entity.toLowerCase()));
+  const topicContext = new Set(memoryContext.topicContinuity.map(topic => topic.toLowerCase()));
+
+  return searchResults.map(doc => {
+    let relevanceBoost = 0;
+    const content = doc.content.toLowerCase();
+
+    // Boost for entity mentions
+    entityMentions.forEach(entity => {
+      if (content.includes(entity)) {
+        relevanceBoost += 0.1;
+      }
+    });
+
+    // Boost for topic continuity
+    topicContext.forEach(topic => {
+      if (content.includes(topic)) {
+        relevanceBoost += 0.05;
+      }
+    });
+
+    return {
+      ...doc,
+      score: Math.min(1.0, (doc.score || 0.8) + relevanceBoost),
+      metadata: {
+        ...doc.metadata,
+        memoryBoost: relevanceBoost,
+        contextEnhanced: relevanceBoost > 0,
+      },
+    };
+  }).sort((a, b) => (b.score || 0) - (a.score || 0)); // Re-sort by enhanced scores
+}
+
 // Health check endpoint
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
@@ -410,6 +496,7 @@ export async function GET(): Promise<NextResponse> {
       memoryEnabled: true,
       ragEnabled: true,
       streamingEnabled: true,
+      parallelProcessing: true,
     },
   });
 }
