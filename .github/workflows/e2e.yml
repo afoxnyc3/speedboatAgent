@@ -52,30 +52,25 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          # Use test environment variables
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
-          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
-          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
-          UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL_TEST }}
-          UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN_TEST }}
-          MEM0_API_KEY: ${{ secrets.MEM0_API_KEY_TEST }}
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY_TEST }}
+          # Use production environment variables for E2E tests
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST }}
+          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
+          UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL }}
+          UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN }}
+          MEM0_API_KEY: ${{ secrets.MEM0_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
 
-      - name: Start application
+      - name: Create test environment file
         run: |
-          npm start &
-          sleep 10
-          # Wait for application to be ready
-          npx wait-on http://localhost:3000/api/health --timeout 60000
-        env:
-          # Use test environment variables
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
-          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
-          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
-          UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL_TEST }}
-          UPSTASH_REDIS_TOKEN: ${{ secrets.UPSTASH_REDIS_TOKEN_TEST }}
-          MEM0_API_KEY: ${{ secrets.MEM0_API_KEY_TEST }}
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY_TEST }}
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env.local
+          echo "WEAVIATE_HOST=${{ secrets.WEAVIATE_HOST }}" >> .env.local
+          echo "WEAVIATE_API_KEY=${{ secrets.WEAVIATE_API_KEY }}" >> .env.local
+          echo "UPSTASH_REDIS_URL=${{ secrets.UPSTASH_REDIS_URL }}" >> .env.local
+          echo "UPSTASH_REDIS_TOKEN=${{ secrets.UPSTASH_REDIS_TOKEN }}" >> .env.local
+          echo "MEM0_API_KEY=${{ secrets.MEM0_API_KEY }}" >> .env.local
+          echo "FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}" >> .env.local
+          echo "NODE_ENV=test" >> .env.local
 
       - name: Run E2E tests (All)
         if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
@@ -168,21 +163,23 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          # Use test environment variables
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
-          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
-          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
+          # Use production environment variables
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST }}
+          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY }}
+
+      - name: Create smoke test environment file
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env.local
+          echo "WEAVIATE_HOST=${{ secrets.WEAVIATE_HOST }}" >> .env.local
+          echo "WEAVIATE_API_KEY=${{ secrets.WEAVIATE_API_KEY }}" >> .env.local
+          echo "NODE_ENV=test" >> .env.local
 
       - name: Start application
         run: |
           npm start &
           sleep 10
           npx wait-on http://localhost:3000/api/health --timeout 30000
-        env:
-          # Use test environment variables
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
-          WEAVIATE_HOST: ${{ secrets.WEAVIATE_HOST_TEST }}
-          WEAVIATE_API_KEY: ${{ secrets.WEAVIATE_API_KEY_TEST }}
 
       - name: Critical path smoke test
         run: |
