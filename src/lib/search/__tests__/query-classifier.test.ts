@@ -24,17 +24,23 @@ import {
 import { RedisClassificationCache } from '../../cache/redis-cache';
 
 // Mock dependencies
+const mockGenerateObjectFn = jest.fn();
 jest.mock('@ai-sdk/openai');
-jest.mock('ai');
+jest.mock('ai', () => ({
+  generateObject: mockGenerateObjectFn
+}));
 const mockCreateHashFn = jest.fn();
+const mockRedisClassificationCacheFn = jest.fn();
 jest.mock('crypto', () => ({
   createHash: mockCreateHashFn
 }));
-jest.mock('../../cache/redis-cache');
+jest.mock('../../cache/redis-cache', () => ({
+  RedisClassificationCache: mockRedisClassificationCacheFn
+}));
 
-const mockGenerateObject = generateObject as jest.MockedFunction<typeof generateObject>;
+const mockGenerateObject = mockGenerateObjectFn;
 const mockCreateHash = mockCreateHashFn;
-const mockRedisClassificationCache = RedisClassificationCache as jest.MockedClass<typeof RedisClassificationCache>;
+const mockRedisClassificationCache = mockRedisClassificationCacheFn;
 
 describe('QueryClassifier', () => {
   let mockHashDigest: jest.MockedFunction<any>;

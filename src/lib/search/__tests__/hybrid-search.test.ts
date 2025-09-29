@@ -16,17 +16,35 @@ import { DEFAULT_SEARCH_CONFIG, DocumentSource, DocumentLanguage } from '../../.
 import { createDocumentHash } from '../search-utils';
 
 // Mock dependencies
-jest.mock('../../weaviate/client');
-jest.mock('../search-utils');
-jest.mock('crypto');
+const mockCreateWeaviateClientFn = jest.fn();
+const mockCreateDocumentHashFn = jest.fn();
+const mockRandomUUIDFn = jest.fn();
+jest.mock('../../weaviate/client', () => ({
+  createWeaviateClient: mockCreateWeaviateClientFn
+}));
+jest.mock('../search-utils', () => ({
+  createDocumentHash: mockCreateDocumentHashFn
+}));
+jest.mock('crypto', () => ({
+  randomUUID: mockRandomUUIDFn
+}));
 
-const mockCreateWeaviateClient = createWeaviateClient as jest.MockedFunction<typeof createWeaviateClient>;
-const mockCreateDocumentHash = createDocumentHash as jest.MockedFunction<typeof createDocumentHash>;
-const mockRandomUUID = randomUUID as jest.MockedFunction<typeof randomUUID>;
+const mockCreateWeaviateClient = mockCreateWeaviateClientFn;
+const mockCreateDocumentHash = mockCreateDocumentHashFn;
+const mockRandomUUID = mockRandomUUIDFn;
 
 describe('HybridSearch', () => {
   let mockClient: any;
   let mockQuery: any;
+
+  // Define default params at the top level so all tests can access it
+  const defaultParams: HybridSearchParams = {
+    query: 'test query',
+    config: DEFAULT_SEARCH_CONFIG,
+    sourceWeights: { github: 1.2, web: 0.8 },
+    limit: 10,
+    offset: 0
+  };
 
   beforeEach(() => {
     // Reset all mocks
@@ -67,13 +85,6 @@ describe('HybridSearch', () => {
   });
 
   describe('performHybridSearch', () => {
-    const defaultParams: HybridSearchParams = {
-      query: 'test query',
-      config: DEFAULT_SEARCH_CONFIG,
-      sourceWeights: { github: 1.2, web: 0.8 },
-      limit: 10,
-      offset: 0
-    };
 
     it('should perform successful hybrid search with results', async () => {
       // Arrange

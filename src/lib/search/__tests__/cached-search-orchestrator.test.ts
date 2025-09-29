@@ -35,33 +35,56 @@ import { getEmbeddingService } from '../../cache/embedding-service';
 
 // Mock all dependencies
 const mockRandomUUIDFn = jest.fn();
+const mockCreateQueryIdFn = jest.fn();
+const mockCreateTimeoutControllerFn = jest.fn();
+const mockValidateQueryConstraintsFn = jest.fn();
+const mockGetCacheManagerFn = jest.fn();
+const mockCreateCacheContextFn = jest.fn();
+const mockGetEmbeddingServiceFn = jest.fn();
+const mockGenerateSearchSuggestionsFn = jest.fn();
+const mockBuildSearchMetadataFn = jest.fn();
+const mockProcessQueryFn = jest.fn();
+const mockFilterDocumentContentFn = jest.fn();
 jest.mock('crypto', () => ({
   randomUUID: mockRandomUUIDFn
 }));
 jest.mock('../query-classifier');
 jest.mock('../hybrid-search');
-jest.mock('../search-utils');
-jest.mock('../search-validation');
-jest.mock('../../cache/redis-cache');
-jest.mock('../../cache/embedding-service');
+jest.mock('../search-utils', () => ({
+  generateSearchSuggestions: mockGenerateSearchSuggestionsFn,
+  buildSearchMetadata: mockBuildSearchMetadataFn,
+  processQuery: mockProcessQueryFn,
+  filterDocumentContent: mockFilterDocumentContentFn
+}));
+jest.mock('../search-validation', () => ({
+  createTimeoutController: mockCreateTimeoutControllerFn,
+  validateQueryConstraints: mockValidateQueryConstraintsFn
+}));
+jest.mock('../../cache/redis-cache', () => ({
+  getCacheManager: mockGetCacheManagerFn,
+  createCacheContext: mockCreateCacheContextFn
+}));
+jest.mock('../../cache/embedding-service', () => ({
+  getEmbeddingService: mockGetEmbeddingServiceFn
+}));
 jest.mock('../../../types/search', () => ({
   ...jest.requireActual('../../../types/search'),
-  createQueryId: jest.fn()
+  createQueryId: mockCreateQueryIdFn
 }));
 
 const mockRandomUUID = mockRandomUUIDFn;
-const mockCreateQueryId = createQueryId as jest.MockedFunction<typeof createQueryId>;
-const mockClassifyQueryWithMetrics = classifyQueryWithMetrics as jest.MockedFunction<typeof classifyQueryWithMetrics>;
-const mockPerformHybridSearch = performHybridSearch as jest.MockedFunction<typeof performHybridSearch>;
-const mockGenerateSearchSuggestions = generateSearchSuggestions as jest.MockedFunction<typeof generateSearchSuggestions>;
-const mockBuildSearchMetadata = buildSearchMetadata as jest.MockedFunction<typeof buildSearchMetadata>;
-const mockProcessQuery = processQuery as jest.MockedFunction<typeof processQuery>;
-const mockFilterDocumentContent = filterDocumentContent as jest.MockedFunction<typeof filterDocumentContent>;
-const mockCreateTimeoutController = createTimeoutController as jest.MockedFunction<typeof createTimeoutController>;
-const mockValidateQueryConstraints = validateQueryConstraints as jest.MockedFunction<typeof validateQueryConstraints>;
-const mockGetCacheManager = getCacheManager as jest.MockedFunction<typeof getCacheManager>;
-const mockCreateCacheContext = createCacheContext as jest.MockedFunction<typeof createCacheContext>;
-const mockGetEmbeddingService = getEmbeddingService as jest.MockedFunction<typeof getEmbeddingService>;
+const mockCreateQueryId = mockCreateQueryIdFn;
+const mockClassifyQueryWithMetrics = jest.mocked(classifyQueryWithMetrics);
+const mockPerformHybridSearch = jest.mocked(performHybridSearch);
+const mockGenerateSearchSuggestions = mockGenerateSearchSuggestionsFn;
+const mockBuildSearchMetadata = mockBuildSearchMetadataFn;
+const mockProcessQuery = mockProcessQueryFn;
+const mockFilterDocumentContent = mockFilterDocumentContentFn;
+const mockCreateTimeoutController = mockCreateTimeoutControllerFn;
+const mockValidateQueryConstraints = mockValidateQueryConstraintsFn;
+const mockGetCacheManager = mockGetCacheManagerFn;
+const mockCreateCacheContext = mockCreateCacheContextFn;
+const mockGetEmbeddingService = mockGetEmbeddingServiceFn;
 
 describe('Cached Search Orchestrator', () => {
   let orchestrator: CachedSearchOrchestrator;

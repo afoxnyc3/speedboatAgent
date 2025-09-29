@@ -23,15 +23,22 @@ import { createDocumentHash } from '../../search/search-utils';
 import type { Document, DocumentSource } from '../../../types/search';
 
 // Mock dependencies
-jest.mock('../../weaviate/client');
-jest.mock('../../search/search-utils');
+const mockCreateHashFn = jest.fn();
+const mockCreateDocumentHashFn = jest.fn();
+const mockCreateWeaviateClientFn = jest.fn();
+jest.mock('../../weaviate/client', () => ({
+  createWeaviateClient: mockCreateWeaviateClientFn
+}));
+jest.mock('../../search/search-utils', () => ({
+  createDocumentHash: mockCreateDocumentHashFn
+}));
 jest.mock('crypto', () => ({
-  createHash: jest.fn()
+  createHash: mockCreateHashFn
 }));
 
-const mockCreateWeaviateClient = createWeaviateClient as jest.MockedFunction<typeof createWeaviateClient>;
-const mockCreateDocumentHash = createDocumentHash as jest.MockedFunction<typeof createDocumentHash>;
-const mockCreateHash = createHash as jest.MockedFunction<typeof createHash>;
+const mockCreateWeaviateClient = mockCreateWeaviateClientFn;
+const mockCreateDocumentHash = mockCreateDocumentHashFn;
+const mockCreateHash = mockCreateHashFn;
 
 describe('Deduplication', () => {
   let mockClient: any;

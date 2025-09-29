@@ -255,7 +255,7 @@ describe('Cache Optimization System', () => {
           priority: 8
         });
 
-        expect(setResult).toBe(true);
+        expect(setResult).toHaveProperty('success', true);
 
         const retrieved = await cacheManager.getOptimized(key, 'search', {
           sessionId: 'session-123'
@@ -475,8 +475,8 @@ describe('Cache Optimization System', () => {
       const cacheManager = new EnhancedRedisCacheManager();
 
       const result = await cacheManager.setOptimized('test', { data: 'test' }, 'search');
-      // Should not throw, just return false when Redis is unavailable
-      expect(typeof result).toBe('boolean');
+      // Should not throw, just return a result object when Redis is unavailable
+      expect(result).toHaveProperty('success');
     });
 
     it('should handle compression errors gracefully', async () => {
