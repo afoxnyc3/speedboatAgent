@@ -11,8 +11,7 @@
       "maxDuration": 60
     },
     "app/api/health/route.ts": {
-      "maxDuration": 10,
-      "runtime": "edge"
+      "maxDuration": 10
     },
     "app/api/feedback/route.ts": {
       "maxDuration": 10
@@ -21,8 +20,7 @@
       "maxDuration": 30
     },
     "app/api/cache/metrics/route.ts": {
-      "maxDuration": 10,
-      "runtime": "edge"
+      "maxDuration": 10
     },
     "app/api/monitoring/costs/route.ts": {
       "maxDuration": 10
