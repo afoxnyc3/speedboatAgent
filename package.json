@@ -35,7 +35,9 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:e2e:runner": "tsx scripts/run-e2e-tests.ts",
-    "demo:health-check": "tsx scripts/demo-health-check.ts"
+    "demo:health-check": "tsx scripts/demo-health-check.ts",
+    "warm-cache": "tsx scripts/warm-cache-on-deploy.ts",
+    "postbuild": "echo '🔥 Running post-build cache warming...' && npm run warm-cache || echo '⚠️ Cache warming failed but build continues'"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.30",
