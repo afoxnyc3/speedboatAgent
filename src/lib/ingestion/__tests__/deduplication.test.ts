@@ -239,7 +239,7 @@ describe('Deduplication', () => {
     });
 
     describe('Hash Creation', () => {
-      it('should create consistent content hashes', () => {
+      it('should create consistent content hashes', async () => {
         const content1 = 'Hello World';
         const content2 = 'hello world'; // Same content, different case
         const content3 = '  Hello World  '; // Same content with whitespace
@@ -257,13 +257,13 @@ describe('Deduplication', () => {
           createTestDocument(content3)
         ];
 
-        const result = deduplicator.deduplicate(docs);
+        const result = await deduplicator.batchDeduplicate(docs);
 
         expect(mockCreateHash).toHaveBeenCalledWith('sha256');
         expect(mockHashObj.update).toHaveBeenCalledWith('hello world');
       });
 
-      it('should create URL hashes with normalization', () => {
+      it('should create URL hashes with normalization', async () => {
         const docs = [
           createTestDocument('content', 'web', {
             metadata: { url: 'https://example.com/path/' }
@@ -285,7 +285,7 @@ describe('Deduplication', () => {
           .mockReturnValue('url-hash-1')
           .mockReturnValue('url-hash-1');
 
-        const result = deduplicator.deduplicate(docs);
+        const result = await deduplicator.batchDeduplicate(docs);
 
         expect(mockHashObj.update).toHaveBeenCalledWith('https://example.com/path');
       });
