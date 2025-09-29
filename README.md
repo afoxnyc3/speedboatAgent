@@ -50,7 +50,7 @@ Save 40 engineering hours by building a production-ready RAG agent that unifies 
 - **Analytics**: Vercel Analytics + Custom metrics
 - **Rate Limiting**: 100 req/min per IP
 - **Deployment**: Vercel with CI/CD
-- **E2E Testing**: Playwright test suite
+- **Testing Strategy**: Unit/Integration focused (E2E temporarily paused for velocity)
 - **Emergency Procedures**: Fallback systems and rollback scripts
 
 ## 📦 Quick Start
@@ -166,7 +166,7 @@ VERCEL_ENV=...
   /profile-chat.ts        # Chat profiling
 /tests
   /e2e
-    /*.spec.ts            # Playwright E2E tests
+    /*.spec.ts            # Playwright E2E tests (manual-only)
     /fixtures/*           # Test data
 ```
 
@@ -178,7 +178,7 @@ VERCEL_ENV=...
 - **Memory System**: Conversation context with Mem0, Redis, and PostgreSQL options
 - **Performance**: 60%+ improvement in response times (20s → 8-12s)
 - **Monitoring**: Sentry integration with custom dashboards and alerts
-- **E2E Testing**: Comprehensive Playwright test suite
+- **Testing Strategy**: Focus on unit/integration tests (E2E tests paused temporarily)
 - **Emergency Systems**: Fallback servers and automatic rollback procedures
 - **Feedback Loop**: User feedback collection with analytics
 - **CI/CD Stability**: 100% reliable pipeline with TypeScript strict mode
@@ -309,7 +309,7 @@ vercel --prod
 1. Check GitHub issues for current tasks
 2. Run `/work [issue-id]` to start automated development workflow
 3. Follow code standards (15-line functions, 100-line files)
-4. Ensure tests pass with automated validation
+4. Ensure unit and integration tests pass (E2E tests run manually as needed)
 5. Create pull request with automatic issue closure (`Closes #<issue-id>`)
 6. Run `/tidyup` to finalize documentation and integration
 

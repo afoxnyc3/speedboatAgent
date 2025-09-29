@@ -62,3 +62,52 @@ RequestError [HttpError]: Resource not accessible by integration
   }
 }
 Error: Unhandled error: HttpError: Resource not accessible by integration
+The job failed because it timed out waiting for http://localhost:3000/api/health to respond during the E2E Tests workflow. This usually means the Next.js server did not start correctly or the health endpoint was not reachable.
+
+Key error:
+Error: Timed out waiting for: http://localhost:3000/api/health
+
+Log hints:
+
+“Redis credentials not found, using memory cache” (should not block startup, but check if your app expects Redis)
+“invalid-next-config” warning: There’s a Next.js config issue flagged in the logs (see: https://nextjs.org/docs/messages/invalid-next-config)
+Recommended solutions:
+
+Fix Next.js config error:
+
+Review your next.config.js for any syntax or configuration errors. Invalid config can prevent the server from starting.
+Reference: next.config.js documentation
+Example fix:
+js
+// Make sure your next.config.js exports an object
+module.exports = {
+  reactStrictMode: true,
+  // other config...
+}
+Check for misplaced exports, typos, or unsupported keys.
+Make sure server starts before tests:
+
+Your E2E workflow should wait for the Next.js server to be fully up before running tests.
+If you use wait-on, ensure your server starts and binds to port 3000.
+If Redis is required for startup, set the necessary environment variables or mock dependencies.
+If using Docker or a custom script, confirm the startup command is correct.
+Double-check health endpoint:
+
+Confirm /api/health route exists and responds correctly in your Next.js app.
+Example API route:
+js
+// pages/api/health.js
+export default function handler(req, res) {
+  res.status(200).json({ status: 'ok' });
+}
+Action steps:
+
+Fix any issues in next.config.js so the Next.js server starts cleanly.
+Ensure /api/health responds successfully.
+Rerun the workflow.
+
+
+Run if [ "failure" == "success" ]; then
+❌ Demo readiness check failed!
+⚠️  Some E2E tests failed. Review test results before demo.
+Error: Process completed with exit code 1.

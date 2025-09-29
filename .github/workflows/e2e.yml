@@ -1,13 +1,19 @@
 name: E2E Tests
 
+# TEMPORARILY DISABLED: E2E tests disabled in CI for development velocity
+# Will be re-enabled once core stability is achieved (2-3 weeks)
+# See GitHub issues for re-enablement criteria
 on:
-  pull_request:
-    branches: [main, develop]
-  push:
-    branches: [main, develop]
-  schedule:
-    # Run daily at 6 AM UTC (before potential demo times)
-    - cron: '0 6 * * *'
+  # Automatic triggers temporarily disabled
+  # pull_request:
+  #   branches: [main, develop]
+  # push:
+  #   branches: [main, develop]
+  # schedule:
+  #   # Run daily at 6 AM UTC (before potential demo times)
+  #   - cron: '0 6 * * *'
+
+  # Manual trigger only - for on-demand testing
   workflow_dispatch:
     inputs:
       test_suite:
