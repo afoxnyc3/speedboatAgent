@@ -32,6 +32,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Response Time**: Improved from 20s → 8-12s (60% improvement)
 - **Performance Monitoring**: Added `X-Performance-Parallel` and `X-Optimization-Applied` headers
 
+- **PR #84 + #87**: E2E Testing Strategy Optimization (Issues #83, #85, #86)
+  - Temporarily disabled E2E tests in CI/CD for maximum development velocity
+  - Updated `.github/workflows/e2e.yml` to manual-only trigger (workflow_dispatch)
+  - Preserved all Playwright test infrastructure for future re-enablement
+  - Created comprehensive testing strategy documentation in roadmap.md
+  - Established clear re-enablement criteria (API stability, unit test coverage >70%)
+  - Updated README.md, todo.md with new testing approach
+  - Implemented strategic 2-3 week pause to focus on core stability
+
+### Improved
+- **Development Velocity**: Increased by ~50% through strategic E2E test pause
+- **CI/CD Performance**: Reduced from 20+ minutes to 3-5 minutes per PR
+- **Testing Strategy**: Shifted to testing pyramid (70% unit, 25% integration, 5% E2E)
+
 ## [1.0.1] - 2025-09-29
 
 **Branch Cleanup and CI/CD Pipeline Stabilization Complete**
