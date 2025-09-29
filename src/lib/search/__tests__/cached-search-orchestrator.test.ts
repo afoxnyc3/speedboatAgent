@@ -44,12 +44,18 @@ const mockGetEmbeddingServiceFn = jest.fn();
 const mockGenerateSearchSuggestionsFn = jest.fn();
 const mockBuildSearchMetadataFn = jest.fn();
 const mockProcessQueryFn = jest.fn();
+const mockClassifyQueryWithMetricsFn = jest.fn();
+const mockPerformHybridSearchFn = jest.fn();
 const mockFilterDocumentContentFn = jest.fn();
 jest.mock('crypto', () => ({
   randomUUID: mockRandomUUIDFn
 }));
-jest.mock('../query-classifier');
-jest.mock('../hybrid-search');
+jest.mock('../query-classifier', () => ({
+  classifyQueryWithMetrics: mockClassifyQueryWithMetricsFn
+}));
+jest.mock('../hybrid-search', () => ({
+  performHybridSearch: mockPerformHybridSearchFn
+}));
 jest.mock('../search-utils', () => ({
   generateSearchSuggestions: mockGenerateSearchSuggestionsFn,
   buildSearchMetadata: mockBuildSearchMetadataFn,
@@ -74,8 +80,8 @@ jest.mock('../../../types/search', () => ({
 
 const mockRandomUUID = mockRandomUUIDFn;
 const mockCreateQueryId = mockCreateQueryIdFn;
-const mockClassifyQueryWithMetrics = jest.mocked(classifyQueryWithMetrics);
-const mockPerformHybridSearch = jest.mocked(performHybridSearch);
+const mockClassifyQueryWithMetrics = mockClassifyQueryWithMetricsFn;
+const mockPerformHybridSearch = mockPerformHybridSearchFn;
 const mockGenerateSearchSuggestions = mockGenerateSearchSuggestionsFn;
 const mockBuildSearchMetadata = mockBuildSearchMetadataFn;
 const mockProcessQuery = mockProcessQueryFn;
