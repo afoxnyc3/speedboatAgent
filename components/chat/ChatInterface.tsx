@@ -56,11 +56,6 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, optimisticMessages, streamingState]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -311,7 +306,11 @@ export default function ChatInterface({
       )}
 
       {/* Messages Container */}
-      <Conversation className="flex-1 overflow-hidden">
+      <Conversation
+        className="flex-1 overflow-hidden"
+        initial={streamingState.isStreaming ? "instant" : "smooth"}
+        resize={streamingState.isStreaming ? "instant" : "smooth"}
+      >
         <ConversationContent
           className={cn(
             "space-y-6 p-4 overflow-y-auto",
