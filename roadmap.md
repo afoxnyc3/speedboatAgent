@@ -29,7 +29,7 @@
 - **Status**: Temporarily disabled in CI/CD (manual-only via workflow_dispatch)
 - **Infrastructure**: Playwright test suite preserved and ready
 - **Timeline**: 2-3 weeks pause (target re-enablement mid-October 2025)
-- **Tracking**: Issues #85 (browser optimization) and #86 (pause strategy)
+- **Completed**: Issues #85 (browser optimization - Firefox removed) ✅ and #86 (pause strategy - CI disabled) ✅
 
 ### Re-enablement Criteria
 E2E tests will be restored to CI when:
@@ -90,10 +90,11 @@ E2E tests will be restored to CI when:
   - **Time**: Completed in PR #80 with comprehensive TypeScript fixes
 
 ### P2 - Research
-- [ ] **Issue #65**: Evaluate Memory Alternatives
-  - Benchmark Mem0 vs Redis vs PostgreSQL
-  - Consider removing if not valuable
-  - **Time**: 4 hours
+- [x] **Issue #65**: Evaluate Memory Alternatives ✅
+  - Benchmarked Mem0 vs Redis vs PostgreSQL
+  - Switched to Redis for 99.4% performance improvement (18ms vs 2-3s)
+  - **Time**: 4 hours (completed)
+  - **Impact**: Eliminated external API dependency, improved reliability
 
 ---
 
