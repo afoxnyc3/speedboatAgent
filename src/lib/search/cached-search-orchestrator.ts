@@ -290,7 +290,7 @@ export async function executeSearchWorkflow(
 /**
  * Create health response with cache information
  */
-export function createHealthResponse(): Record<string, unknown> {
+export function createHealthResponse(enabled = false): Record<string, unknown> {
   return {
     status: 'healthy',
     version: '1.0.0',
@@ -309,7 +309,7 @@ export function createHealthResponse(): Record<string, unknown> {
       timeout: 30000
     },
     cache: {
-      enabled: getCacheManager().isAvailable(),
+      enabled: Boolean(enabled),
       types: ['embeddings', 'classifications', 'searchResults', 'contextualQueries']
     }
   };

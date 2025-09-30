@@ -73,7 +73,7 @@ export const DeduplicationRequestSchema = z.object({
 /**
  * Content deduplication service
  */
-class ContentDeduplicator {
+export class ContentDeduplicator {
   private readonly config: DeduplicationConfig;
   private readonly contentHashes: Map<string, Document>;
   private readonly urlHashes: Map<string, Document>;
@@ -523,5 +523,3 @@ export async function checkDocumentExists(
   const deduplicator = getContentDeduplicator(config);
   return deduplicator.checkExistingDocument(document);
 }
-
-export type { ContentDeduplicator };
