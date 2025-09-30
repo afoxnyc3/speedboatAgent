@@ -13,42 +13,7 @@ const mockQuery = {
   do: jest.fn().mockResolvedValue({
     data: {
       Get: {
-        Document: [
-          {
-            content: 'Mock Weaviate document content',
-            source: 'github',
-            filepath: '/mock/weaviate/file.ts',
-            url: 'https://github.com/mock/weaviate/file.ts',
-            language: 'typescript',
-            priority: 1.0,
-            lastModified: '2023-01-01T00:00:00Z',
-            isCode: true,
-            isDocumentation: false,
-            fileType: 'typescript',
-            size: 512,
-            _additional: {
-              score: 0.88,
-              id: 'weaviate-mock-doc-id'
-            }
-          },
-          {
-            content: 'Second mock Weaviate document',
-            source: 'web',
-            filepath: '/mock/weaviate/docs.md',
-            url: 'https://docs.example.com/guide',
-            language: 'markdown',
-            priority: 0.8,
-            lastModified: '2023-01-02T00:00:00Z',
-            isCode: false,
-            isDocumentation: true,
-            fileType: 'markdown',
-            size: 1024,
-            _additional: {
-              score: 0.75,
-              id: 'weaviate-mock-doc-id-2'
-            }
-          }
-        ]
+        Document: []  // Empty by default - tests configure specific responses
       }
     }
   })
