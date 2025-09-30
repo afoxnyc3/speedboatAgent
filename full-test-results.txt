@@ -1,0 +1,181 @@
+
+> typescript-next-starter@0.1.0 test
+> jest --watch --watchAll=false --testTimeout=15000
+
+FAIL src/lib/ingestion/__tests__/deduplication.test.ts
+  ● Deduplication › ContentDeduplicator › Weaviate Integration › should check existing document by content hash
+
+    expect(received).not.toBeNull()
+
+    Received: null
+
+      463 |
+      464 |         // Should find existing document and include checksum in metadata
+    > 465 |         expect(result).not.toBeNull();
+          |                            ^
+      466 |         expect(result?.id).toBe('existing-weaviate-id');
+      467 |         expect(result?.metadata.checksum).toBeDefined();
+      468 |         expect(mockClient.graphql.get).toHaveBeenCalled();
+
+      at Object.toBeNull (src/lib/ingestion/__tests__/deduplication.test.ts:465:28)
+
+  ● Deduplication › Convenience Functions › deduplicateDocuments › should use custom config when provided
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  [{"content": "aaaaaaaaaaaaaaaaaaaaaaaaa", "filepath": "/test/github/file.ts", "id": "doc-d294pewnb", "language": "typescript", "metadata": {"checksum": "test-checksum", "encoding": "utf-8", "lastModified": 2023-01-01T00:00:00.000Z, "lines": 1, "mimeType": "text/plain", "size": 25, "url": "https://github.com/test/file", "wordCount": 1}, "priority": 1, "score": 0.8, "source": "github"}]
+
+      638 |
+      639 |         expect(result.processed).toBe(1);
+    > 640 |         expect(result.skippedDocuments).toHaveLength(0); // Should not skip with lower threshold
+          |                                         ^
+      641 |       });
+      642 |     });
+      643 |
+
+      at Object.toHaveLength (src/lib/ingestion/__tests__/deduplication.test.ts:640:41)
+
+  ● Deduplication › Convenience Functions › checkDocumentExists › should check document existence using singleton
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      653 |
+      654 |         expect(result).toBeNull();
+    > 655 |         expect(mockClient.graphql.get).toHaveBeenCalled();
+          |                                        ^
+      656 |       });
+      657 |     });
+      658 |   });
+
+      at Object.toHaveBeenCalled (src/lib/ingestion/__tests__/deduplication.test.ts:655:40)
+
+PASS src/lib/cache/__tests__/cache-optimization.test.ts
+PASS src/lib/monitoring/__tests__/monitoring.test.ts
+PASS src/types/__tests__/types.test.ts
+PASS src/lib/cache/__tests__/scan-iterator.test.ts
+PASS src/lib/search/__tests__/query-classifier.test.ts
+PASS src/lib/search/__tests__/cached-search-orchestrator.test.ts
+PASS src/lib/ingestion/__tests__/crawl-schemas.test.ts
+PASS tests/unit/api/search-simple.test.ts
+PASS src/lib/weaviate/__tests__/client.test.ts
+  ● Console
+
+    console.log
+      Weaviate connection successful: 1.0.0
+
+      at log (src/lib/weaviate/client.ts:80:13)
+
+PASS src/lib/security/__tests__/input-sanitization.test.ts
+PASS src/lib/security/__tests__/api-keys.test.ts
+PASS src/lib/search/__tests__/hybrid-search.test.ts
+PASS src/lib/security/__tests__/rate-limiter.test.ts
+PASS tests/unit/example.test.ts
+PASS src/lib/cache/__tests__/redis-cache.test.ts
+  ● Console
+
+    console.log
+      Cache warming needed for query: test query 1
+
+      at RedisCacheManager.log [as warmCache] (src/lib/cache/redis-cache-manager.ts:316:19)
+
+    console.log
+      Cache warming needed for query: test query 2
+
+      at RedisCacheManager.log [as warmCache] (src/lib/cache/redis-cache-manager.ts:316:19)
+
+    console.log
+      Cleared 0 total cache keys
+
+      at RedisCacheManager.log [as clearAll] (src/lib/cache/redis-cache-manager.ts:391:15)
+
+PASS src/lib/search/__tests__/enhanced-authority-weighting.test.ts
+PASS src/lib/cache/__tests__/performance.test.ts
+  ● Console
+
+    console.log
+      Cache Performance: 73% hit rate
+
+      at Object.log (src/lib/cache/__tests__/performance.test.ts:138:15)
+
+    console.log
+      Total requests: 22, Hits: 16, Misses: 6
+
+      at Object.log (src/lib/cache/__tests__/performance.test.ts:139:15)
+
+PASS src/lib/cache/__tests__/embedding-service.test.ts
+PASS src/lib/feedback/__tests__/feedback.test.ts
+PASS src/lib/memory/__tests__/privacy-compliance.test.ts
+PASS src/lib/ingestion/__tests__/content-normalizer-simple.test.ts
+PASS src/lib/memory/__tests__/mem0-client.test.ts
+  ● Console
+
+    console.log
+      [Mem0] Using mock client (API key issues or disabled)
+
+      at Object.log (src/lib/memory/mem0-client.ts:313:17)
+
+
+Summary of all failing tests
+FAIL src/lib/ingestion/__tests__/deduplication.test.ts
+  ● Deduplication › ContentDeduplicator › Weaviate Integration › should check existing document by content hash
+
+    expect(received).not.toBeNull()
+
+    Received: null
+
+      463 |
+      464 |         // Should find existing document and include checksum in metadata
+    > 465 |         expect(result).not.toBeNull();
+          |                            ^
+      466 |         expect(result?.id).toBe('existing-weaviate-id');
+      467 |         expect(result?.metadata.checksum).toBeDefined();
+      468 |         expect(mockClient.graphql.get).toHaveBeenCalled();
+
+      at Object.toBeNull (src/lib/ingestion/__tests__/deduplication.test.ts:465:28)
+
+  ● Deduplication › Convenience Functions › deduplicateDocuments › should use custom config when provided
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  [{"content": "aaaaaaaaaaaaaaaaaaaaaaaaa", "filepath": "/test/github/file.ts", "id": "doc-d294pewnb", "language": "typescript", "metadata": {"checksum": "test-checksum", "encoding": "utf-8", "lastModified": 2023-01-01T00:00:00.000Z, "lines": 1, "mimeType": "text/plain", "size": 25, "url": "https://github.com/test/file", "wordCount": 1}, "priority": 1, "score": 0.8, "source": "github"}]
+
+      638 |
+      639 |         expect(result.processed).toBe(1);
+    > 640 |         expect(result.skippedDocuments).toHaveLength(0); // Should not skip with lower threshold
+          |                                         ^
+      641 |       });
+      642 |     });
+      643 |
+
+      at Object.toHaveLength (src/lib/ingestion/__tests__/deduplication.test.ts:640:41)
+
+  ● Deduplication › Convenience Functions › checkDocumentExists › should check document existence using singleton
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      653 |
+      654 |         expect(result).toBeNull();
+    > 655 |         expect(mockClient.graphql.get).toHaveBeenCalled();
+          |                                        ^
+      656 |       });
+      657 |     });
+      658 |   });
+
+      at Object.toHaveBeenCalled (src/lib/ingestion/__tests__/deduplication.test.ts:655:40)
+
+
+Test Suites: 1 failed, 22 passed, 23 total
+Tests:       3 failed, 19 skipped, 395 passed, 417 total
+Snapshots:   0 total
+Time:        4.607 s, estimated 5 s
+Ran all test suites.
