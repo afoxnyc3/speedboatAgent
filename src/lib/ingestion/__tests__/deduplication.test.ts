@@ -202,8 +202,8 @@ describe('Deduplication', () => {
     let deduplicator: ContentDeduplicator;
 
     beforeEach(() => {
-      // Create new instance directly to avoid singleton caching issues with mocks
-      deduplicator = new ContentDeduplicator();
+      // Create new instance with low threshold for short test content
+      deduplicator = new ContentDeduplicator({ contentThreshold: 0 });
     });
 
     describe('Constructor', () => {
@@ -403,11 +403,13 @@ describe('Deduplication', () => {
       });
 
       it('should skip documents below content threshold', async () => {
+        // Use deduplicator with default threshold (100 chars)
+        const defaultDedup = new ContentDeduplicator();
         const shortDoc = createTestDocument('short'); // Below 100 char threshold
         const longDoc = createTestDocument('a'.repeat(150)); // Above threshold
 
         // Test behavior: short documents are skipped based on threshold
-        const result = await deduplicator.deduplicate([shortDoc, longDoc]);
+        const result = await defaultDedup.deduplicate([shortDoc, longDoc]);
 
         expect(result.processed).toBe(2);
         expect(result.skippedDocuments).toHaveLength(1);
@@ -657,7 +659,8 @@ describe('Deduplication', () => {
 
   describe('Edge Cases and Complex Scenarios', () => {
     it('should handle mixed source priorities correctly', async () => {
-      const deduplicator = getContentDeduplicator();
+      // Use low threshold for short test content
+      const deduplicator = new ContentDeduplicator({ contentThreshold: 0 });
       const sameUrl = 'https://example.com/mixed';
       const docs = [
         createTestDocument('mixed content', 'local', {
@@ -682,7 +685,7 @@ describe('Deduplication', () => {
     });
 
     it('should handle documents with no metadata gracefully', async () => {
-      const deduplic = new ContentDeduplicator();
+      const deduplic = new ContentDeduplicator({ contentThreshold: 0 });
       const docWithoutMetadata = {
         ...createTestDocument('content without metadata'),
         metadata: {} as any
