@@ -38,7 +38,15 @@
 **Remaining Open Issues: 1**
 - **P3 (Optional)**: #7 (GitHub Webhooks)
 
-**Next Steps**: Start MVP Story #1 (Fix Redis Rate Limiter Bug)
+**Next Steps**: MVP Story #2 (Optimize Chat Response Time)
+
+### Current Session (2025-09-30 - MVP Story #1 Complete)
+✅ **Fixed Redis Rate Limiter Bug** (2 hours)
+- Problem: `-Infinity` converted to `null`, Redis threw error
+- Solution: Use Redis-native `'-inf'` string instead
+- Testing: 5 consecutive requests, no errors in logs
+- PR #92 created and ready for merge
+- **MVP Story #1 COMPLETE**
 
 ### Development Notes
 - Test coverage target (70%) achieved
