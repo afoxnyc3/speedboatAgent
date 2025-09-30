@@ -205,7 +205,9 @@ export class RateLimiter {
       const pipeline = this.redis.pipeline();
 
       // Remove expired entries from sorted set
-      pipeline.zremrangebyscore(key, -Infinity, windowStart);
+      // Use '-inf' string instead of -Infinity to avoid null args error
+      // TypeScript expects number, but Redis accepts '-inf' as special string value
+      pipeline.zremrangebyscore(key, '-inf' as unknown as number, windowStart);
 
       // Count current requests in window
       pipeline.zcard(key);
