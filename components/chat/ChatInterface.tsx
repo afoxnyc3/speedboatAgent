@@ -431,9 +431,9 @@ export default function ChatInterface({
                           <Clock className="h-3 w-3" />
                           <span>{formatTimestamp(message.timestamp)}</span>
                           {message.streaming && (
-                            <Badge variant="secondary" className="text-xs animate-pulse">
+                            <Badge variant="secondary" className="text-xs">
                               <div className="flex items-center gap-1">
-                                <div className="w-1 h-1 bg-current rounded-full animate-bounce" />
+                                <div className="w-1 h-1 bg-current rounded-full animate-pulse" />
                                 Streaming
                               </div>
                             </Badge>
