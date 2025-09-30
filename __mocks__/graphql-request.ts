@@ -25,7 +25,25 @@ export class GraphQLClient {
             size: 1024,
             _additional: {
               score: 0.95,
-              id: 'weaviate-mock-id'
+              id: 'weaviate-mock-id-1'
+            }
+          },
+          {
+            id: 'mock-doc-2',
+            content: 'Second mock document for testing',
+            source: 'web',
+            filepath: '/mock/docs/guide.md',
+            url: 'https://docs.example.com/guide',
+            language: 'markdown',
+            priority: 0.8,
+            lastModified: '2023-01-02T00:00:00Z',
+            isCode: false,
+            isDocumentation: true,
+            fileType: 'markdown',
+            size: 2048,
+            _additional: {
+              score: 0.85,
+              id: 'weaviate-mock-id-2'
             }
           }
         ]
