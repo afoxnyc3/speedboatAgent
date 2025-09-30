@@ -75,7 +75,7 @@ describe('Mem0Client', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'X-API-Key': 'test-api-key',
+            Authorization: 'Token test-api-key',
             'Content-Type': 'application/json',
           }),
         })
