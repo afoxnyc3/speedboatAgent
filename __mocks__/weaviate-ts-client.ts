@@ -3,7 +3,8 @@
  * Prevents all real Weaviate API calls in tests
  */
 
-const mockQuery = {
+// Export mockQuery and mockClient so tests can configure them
+export const mockQuery = {
   withClassName: jest.fn().mockReturnThis(),
   withFields: jest.fn().mockReturnThis(),
   withHybrid: jest.fn().mockReturnThis(),
@@ -19,7 +20,7 @@ const mockQuery = {
   })
 };
 
-const mockClient = {
+export const mockClient = {
   graphql: {
     get: jest.fn().mockReturnValue(mockQuery)
   },
