@@ -46,24 +46,46 @@ export interface CachedSearchExecutionParams {
  * Simplified search orchestrator with consistent behavior for tests
  */
 export class CachedSearchOrchestrator {
+  // Allow dependency injection for testing
+  constructor(
+    private deps?: {
+      getCacheManager?: typeof getCacheManager;
+      getEmbeddingService?: typeof getEmbeddingService;
+      classifyQueryWithMetrics?: typeof classifyQueryWithMetrics;
+      performHybridSearch?: typeof performHybridSearch;
+      createCacheContext?: typeof createCacheContext;
+      createTimeoutController?: typeof createTimeoutController;
+      validateQueryConstraints?: typeof validateQueryConstraints;
+    }
+  ) {}
+
   /**
    * Execute search workflow with simplified caching logic
    */
   async search(params: CachedSearchExecutionParams): Promise<SearchResponse> {
+    // Use injected dependencies or defaults
+    const _getCacheManager = this.deps?.getCacheManager || getCacheManager;
+    const _getEmbeddingService = this.deps?.getEmbeddingService || getEmbeddingService;
+    const _classifyQueryWithMetrics = this.deps?.classifyQueryWithMetrics || classifyQueryWithMetrics;
+    const _performHybridSearch = this.deps?.performHybridSearch || performHybridSearch;
+    const _createCacheContext = this.deps?.createCacheContext || createCacheContext;
+    const _createTimeoutController = this.deps?.createTimeoutController || createTimeoutController;
+    const _validateQueryConstraints = this.deps?.validateQueryConstraints || validateQueryConstraints;
+
     // 1) Validate & build context
-    validateQueryConstraints(params.query);
+    _validateQueryConstraints(params.query);
 
-    const cacheManager = getCacheManager();
-    const embeddingService = getEmbeddingService();
+    const cacheManager = _getCacheManager();
+    const embeddingService = _getEmbeddingService();
 
-    const cacheCtx = createCacheContext(
+    const cacheCtx = _createCacheContext(
       params.sessionId,
       params.userId,
       params.weights as Record<string, number> | undefined
     );
 
     // 2) Timeout controller setup
-    const { cleanup } = createTimeoutController(params.timeout);
+    const { cleanup } = _createTimeoutController(params.timeout);
 
     try {
       // 3) Only read cache when NOT forceFresh
@@ -86,12 +108,12 @@ export class CachedSearchOrchestrator {
         forceFresh: params.forceFresh
       });
 
-      const { classification } = await classifyQueryWithMetrics(params.query, {
+      const { classification } = await _classifyQueryWithMetrics(params.query, {
         timeout: params.timeout,
       });
 
       const sourceWeights = params.weights || classification.weights;
-      const { documents } = await performHybridSearch({
+      const { documents } = await _performHybridSearch({
         query: params.query,
         config: params.config || DEFAULT_SEARCH_CONFIG,
         sourceWeights,
@@ -162,8 +184,13 @@ export class CachedSearchOrchestrator {
     failed: number;
     alreadyCached: number;
   }> {
-    const cacheManager = getCacheManager();
-    const ctx = createCacheContext(undefined, undefined, undefined);
+    const _getCacheManager = this.deps?.getCacheManager || getCacheManager;
+    const _createCacheContext = this.deps?.createCacheContext || createCacheContext;
+    const _classifyQueryWithMetrics = this.deps?.classifyQueryWithMetrics || classifyQueryWithMetrics;
+    const _performHybridSearch = this.deps?.performHybridSearch || performHybridSearch;
+
+    const cacheManager = _getCacheManager();
+    const ctx = _createCacheContext(undefined, undefined, undefined);
     let success = 0;
     let failed = 0;
     let alreadyCached = 0;
@@ -179,8 +206,8 @@ export class CachedSearchOrchestrator {
           continue;
         }
 
-        const { classification } = await classifyQueryWithMetrics(q.query);
-        const { documents } = await performHybridSearch({
+        const { classification } = await _classifyQueryWithMetrics(q.query);
+        const { documents } = await _performHybridSearch({
           query: q.query,
           config: DEFAULT_SEARCH_CONFIG,
           sourceWeights: classification.weights,
@@ -204,7 +231,8 @@ export class CachedSearchOrchestrator {
    * Get cache statistics (synchronous for compatibility)
    */
   getCacheStats() {
-    const cacheManager = getCacheManager();
+    const _getCacheManager = this.deps?.getCacheManager || getCacheManager;
+    const cacheManager = _getCacheManager();
     return cacheManager.getCacheHealth();
   }
 
@@ -212,7 +240,8 @@ export class CachedSearchOrchestrator {
    * Clear all caches
    */
   async clearAllCaches(): Promise<boolean> {
-    const cacheManager = getCacheManager();
+    const _getCacheManager = this.deps?.getCacheManager || getCacheManager;
+    const cacheManager = _getCacheManager();
     if (!cacheManager.isAvailable()) return false;
     return cacheManager.clearAll();
   }
@@ -225,8 +254,11 @@ export class CachedSearchOrchestrator {
     cache: { healthy: boolean; latency?: number; error?: string };
     embedding: { cacheAvailable: boolean; stats: any };
   }> {
-    const cacheManager = getCacheManager();
-    const embeddingService = getEmbeddingService();
+    const _getCacheManager = this.deps?.getCacheManager || getCacheManager;
+    const _getEmbeddingService = this.deps?.getEmbeddingService || getEmbeddingService;
+
+    const cacheManager = _getCacheManager();
+    const embeddingService = _getEmbeddingService();
     const cacheHealth = await cacheManager.healthCheck();
     const embeddingStats = embeddingService.getCacheStats();
 
@@ -275,8 +307,26 @@ export async function executeSearchWorkflow(
  */
 export function createHealthResponse(enabled = false): Record<string, unknown> {
   return {
-    enabled: Boolean(enabled),
-    types: ['embeddings', 'classifications', 'searchResults', 'contextualQueries']
+    status: 'healthy',
+    version: '1.0.0',
+    capabilities: [
+      'hybrid_search',
+      'query_classification',
+      'source_weighting',
+      'result_caching',
+      'embedding_caching',
+      'contextual_caching',
+      'cache_warming'
+    ],
+    limits: {
+      maxQueryLength: 1000,
+      maxResults: 100,
+      timeout: 30000
+    },
+    cache: {
+      enabled: Boolean(enabled),
+      types: ['embeddings', 'classifications', 'searchResults', 'contextualQueries']
+    }
   };
 }
 
