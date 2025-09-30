@@ -54,13 +54,110 @@ export default function ChatInterface({
   const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const scrollThrottleRef = useRef<NodeJS.Timeout | null>(null);
+  const isUserScrollingRef = useRef(false);
+
+  // Check if user is near bottom of scroll container
+  const isUserAtBottom = useCallback(() => {
+    if (!scrollContainerRef.current) return true;
+    const container = scrollContainerRef.current;
+    const threshold = 100; // pixels from bottom
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    return distanceFromBottom < threshold;
+  }, []);
+
+  // Smooth scroll to bottom with throttling
+  const scrollToBottom = useCallback((force = false) => {
+    if (!scrollContainerRef.current) return;
+
+    // Don't auto-scroll if user has manually scrolled up (unless forced)
+    if (!force && !isUserAtBottom() && isUserScrollingRef.current) return;
+
+    const container = scrollContainerRef.current;
+
+    // Use instant scroll during streaming to prevent stuttering
+    // Use smooth scroll when not streaming for better UX
+    const behavior = streamingState.isStreaming ? 'auto' : 'smooth';
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: behavior as ScrollBehavior
+    });
+  }, [streamingState.isStreaming, isUserAtBottom]);
+
+  // Throttled scroll to bottom for streaming updates
+  const throttledScrollToBottom = useCallback(() => {
+    // Clear existing throttle
+    if (scrollThrottleRef.current) {
+      clearTimeout(scrollThrottleRef.current);
+    }
+
+    // During streaming, throttle scroll updates to every 150ms
+    if (streamingState.isStreaming) {
+      scrollThrottleRef.current = setTimeout(() => {
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      }, 150);
+    } else {
+      // When not streaming, scroll immediately
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }
+  }, [streamingState.isStreaming, scrollToBottom]);
+
+  // Detect user scrolling
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      // Mark that user is actively scrolling
+      isUserScrollingRef.current = true;
+
+      // Clear the timeout if user continues scrolling
+      clearTimeout(scrollTimeout);
+
+      // After 1 second of no scrolling, check if at bottom
+      scrollTimeout = setTimeout(() => {
+        if (isUserAtBottom()) {
+          isUserScrollingRef.current = false;
+        }
+      }, 1000);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, [isUserAtBottom]);
+
+  // Auto-scroll on new content
+  useEffect(() => {
+    // Trigger scroll when messages change or streaming content updates
+    throttledScrollToBottom();
+  }, [
+    messages.length,
+    optimisticMessages.length,
+    streamingState.partialContent,
+    throttledScrollToBottom
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+      if (scrollThrottleRef.current) {
+        clearTimeout(scrollThrottleRef.current);
       }
     };
   }, []);
@@ -306,17 +403,9 @@ export default function ChatInterface({
       )}
 
       {/* Messages Container */}
-      <Conversation
-        className="flex-1 overflow-hidden"
-        initial={streamingState.isStreaming ? "instant" : "smooth"}
-        resize={streamingState.isStreaming ? "instant" : "smooth"}
-      >
-        <ConversationContent
-          className={cn(
-            "space-y-6 p-4 overflow-y-auto",
-            "scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-          )}
-        >
+      <Conversation className="flex-1 overflow-hidden">
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <ConversationContent className="space-y-6 p-4">
           {allMessages.length === 0 && !streamingState.isStreaming ? (
             <ConversationEmptyState
               title="RAG Assistant Ready"
@@ -442,7 +531,8 @@ export default function ChatInterface({
           )}
 
           <div ref={messagesEndRef} />
-        </ConversationContent>
+          </ConversationContent>
+        </div>
       </Conversation>
 
       {/* Input Area */}
