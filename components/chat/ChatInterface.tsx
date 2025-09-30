@@ -451,11 +451,33 @@ export default function ChatInterface({
                         message.error && "text-red-600",
                         message.id.startsWith('opt_') && "opacity-75"
                       )}>
-                        {renderMessageContent(message)}
+                        {/* Show progressive loader for streaming messages with stage but no content yet */}
+                        {message.streaming && streamingState.stage && !message.content ? (
+                          <ProgressiveSkeletonLoader stage={streamingState.stage} />
+                        ) : (
+                          renderMessageContent(message)
+                        )}
                       </MessageContent>
 
-                      {/* Source citations */}
-                      {message.sources && message.sources.length > 0 && (
+                      {/* Sources preview for streaming messages */}
+                      {message.streaming && streamingState.sources && streamingState.sources.length > 0 && (
+                        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-2 text-sm text-blue-800 mb-2">
+                            <FileText className="w-4 h-4" />
+                            <span>Found {streamingState.sources.length} relevant sources</span>
+                          </div>
+                          <div className="space-y-1">
+                            {streamingState.sources.slice(0, 2).map((source: any, index: number) => (
+                              <div key={index} className="text-xs text-blue-600 truncate">
+                                {source.metadata?.filepath || source.metadata?.url || 'Source'}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Source citations for completed messages */}
+                      {!message.streaming && message.sources && message.sources.length > 0 && (
                         <div className="mt-4">
                           <SourceViewer
                             citations={message.sources}
@@ -488,44 +510,20 @@ export default function ChatInterface({
             </>
           )}
 
-          {/* Enhanced loading indicators */}
-          {(isLoading || streamingState.isStreaming) && (
+          {/* Enhanced loading indicators - only show if no streaming message exists yet */}
+          {(isLoading || streamingState.isStreaming) && optimisticMessages.length === 0 && (
             <Message from="assistant">
               <MessageContent>
-                {streamingState.isStreaming && streamingState.stage ? (
-                  <div className="space-y-4">
-                    {/* Progressive loading stages */}
-                    <ProgressiveSkeletonLoader stage={streamingState.stage} />
-
-                    {/* Sources preview */}
-                    {streamingState.sources && streamingState.sources.length > 0 && (
-                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center gap-2 text-sm text-blue-800 mb-2">
-                          <FileText className="w-4 h-4" />
-                          <span>Found {streamingState.sources.length} relevant sources</span>
-                        </div>
-                        <div className="space-y-1">
-                          {streamingState.sources.slice(0, 2).map((source: any, index: number) => (
-                            <div key={index} className="text-xs text-blue-600 truncate">
-                              {source.metadata?.filepath || source.metadata?.url || 'Source'}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                <div className="flex items-center gap-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.1s]" />
+                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.2s]" />
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.1s]" />
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.2s]" />
-                    </div>
-                    <span className="text-muted-foreground">
-                      Searching knowledge base...
-                    </span>
-                  </div>
-                )}
+                  <span className="text-muted-foreground">
+                    Searching knowledge base...
+                  </span>
+                </div>
               </MessageContent>
             </Message>
           )}
