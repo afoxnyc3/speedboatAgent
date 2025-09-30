@@ -1,0 +1,317 @@
+# Git Branching Strategy
+
+## Branch Types
+
+### Main Branches
+- `main` - Production-ready code, always deployable
+- `develop` - Integration branch for features (optional, use if needed)
+
+### Supporting Branches
+- `feature/*` - New features and enhancements
+- `fix/*` - Bug fixes
+- `hotfix/*` - Emergency production fixes
+- `release/*` - Release preparation (optional)
+- `chore/*` - Maintenance tasks and refactoring
+
+## Naming Convention
+```
+<type>/<issue-id>-<short-description>
+```
+
+### Examples
+- `feature/123-user-authentication`
+- `feature/124-search-api-endpoint`
+- `fix/125-login-validation-error`
+- `fix/126-memory-leak-chat`
+- `hotfix/127-critical-security-patch`
+- `chore/128-update-dependencies`
+- `chore/129-refactor-api-layer`
+
+## Workflow
+
+### Feature Development
+```bash
+# Create feature branch from main (or develop if using)
+git checkout main
+git pull origin main
+git checkout -b feature/123-new-feature
+
+# Work on feature with atomic commits
+git add [files]
+git commit -m "feat: #123 implement core functionality"
+
+# Keep branch updated (if long-lived)
+git fetch origin
+git rebase origin/main  # or merge if you prefer
+
+# Push to remote
+git push -u origin feature/123-new-feature
+
+# Create pull request to main
+gh pr create --title "feat: #123 New feature implementation" \
+  --body "Closes #123"
+```
+
+### Bug Fix
+```bash
+# Create fix branch from main (or develop)
+git checkout main
+git pull origin main
+git checkout -b fix/124-bug-description
+
+# Fix bug with clear commit message
+git add [files]
+git commit -m "fix: #124 resolve [specific issue]"
+
+# Push and create PR
+git push -u origin fix/124-bug-description
+gh pr create --title "fix: #124 Bug description" \
+  --body "Fixes #124"
+```
+
+### Hotfix (Emergency Production Fix)
+```bash
+# Create hotfix branch from main
+git checkout main
+git pull origin main
+git checkout -b hotfix/125-critical-fix
+
+# Apply fix
+git add [files]
+git commit -m "hotfix: #125 critical [issue]"
+
+# Test thoroughly in hotfix branch
+
+# Push and create urgent PR
+git push -u origin hotfix/125-critical-fix
+gh pr create --title "hotfix: #125 Critical fix" \
+  --body "Fixes #125 [URGENT]" \
+  --label "priority:critical"
+
+# After merge, immediately tag
+git checkout main
+git pull origin main
+git tag -a v1.0.1 -m "Hotfix: [description]"
+git push origin v1.0.1
+```
+
+## Commit Message Format
+```
+<type>: #<issue-id> <description>
+
+[optional body explaining what and why]
+
+[optional footer with breaking changes or additional issue refs]
+```
+
+### Types
+- `feat`: New feature for the user
+- `fix`: Bug fix for the user
+- `docs`: Documentation only changes
+- `style`: Code style (formatting, missing semicolons, etc.)
+- `refactor`: Code change that neither fixes a bug nor adds a feature
+- `perf`: Performance improvement
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks, dependency updates, etc.
+- `hotfix`: Emergency production fix
+
+### Examples
+```bash
+# Simple feature
+git commit -m "feat: #123 add user authentication"
+
+# Bug fix with body
+git commit -m "fix: #124 resolve login validation
+
+The validation was failing for emails with + signs.
+Updated regex pattern to properly handle all RFC-compliant emails."
+
+# Breaking change
+git commit -m "feat: #125 redesign API response format
+
+BREAKING CHANGE: API now returns data in { data, meta } format
+instead of flat structure. Update client code accordingly."
+```
+
+## Pull Request Process
+
+### Before Creating PR
+1. **Update from target branch**
+   ```bash
+   git fetch origin
+   git rebase origin/main  # or merge
+   ```
+
+2. **Run all quality checks**
+   ```bash
+   [test command]      # e.g., npm test
+   [lint command]      # e.g., npm run lint
+   [typecheck command] # e.g., npm run typecheck
+   [build command]     # e.g., npm run build
+   ```
+
+3. **Self-review code**
+   - Review your own changes first
+   - Check for console.logs, commented code
+   - Verify test coverage
+   - Update documentation
+
+### PR Template
+```markdown
+## Summary
+[Brief description of what this PR does]
+
+## Issue
+Closes #[issue-number]
+<!-- Use: Closes #, Fixes #, or Resolves # for automatic closure -->
+
+## Changes
+- [ ] [Specific change 1]
+- [ ] [Specific change 2]
+- [ ] [Specific change 3]
+
+## Testing
+- [ ] Unit tests pass
+- [ ] Integration tests pass
+- [ ] Manual testing completed
+- [ ] Browser/device testing (if applicable)
+
+## Documentation
+- [ ] Code comments added/updated
+- [ ] README updated (if needed)
+- [ ] API docs updated (if applicable)
+- [ ] Change log entry added
+
+## Screenshots/Videos
+[If applicable, add visual evidence of changes]
+
+## Performance Impact
+- [Metric 1]: [Impact or "No change"]
+- [Metric 2]: [Impact or "No change"]
+
+## Breaking Changes
+[List any breaking changes, or write "None"]
+
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Tests added/updated
+- [ ] Documentation updated
+- [ ] No merge conflicts
+```
+
+### PR Review Process
+1. **Author**: Create PR with complete description
+2. **CI**: Automated checks must pass
+3. **Reviewer**: Code review for quality and correctness
+4. **Author**: Address feedback and push updates
+5. **Approval**: Get required approvals (typically 1-2)
+6. **Merge**: Squash and merge or merge commit (per team policy)
+
+## Merge Strategy
+
+### Feature → Main
+- **Squash and merge**: Cleans commit history
+- **Merge commit**: Preserves feature branch history (if needed)
+
+### Release Branch → Main
+- **Merge commit**: Preserves release history
+- **Tag**: Always tag releases
+
+### Hotfix → Main
+- **Merge commit**: Direct merge for urgency
+- **Tag immediately**: Create patch version tag
+- **Backport**: Cherry-pick or merge to develop if used
+
+## Protection Rules
+
+### Main Branch Protection
+- ✅ Require pull request reviews: [1-2 reviewers]
+- ✅ Require status checks to pass
+- ✅ Require branches to be up to date
+- ✅ Include administrators in restrictions
+- ✅ Require linear history (optional)
+- ❌ Allow force pushes: Never
+
+### Develop Branch Protection (if used)
+- ✅ Require pull request reviews: [1 reviewer]
+- ✅ Require status checks
+- ❌ Allow force pushes: No
+
+## Post-Merge Cleanup
+
+```bash
+# After PR is merged
+git checkout main
+git pull origin main
+
+# Delete local feature branch
+git branch -d feature/123-new-feature
+
+# Delete remote branch (if not auto-deleted)
+git push origin --delete feature/123-new-feature
+
+# Verify clean state
+git status
+```
+
+## Common Scenarios
+
+### Updating Long-Lived Branch
+```bash
+# Option 1: Rebase (cleaner history)
+git checkout feature/123-long-feature
+git fetch origin
+git rebase origin/main
+
+# Option 2: Merge (safer, preserves history)
+git checkout feature/123-long-feature
+git fetch origin
+git merge origin/main
+```
+
+### Resolving Conflicts
+```bash
+# During rebase
+git rebase origin/main
+# Fix conflicts in files
+git add [resolved-files]
+git rebase --continue
+
+# During merge
+git merge origin/main
+# Fix conflicts in files
+git add [resolved-files]
+git commit -m "merge: resolve conflicts with main"
+```
+
+### Aborting Operations
+```bash
+# Abort rebase
+git rebase --abort
+
+# Abort merge
+git merge --abort
+
+# Undo last commit (keep changes)
+git reset --soft HEAD~1
+
+# Undo last commit (discard changes) - DANGEROUS
+git reset --hard HEAD~1
+```
+
+## Best Practices
+
+1. **Branch Often**: Create branches for all changes
+2. **Commit Atomically**: Each commit should be a logical unit
+3. **Write Clear Messages**: Future you will thank you
+4. **Pull Before Push**: Always sync before pushing
+5. **Delete After Merge**: Clean up merged branches
+6. **Tag Releases**: Make releases easy to find
+7. **Protect Main**: Never commit directly to main
+8. **Review Your Code**: Self-review before requesting review
+
+---
+
+*Last Updated: [DATE]*
+*Team Standard: [Merge strategy preference]*

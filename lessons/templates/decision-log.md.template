@@ -1,0 +1,137 @@
+# Architecture Decision Log
+
+This log documents all significant architecture and design decisions for [PROJECT_NAME].
+
+## How to Use This Template
+
+1. Copy the decision template below for each new ADR
+2. Number decisions sequentially (ADR-001, ADR-002, etc.)
+3. Fill in all sections with relevant detail
+4. Update status as decisions evolve
+5. Link to related ADRs when appropriate
+
+## Decision Template
+```markdown
+## ADR-[NUMBER]: [TITLE]
+Date: YYYY-MM-DD
+Status: [Proposed | Accepted | Deprecated | Superseded by ADR-XXX]
+
+### Context
+[What is the issue we're addressing? Include relevant background, constraints, requirements.]
+
+### Decision
+[What is the change we're making? Be specific and concrete.]
+
+### Consequences
+#### Positive
+- [Benefit 1]
+- [Benefit 2]
+- [Benefit 3]
+
+#### Negative
+- [Trade-off 1]
+- [Trade-off 2]
+- [Trade-off 3]
+
+### Alternatives Considered
+1. **[Alternative 1 name]**
+   - Pros: [List advantages]
+   - Cons: [List disadvantages]
+   - Why not chosen: [Explanation]
+
+2. **[Alternative 2 name]**
+   - Pros: [List advantages]
+   - Cons: [List disadvantages]
+   - Why not chosen: [Explanation]
+
+### Implementation Notes
+[Optional: Specific guidance for implementation, migration strategy, rollback plan]
+
+### Related Decisions
+- [Link to related ADR-XXX]
+- [Link to related ADR-YYY]
+```
+
+---
+
+## Sample ADR (Delete this in your project)
+
+## ADR-001: Use [Technology/Pattern] for [Purpose]
+Date: 2025-01-15
+Status: Accepted
+
+### Context
+We needed to choose a [technology category] for [specific purpose]. Our requirements were:
+- [Requirement 1]
+- [Requirement 2]
+- [Requirement 3]
+- [Constraint 1]
+
+### Decision
+We will use [Technology/Pattern] because it best meets our requirements while fitting within our constraints.
+
+Key aspects of this decision:
+- [Aspect 1]
+- [Aspect 2]
+- [Aspect 3]
+
+### Consequences
+#### Positive
+- [Benefit 1 with specific metric or outcome]
+- [Benefit 2 with specific metric or outcome]
+- [Benefit 3 with specific metric or outcome]
+- Better developer experience through [specific improvement]
+
+#### Negative
+- [Trade-off 1 with mitigation strategy]
+- [Trade-off 2 with acceptance criteria]
+- Learning curve for [specific area]
+- Additional complexity in [specific area]
+
+### Alternatives Considered
+1. **[Alternative technology/pattern]**
+   - Pros: [Specific advantages]
+   - Cons: [Specific disadvantages]
+   - Why not chosen: [Did not meet requirement X as well as chosen solution]
+
+2. **[Another alternative]**
+   - Pros: [Specific advantages]
+   - Cons: [Specific disadvantages]
+   - Why not chosen: [Higher operational cost, less team familiarity]
+
+3. **Build custom solution**
+   - Pros: Perfect fit for requirements, full control
+   - Cons: High development time, maintenance burden
+   - Why not chosen: ROI not justified for MVP timeline
+
+---
+
+## Your Project Decisions Start Here
+
+## ADR-001: [Your First Decision Title]
+Date: YYYY-MM-DD
+Status: Proposed
+
+### Context
+[Describe the issue...]
+
+### Decision
+[State the decision...]
+
+### Consequences
+#### Positive
+-
+
+#### Negative
+-
+
+### Alternatives Considered
+1. **[Alternative 1]**
+   - Pros:
+   - Cons:
+   - Why not chosen:
+
+---
+
+*Last Updated: [DATE]*
+*Total Decisions: [COUNT]*

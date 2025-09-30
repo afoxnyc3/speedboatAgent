@@ -1,0 +1,238 @@
+# [PROJECT_NAME] Project Specification
+
+> **Product Requirements Document**
+> Replace all [PLACEHOLDER] markers with your project details
+
+## Product Requirements
+
+### Overview
+[2-3 sentences describing what the product does and who it's for]
+
+### Core Features
+1. **[Feature Name]**: [Description of feature and user value]
+2. **[Feature Name]**: [Description of feature and user value]
+3. **[Feature Name]**: [Description of feature and user value]
+4. **[Feature Name]**: [Description of feature and user value]
+
+### Success Metrics
+- [Metric 1 with target, e.g., "Response time < 2s (p95)"]
+- [Metric 2 with target, e.g., "User satisfaction > 85%"]
+- [Metric 3 with target, e.g., "Uptime > 99.9%"]
+- [Metric 4 with business impact, e.g., "40 hours saved vs alternative"]
+
+## Architecture
+
+### Tech Stack
+```yaml
+Frontend:       [Framework + Version]
+Backend:        [Framework + Version]
+Database:       [Type + Provider]
+API Layer:      [Description]
+Authentication: [Solution]
+Deployment:     [Platform]
+Monitoring:     [Tools]
+```
+
+### Data Flow
+```mermaid
+[Add your mermaid diagram or ASCII art data flow here]
+
+Example:
+User → Frontend → API Gateway → Business Logic → Database
+                    ↓                              ↓
+                  Cache ←─────────────────────────┘
+```
+
+### API Endpoints
+```typescript
+// [Domain 1]
+GET    /api/[resource]         // [Description]
+POST   /api/[resource]         // [Description]
+PUT    /api/[resource]/:id     // [Description]
+DELETE /api/[resource]/:id     // [Description]
+
+// [Domain 2]
+GET    /api/[resource]         // [Description]
+POST   /api/[resource]         // [Description]
+```
+
+### Security
+- [Security measure 1, e.g., "JWT authentication with refresh tokens"]
+- [Security measure 2, e.g., "Rate limiting: 100 req/min per user"]
+- [Security measure 3, e.g., "Input validation with Zod schemas"]
+- [Security measure 4, e.g., "CORS configuration for production domains only"]
+
+## Data Strategy
+
+### Phase 1: [Phase Name]
+- [Data source or approach 1]
+- [Data source or approach 2]
+- [Priority/weighting strategy]
+
+### Phase 2: [Phase Name]
+- [Data source or approach 1]
+- [Data source or approach 2]
+- [Integration strategy]
+
+## UX Design
+
+### [Primary Interface Name]
+```
+┌─────────────────────────────────────┐
+│ [High-level UI sketch]              │
+│                                     │
+│ [Key interaction 1]                 │
+│ [Key interaction 2]                 │
+│                                     │
+│ [Action buttons]                    │
+└─────────────────────────────────────┘
+```
+
+### Key Interactions
+- **[Interaction 1]**: [Description of user flow]
+- **[Interaction 2]**: [Description of user flow]
+- **[Interaction 3]**: [Description of user flow]
+
+### Performance
+- [UX performance goal 1, e.g., "Skeleton loaders during fetch"]
+- [UX performance goal 2, e.g., "Optimistic UI updates"]
+- [UX performance goal 3, e.g., "< 50KB initial JS bundle"]
+
+## [Database/Storage] Configuration
+
+### Schema Design
+```[language]
+{
+  [Schema definition with comments explaining design choices]
+}
+```
+
+### Key Design Decisions
+- **[Decision 1]**: [Rationale]
+- **[Decision 2]**: [Rationale]
+- **[Decision 3]**: [Rationale]
+
+## External References
+
+### Core Technologies
+- [Technology 1 Documentation URL]
+- [Technology 2 Documentation URL]
+- [Technology 3 Documentation URL]
+
+### [Category Name]
+- [Resource 1 URL]
+- [Resource 2 URL]
+
+### [Category Name]
+- [Resource 1 URL]
+- [Resource 2 URL]
+
+## Implementation Timeline
+
+### Week 1: [Phase Name]
+- [Major deliverable 1]
+- [Major deliverable 2]
+- [Major deliverable 3]
+
+### Week 2: [Phase Name]
+- [Major deliverable 1]
+- [Major deliverable 2]
+- [Major deliverable 3]
+
+### Week 3: [Phase Name]
+- [Major deliverable 1]
+- [Major deliverable 2]
+
+### Week 4: [Phase Name]
+- [Major deliverable 1]
+- [Major deliverable 2]
+
+## Configuration
+
+### Environment Variables
+```bash
+# Required
+[VAR_1]=          # [Description]
+[VAR_2]=          # [Description]
+[VAR_3]=          # [Description]
+
+# Optional
+[VAR_4]=          # [Description]
+[VAR_5]=          # [Description]
+
+# Development Only
+[DEV_VAR_1]=      # [Description]
+```
+
+### Repository Structure
+```
+/[dir-1]          # [Description]
+  /[subdir-1]     # [Description]
+  /[subdir-2]     # [Description]
+/[dir-2]          # [Description]
+/[dir-3]          # [Description]
+/[scripts]        # [Description]
+/[tests]          # [Description]
+```
+
+## Cost Projections
+
+| Component | Monthly Estimate | Optimization Strategy |
+|-----------|-----------------|----------------------|
+| [Service 1] | $[amount] | [How to optimize] |
+| [Service 2] | $[amount] | [How to optimize] |
+| [Service 3] | $[amount] | [How to optimize] |
+| **Total** | **$[total]** | [Overall strategy] |
+
+## Risk Mitigation
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|------------|
+| [Risk 1] | [High/Med/Low] | [High/Med/Low] | [Strategy] |
+| [Risk 2] | [High/Med/Low] | [High/Med/Low] | [Strategy] |
+| [Risk 3] | [High/Med/Low] | [High/Med/Low] | [Strategy] |
+
+## Success Criteria
+
+### Technical Metrics
+- [Technical goal 1 with measurement]
+- [Technical goal 2 with measurement]
+- [Technical goal 3 with measurement]
+
+### Business Metrics
+- [Business goal 1 with measurement]
+- [Business goal 2 with measurement]
+- [Business goal 3 with measurement]
+
+### User Experience Metrics
+- [UX goal 1 with measurement]
+- [UX goal 2 with measurement]
+- [UX goal 3 with measurement]
+
+## Launch Checklist
+
+### Infrastructure
+- [ ] [Infrastructure item 1]
+- [ ] [Infrastructure item 2]
+- [ ] [Infrastructure item 3]
+
+### Features
+- [ ] [Feature 1 complete with acceptance criteria]
+- [ ] [Feature 2 complete with acceptance criteria]
+- [ ] [Feature 3 complete with acceptance criteria]
+
+### Quality
+- [ ] [Quality gate 1]
+- [ ] [Quality gate 2]
+- [ ] [Quality gate 3]
+
+### Operations
+- [ ] [Operational requirement 1]
+- [ ] [Operational requirement 2]
+- [ ] [Operational requirement 3]
+
+---
+
+*Created: [DATE]*
+*Last Updated: [DATE]*
+*Version: [VERSION]*

@@ -1,0 +1,144 @@
+# TODO - [PROJECT_NAME]
+
+## Current Phase: [PHASE_NAME]
+**Focus**: [Brief description of current work]
+
+**Current Status**: [Status summary]
+
+**Recently Completed ([DATE])**:
+- ✅ [Completed item 1]
+- ✅ [Completed item 2]
+- ✅ [Completed item 3]
+
+---
+
+## 🚧 ACTIVE - [Current Week/Sprint Name]
+
+### ⚡ Priority P0 Issues (Critical)
+Work on these first - production blockers or critical functionality
+
+- **Issue #[N]**: [Title] - [Status]
+  - [Brief description]
+  - [Key requirements or next steps]
+  - **Status**: [In Progress/Blocked/Ready]
+
+### 🔥 Priority P1 Issues (High)
+Important features and improvements
+
+- **Issue #[N]**: [Title]
+  - [Brief description]
+  - [Key requirements]
+
+### 📊 Priority P2 Issues (Medium)
+Enhancements and optimizations
+
+- **Issue #[N]**: [Title]
+  - [Brief description]
+  - [Key requirements]
+
+### 📝 Priority P3 Issues (Low)
+Nice-to-haves and documentation
+
+- **Issue #[N]**: [Title]
+  - [Brief description]
+
+---
+
+## ✅ COMPLETED - [Previous Week/Sprint Name]
+
+### ✅ [Category Name] - COMPLETE
+**Completed**: [DATE]
+
+- ✅ [Completed task 1 with brief outcome]
+- ✅ [Completed task 2 with brief outcome]
+- ✅ [Completed task 3 with brief outcome]
+- ✅ [Completed task 4 with brief outcome]
+
+### ✅ [Another Category] - COMPLETE
+**Completed**: [DATE]
+
+- ✅ [Completed task 1]
+- ✅ [Completed task 2]
+- ✅ [Completed task 3]
+
+---
+
+## 📦 ARCHIVED - [Older Phase Name]
+
+### ✅ [Category] - COMPLETE
+**Completed**: [DATE]
+**GitHub**: [Link to issue if applicable]
+
+- ✅ [Completed task 1]
+- ✅ [Completed task 2]
+- ✅ [Completed task 3]
+
+---
+
+## Development Notes
+
+### Architecture Decisions
+- **[Decision topic]**: [Brief note]
+- **[Decision topic]**: [Brief note]
+
+### Implementation Priority
+1. **[Priority 1]** - [Why it's first]
+2. **[Priority 2]** - [Why it's second]
+3. **[Priority 3]** - [Why it's third]
+
+### Current Sprint Status
+- ✅ [Completed milestone in current sprint]
+- 🚧 [In-progress milestone]
+- 📋 [Upcoming milestone]
+
+---
+
+## Blockers & Dependencies
+
+### Current Blockers
+- 🚫 **[Blocker 1]**: [Description and impact]
+  - **Unblock condition**: [What needs to happen]
+  - **Owner**: [Who's working on it]
+
+### Waiting On
+- ⏳ **[Dependency 1]**: [Description]
+  - **Expected**: [When it should be available]
+
+---
+
+## Upcoming ([Next Week/Sprint])
+
+### Planned Work
+- [ ] [Planned task 1]
+- [ ] [Planned task 2]
+- [ ] [Planned task 3]
+
+### Future Considerations
+- [ ] [Future enhancement 1]
+- [ ] [Future enhancement 2]
+
+---
+
+## Quick Reference
+
+### Common Commands
+```bash
+# [Command category 1]
+[command 1]          # [Description]
+[command 2]          # [Description]
+
+# [Command category 2]
+[command 1]          # [Description]
+[command 2]          # [Description]
+```
+
+### Key Files
+- `[file/path]` - [Purpose]
+- `[file/path]` - [Purpose]
+- `[file/path]` - [Purpose]
+
+---
+
+*Last Updated: [DATE]*
+*Sprint: [Sprint name/number]*
+*Progress: [N]% complete*

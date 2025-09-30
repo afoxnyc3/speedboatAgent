@@ -1,0 +1,155 @@
+# Change Log
+
+All notable changes to [PROJECT_NAME] will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- [New feature or capability]
+- [New feature or capability]
+
+### Changed
+- [Change in existing functionality]
+- [Change in existing functionality]
+
+### Fixed
+- [Bug fix]
+- [Bug fix]
+
+### Removed
+- [Removed feature or functionality]
+
+---
+
+## [1.0.0] - YYYY-MM-DD
+
+**Milestone**: [Major milestone name]
+
+### Added
+- **[Feature category]**: [Description of what was added]
+  - [Specific item 1]
+  - [Specific item 2]
+  - [Specific item 3]
+
+- **[Another feature category]**: [Description]
+  - [Specific item 1]
+  - [Specific item 2]
+
+### Changed
+- **[What changed]**: [Description of change and why]
+- **[Another change]**: [Description of change and why]
+
+### Fixed
+- **[Bug or issue]**: [Description of fix]
+- **[Another bug]**: [Description of fix]
+
+### Performance
+- **[Performance improvement]**: [Metric improvement, e.g., "Response time: 2s → 1s"]
+- **[Another improvement]**: [Metric improvement]
+
+### Technical Achievements
+- [Achievement 1 with metric]
+- [Achievement 2 with metric]
+- [Achievement 3 with metric]
+
+---
+
+## [0.5.0] - YYYY-MM-DD
+
+**Milestone**: [Minor milestone name]
+
+### Added
+- [New feature]
+- [New feature]
+
+### Fixed
+- [Bug fix]
+- [Bug fix]
+
+---
+
+## [0.1.0] - YYYY-MM-DD
+
+**Milestone**: [Initial release or major milestone]
+
+### Added
+- **Core Infrastructure**: [Description]
+  - [Component 1]
+  - [Component 2]
+  - [Component 3]
+
+- **[Feature category]**: [Description]
+  - [Feature 1]
+  - [Feature 2]
+
+### Technical Achievements
+- [Achievement 1]
+- [Achievement 2]
+- [Achievement 3]
+
+### Infrastructure
+- [Infrastructure item 1]
+- [Infrastructure item 2]
+
+### Metrics Achieved
+- [Metric 1]: [Value]
+- [Metric 2]: [Value]
+- [Metric 3]: [Value]
+
+---
+
+## Template for New Entries
+
+```markdown
+## [VERSION] - YYYY-MM-DD
+
+**Milestone**: [Milestone name]
+
+### Added
+- **[Feature]**: [Description]
+  - [Detail 1]
+  - [Detail 2]
+
+### Changed
+- **[Change]**: [Description and reason]
+
+### Fixed
+- **[Bug]**: [Description of fix]
+- **[Issue]**: [Root cause and solution]
+
+### Removed
+- **[Feature]**: [Why it was removed]
+
+### Performance
+- **[Improvement]**: [Metric change]
+
+### Security
+- **[Security enhancement]**: [Description]
+```
+
+---
+
+## Versioning Guide
+
+### Major Version (X.0.0)
+- Breaking changes
+- Major feature additions
+- Architecture changes
+
+### Minor Version (0.X.0)
+- New features (backward compatible)
+- Significant improvements
+- New capabilities
+
+### Patch Version (0.0.X)
+- Bug fixes
+- Minor improvements
+- Documentation updates
+
+---
+
+*Last Updated: [DATE]*
+*Current Version: [VERSION]*
