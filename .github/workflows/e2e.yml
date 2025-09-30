@@ -36,8 +36,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Test on multiple browsers for demo reliability
-        browser: [chromium, firefox]
+        # Optimized to Chromium only for faster CI/CD cycles
+        # Firefox removed per issue #85 (browser matrix optimization)
+        browser: [chromium]
 
     steps:
       - name: Checkout code
