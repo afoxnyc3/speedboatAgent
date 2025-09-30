@@ -4,7 +4,26 @@
  */
 
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { createHash } from 'crypto';
+import type { Document, DocumentSource } from '../../../types/search';
+
+// Create mock functions BEFORE jest.mock() calls
+const mockCreateHashFn = jest.fn();
+const mockCreateWeaviateClientFn = jest.fn();
+const mockCreateDocumentHashFn = jest.fn();
+
+// Mock dependencies with manual factories (crypto is a Node built-in, needs factory)
+jest.mock('crypto', () => ({
+  createHash: mockCreateHashFn,
+  randomUUID: jest.fn().mockReturnValue('test-uuid-123')
+}));
+jest.mock('../../weaviate/client', () => ({
+  createWeaviateClient: mockCreateWeaviateClientFn
+}));
+jest.mock('../../search/search-utils', () => ({
+  createDocumentHash: mockCreateDocumentHashFn
+}));
+
+// Import AFTER mocks are set up
 import {
   DEFAULT_DEDUP_CONFIG,
   DeduplicationConfig,
@@ -16,29 +35,13 @@ import {
   getContentDeduplicator,
   DeduplicationConfigSchema,
   DeduplicationRequestSchema,
-  type ContentDeduplicator
+  ContentDeduplicator
 } from '../deduplication';
-import { createWeaviateClient } from '../../weaviate/client';
-import { createDocumentHash } from '../../search/search-utils';
-import type { Document, DocumentSource } from '../../../types/search';
 
-// Mock dependencies
-const mockCreateHashFn = jest.fn();
-const mockCreateDocumentHashFn = jest.fn();
-const mockCreateWeaviateClientFn = jest.fn();
-jest.mock('../../weaviate/client', () => ({
-  createWeaviateClient: mockCreateWeaviateClientFn
-}));
-jest.mock('../../search/search-utils', () => ({
-  createDocumentHash: mockCreateDocumentHashFn
-}));
-jest.mock('crypto', () => ({
-  createHash: mockCreateHashFn
-}));
-
+// Get references to mocked functions
+const mockCreateHash = mockCreateHashFn;
 const mockCreateWeaviateClient = mockCreateWeaviateClientFn;
 const mockCreateDocumentHash = mockCreateDocumentHashFn;
-const mockCreateHash = mockCreateHashFn;
 
 describe('Deduplication', () => {
   let mockClient: any;
@@ -49,17 +52,19 @@ describe('Deduplication', () => {
     // Reset all mocks
     jest.clearAllMocks();
 
-    // Mock crypto hash object
+    // Create mock hash object for crypto.createHash()
     mockHashObj = {
       update: jest.fn().mockReturnThis(),
-      digest: jest.fn().mockReturnValue('mocked-hash-123')
+      digest: jest.fn().mockReturnValue('mock-hash-digest')
     };
+
+    // Configure createHash to return our mockHashObj
     mockCreateHash.mockReturnValue(mockHashObj);
 
-    // Mock search utils
-    mockCreateDocumentHash.mockReturnValue('doc-hash-456');
+    // Configure search utils mock
+    mockCreateDocumentHash.mockReturnValue('test-hash-456');
 
-    // Mock Weaviate client and query builder
+    // Mock Weaviate client and query builder (no global mock for this)
     mockQuery = {
       withClassName: jest.fn().mockReturnThis(),
       withFields: jest.fn().mockReturnThis(),
@@ -74,7 +79,10 @@ describe('Deduplication', () => {
       }
     };
 
-    mockCreateWeaviateClient.mockReturnValue(mockClient);
+    // Configure weaviate client mock (it's an auto-mock, so we can call mockReturnValue)
+    if (jest.isMockFunction(mockCreateWeaviateClient)) {
+      mockCreateWeaviateClient.mockReturnValue(mockClient);
+    }
   });
 
   afterEach(() => {
