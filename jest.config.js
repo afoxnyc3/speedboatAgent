@@ -8,7 +8,10 @@ const config = {
   transformIgnorePatterns: [
     'node_modules/(?!(@upstash/redis|uncrypto)/)',
   ],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: [
+    '<rootDir>/jest.setup.js',
+    '<rootDir>/tests/setup/jest.setup.ts'
+  ],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',

@@ -1,0 +1,243 @@
+# CLAUDE.md - [PROJECT_NAME] Technical Reference
+
+> **Instructions for filling out this template:**
+> 1. Replace all [PLACEHOLDER] markers with your project details
+> 2. Remove sections not relevant to your project
+> 3. Keep this file under 15KB for optimal Claude Code performance
+> 4. Update throughout development as architecture evolves
+
+## Project Overview
+[One paragraph describing what this project does and why it exists]
+
+**Example:** AI-powered knowledge assistant that provides instant, accurate answers from GitHub repository documentation and codebase with hybrid web-scraped content.
+
+## Mission Statement
+[Clear statement of project goals and success criteria]
+
+**Example:** Build a production-ready RAG agent that saves 40 engineering hours through intelligent code understanding and documentation retrieval with zero hallucination tolerance.
+
+## Core Features
+- **Feature 1**: [Description]
+- **Feature 2**: [Description]
+- **Feature 3**: [Description]
+- **Feature 4**: [Description]
+
+## Technical Architecture
+
+### Core Stack
+```yaml
+Frontend:       [Framework] + [Language]
+Backend:        [Framework] + [Language]
+Database:       [Type and provider]
+Vector DB:      [Provider] # If applicable
+LLM:            [Provider and model] # If applicable
+Caching:        [Solution]
+Queue:          [Solution] # If applicable
+Monitoring:     [Tools]
+Deployment:     [Platform]
+```
+
+### Data Flow
+```
+[Describe your data flow with ASCII or Mermaid diagram]
+
+Example:
+User Request → API Gateway → Business Logic → Database
+                ↓                               ↓
+            Cache Check ←──────────────────────┘
+                ↓
+            Response
+```
+
+### API Endpoints
+```typescript
+GET    /api/[resource]         // [Description]
+POST   /api/[resource]         // [Description]
+PUT    /api/[resource]/:id     // [Description]
+DELETE /api/[resource]/:id     // [Description]
+```
+
+### Performance Requirements
+- [Metric 1]: [Target] (e.g., Response time: < 2s p95)
+- [Metric 2]: [Target] (e.g., Uptime: > 99.9%)
+- [Metric 3]: [Target] (e.g., Throughput: > 1000 req/min)
+- [Metric 4]: [Target]
+
+## Implementation Timeline
+
+### Week 1: [Phase Name]
+- [Major milestone 1]
+- [Major milestone 2]
+- [Major milestone 3]
+
+### Week 2: [Phase Name]
+- [Major milestone 1]
+- [Major milestone 2]
+- [Major milestone 3]
+
+### Week 3: [Phase Name]
+- [Major milestone 1]
+- [Major milestone 2]
+
+### Week 4: [Phase Name]
+- [Major milestone 1]
+- [Major milestone 2]
+
+## Project Structure
+```
+/src
+  /[domain-1]     # [Description]
+  /[domain-2]     # [Description]
+  /[domain-3]     # [Description]
+/[tests-dir]      # Test suites
+/[config-dir]     # Configuration files
+/[scripts-dir]    # Build and deployment scripts
+```
+
+## Development Standards
+
+### Code Quality Gates
+- **[Language]**: [Specific requirements, e.g., "No 'any' types, strict mode enabled"]
+- **Validation**: [Approach, e.g., "Zod schemas for all API inputs"]
+- **Error Handling**: [Strategy, e.g., "Try-catch with Sentry reporting"]
+- **Testing**: [Requirements, e.g., "Unit tests for critical paths, >80% coverage"]
+
+### Code Quality Metrics
+- Functions: [Max lines, e.g., "15 lines max" or "350 lines max"]
+- Files: [Max lines, e.g., "100 lines max" or "350 lines max"]
+- Classes: [Max lines, e.g., "50 lines max"]
+- Complexity: [Max cyclomatic complexity, e.g., "10 max"]
+
+**Note:** Adjust these based on your team's standards. The SpeedboatAgent project started with 15/100 line limits but relaxed to 350/350 after finding them impractical for production code.
+
+### Security
+- [Security practice 1, e.g., "API key rotation via KV store"]
+- [Security practice 2, e.g., "Rate limiting: 100 req/min per IP"]
+- [Security practice 3, e.g., "Input sanitization with schemas"]
+- [Security practice 4, e.g., "Webhook signature verification"]
+
+## Environment Configuration
+```env
+# Required
+[KEY_1]=           # [Description]
+[KEY_2]=           # [Description]
+[KEY_3]=           # [Description]
+
+# Optional
+[OPTIONAL_KEY_1]=  # [Description]
+[OPTIONAL_KEY_2]=  # [Description]
+```
+
+## Success Metrics
+
+### Technical Metrics
+- [Metric 1 with target]
+- [Metric 2 with target]
+- [Metric 3 with target]
+
+### Business Metrics
+- [Metric 1 with target]
+- [Metric 2 with target]
+- [Metric 3 with target]
+
+## Git Workflow
+
+### Branches
+- `feature/<issue-id>-<description>` - New features
+- `fix/<issue-id>-<description>` - Bug fixes
+- `chore/<description>` - Maintenance tasks
+
+**IMPORTANT**: All new work MUST be done on a new branch, never directly on main.
+
+### Commits
+```
+<type>: #<issue-id> <imperative-summary>
+
+[optional body]
+
+[optional footer]
+```
+**Types**: feat, fix, chore, docs, refactor, test
+
+### Post-Merge Process
+1. Create PR for your feature/fix branch
+2. Merge PR to main via GitHub (after CI passes)
+3. Switch to main branch: `git checkout main`
+4. Pull latest changes: `git pull origin main`
+5. Delete merged branch: `git branch -d <branch-name>`
+6. Verify clean working tree: `git status`
+
+### Push Frequency Best Practices
+- **After completing an issue**: Always push before starting next issue
+- **After documentation updates**: Push immediately
+- **After /tidyup**: Ensure all changes are pushed to remote
+- **Before /work**: Check for unpushed commits with `git status`
+- **End of session**: Never leave unpushed commits overnight
+
+## Development Workflow
+
+### /work Command
+[If using custom commands, describe your main workflow command here]
+
+The `/work` command provides a streamlined development workflow that automatically selects the highest priority issue and guides through completion.
+
+#### Usage
+```bash
+/work              # Auto-select next priority issue
+/work <issue-id>   # Work on specific issue
+```
+
+#### Priority System
+- **P0 (Critical)**: Production blockers, performance, security
+- **P1 (High)**: Core features, user experience improvements
+- **P2 (Medium)**: Enhancements, optimization, monitoring
+- **P3 (Low)**: Nice-to-have features, documentation
+
+### /tidyup Command
+[If using custom commands, describe your documentation finalization command]
+
+```bash
+/tidyup           # Finalize documentation and prepare for PR
+```
+
+## Launch Checklist
+
+**Note**: For current progress status, see [progress.md](./progress.md)
+
+### Infrastructure
+- [ ] [Infrastructure item 1]
+- [ ] [Infrastructure item 2]
+- [ ] [Infrastructure item 3]
+
+### Features
+- [ ] [Feature 1 complete]
+- [ ] [Feature 2 complete]
+- [ ] [Feature 3 complete]
+
+### Quality
+- [ ] All tests passing
+- [ ] Documentation complete
+- [ ] Security review passed
+- [ ] Load testing complete
+- [ ] Monitoring active
+
+### Deployment
+- [ ] Staging deployed
+- [ ] Production deployed
+- [ ] DNS configured
+- [ ] SSL certificates active
+
+---
+
+**Important Instructions for Claude Code:**
+
+1. **Always read this file first** when starting a new session
+2. **Reference this file** for technical decisions and architecture
+3. **Update this file** when making significant changes
+4. **Maintain consistency** with the patterns documented here
+
+---
+
+*Last Updated: [DATE]*
+*Version: [VERSION]*
+*Status: [Development/Production]*

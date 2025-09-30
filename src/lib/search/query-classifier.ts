@@ -1,6 +1,7 @@
 /**
  * Query Classification System
- * Intelligent RAG query routing with GPT-4 classification
+ * Simplified implementation with dependency injection for testability
+ * Based on mon.md recommendations
  */
 
 import { openai } from '@ai-sdk/openai';
@@ -11,13 +12,12 @@ import { z } from 'zod';
 import {
   QueryClassification,
   ClassificationOptions,
-  GPTClassificationResponse,
   SOURCE_WEIGHT_CONFIGS,
   DEFAULT_WEIGHTS,
   ClassificationMetrics,
-  QueryType
+  QueryType,
+  type SourceWeights
 } from '../../types/query-classification';
-import { RedisClassificationCache } from '../cache/redis-cache';
 
 // Zod schema for GPT response validation
 const ClassificationResponseSchema = z.object({
@@ -40,264 +40,75 @@ export class QueryClassificationError extends Error {
   }
 }
 
-function normalizeClassificationError(
-  error: unknown,
-  context: { timeout?: number } = {}
-): QueryClassificationError {
-  if (error instanceof QueryClassificationError) {
-    return error;
-  }
+// Simple in-memory cache
+const _cache = new Map<string, QueryClassification>();
+let _cacheHits = 0;
+let _cacheMisses = 0;
 
-  if (error instanceof z.ZodError) {
-    return new QueryClassificationError('Classification response validation failed', 'INVALID_RESPONSE', {
-      issues: error.issues
-    });
-  }
+// Dependencies interface for injection
+interface ClassifierDeps {
+  generateObject?: typeof generateObject;
+  createHash?: typeof createHash;
+  openai?: typeof openai;
+}
 
-  if (error instanceof Error && error.name === 'AbortError') {
-    return new QueryClassificationError(
-      `Classification timeout after ${context.timeout ?? 0}ms`,
-      'TIMEOUT',
-      {
-        timeout: context.timeout
-      }
-    );
-  }
+let _deps: ClassifierDeps | undefined;
 
-  if (error instanceof SyntaxError || (error instanceof Error && /Invalid JSON response/i.test(error.message))) {
-    return new QueryClassificationError(
-      'Invalid JSON response from classification provider',
-      'INVALID_RESPONSE',
-      {
-        originalError: error
-      }
-    );
-  }
-
-  if (error instanceof Error) {
-    return new QueryClassificationError(
-      `Classification provider error: ${error.message}`,
-      'PROVIDER_ERROR',
-      {
-        originalError: error
-      }
-    );
-  }
-
-  return new QueryClassificationError('Classification provider error: Unknown error', 'PROVIDER_ERROR', {
-    originalError: error
-  });
+/**
+ * Set dependencies for testing (call this in test setup)
+ */
+export function setClassifierDependencies(deps?: ClassifierDeps) {
+  _deps = deps;
 }
 
 /**
- * System prompt for consistent query classification
+ * Validate and normalize query
  */
-const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert at classifying user queries for a RAG system containing code repositories and business documentation.
-
-Classify queries into these categories:
-
-1. TECHNICAL: Code implementation, API usage, programming concepts, architectural details, debugging
-   - Examples: "How do I implement React hooks?", "What's the TypeScript interface?", "Fix this error"
-
-2. BUSINESS: Product features, user stories, business requirements, processes, policies
-   - Examples: "What features does the product have?", "How do users onboard?", "What's our pricing?"
-
-3. OPERATIONAL: Deployment, configuration, DevOps, workflows, setup procedures
-   - Examples: "How do I deploy?", "What's the CI/CD process?", "How to configure environment?"
-
-Return confidence score (0-1) and brief reasoning.
-
-Query context: Chelsea Piers speedboat booking and management system.`;
-
-/**
- * Hybrid cache implementation (memory + Redis)
- */
-class HybridClassificationCache {
-  private memCache = new Map<string, { data: QueryClassification; expires: number }>();
-  private redisCache = new RedisClassificationCache();
-  private readonly TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-  async set(key: string, classification: QueryClassification): Promise<void> {
-    // Set in memory cache immediately
-    const expires = Date.now() + this.TTL_MS;
-    this.memCache.set(key, { data: { ...classification, cached: true }, expires });
-
-    // Set in Redis cache asynchronously (don't wait)
-    if (this.redisCache.isAvailable()) {
-      this.redisCache.set(key, classification).catch(error => {
-        console.warn('Failed to set Redis cache:', error);
-      });
-    }
+function validateAndNormalizeQuery(query: string): string {
+  if (!query || typeof query !== 'string' || query.trim().length === 0) {
+    throw new QueryClassificationError('Query cannot be empty', 'INVALID_QUERY');
   }
-
-  async get(key: string): Promise<QueryClassification | null> {
-    // Check memory cache first
-    const memEntry = this.memCache.get(key);
-    if (memEntry && memEntry.expires > Date.now()) {
-      return memEntry.data;
-    }
-
-    // Clean expired memory entry
-    if (memEntry) {
-      this.memCache.delete(key);
-    }
-
-    // Check Redis cache
-    if (this.redisCache.isAvailable()) {
-      try {
-        const redisResult = await this.redisCache.get(key);
-        if (redisResult) {
-          // Warm memory cache
-          const expires = Date.now() + this.TTL_MS;
-          this.memCache.set(key, { data: redisResult, expires });
-          return redisResult;
-        }
-      } catch (error) {
-        console.warn('Redis cache get failed:', error);
-      }
-    }
-
-    return null;
-  }
-
-  async clear(): Promise<void> {
-    this.memCache.clear();
-    if (this.redisCache.isAvailable()) {
-      await this.redisCache.clear();
-    }
-  }
-
-  size(): number {
-    return this.memCache.size;
-  }
+  return query.trim();
 }
-
-const cache = new HybridClassificationCache();
 
 /**
  * Generate cache key from query
  */
 function generateCacheKey(query: string): string {
-  return createHash('sha256')
+  const _createHash = _deps?.createHash || createHash;
+  return _createHash('sha256')
     .update(query.toLowerCase().trim())
     .digest('hex');
 }
 
 /**
- * Classify query using GPT-4
+ * Get source weights for classification type
  */
-async function classifyWithGPT(
-  query: string,
-  timeout: number = 5000
-): Promise<GPTClassificationResponse> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const result = await generateObject({
-      model: openai('gpt-4o-mini'),
-      system: CLASSIFICATION_SYSTEM_PROMPT,
-      prompt: `Classify this query: "${query}"`,
-      schema: ClassificationResponseSchema,
-      abortSignal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    const parsed = ClassificationResponseSchema.safeParse(result?.object);
-
-    if (!parsed.success) {
-      throw new QueryClassificationError(
-        'Classification response validation failed',
-        'INVALID_RESPONSE',
-        {
-          issues: parsed.error.issues,
-          response: result?.object
-        }
-      );
-    }
-
-    return parsed.data as GPTClassificationResponse;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw normalizeClassificationError(error, { timeout });
-  }
+function getWeightsForType(type: QueryType): SourceWeights {
+  return type === 'business'
+    ? SOURCE_WEIGHT_CONFIGS.business
+    : type === 'operational'
+    ? SOURCE_WEIGHT_CONFIGS.operational
+    : SOURCE_WEIGHT_CONFIGS.technical;
 }
 
 /**
- * Apply source authority weighting based on query type
+ * Create fallback classification for errors
  */
-function applySourceWeights(type: QueryType) {
-  return SOURCE_WEIGHT_CONFIGS[type];
-}
-
-/**
- * Validates and normalizes query input
- */
-function validateAndNormalizeQuery(query: string): string {
-  if (!query || typeof query !== 'string') {
-    throw new Error('Query must be a non-empty string');
-  }
-
-  const trimmedQuery = query.trim();
-  if (!trimmedQuery) {
-    throw new Error('Query cannot be empty');
-  }
-
-  return trimmedQuery;
-}
-
-/**
- * Attempts to retrieve cached classification
- */
-async function getCachedClassification(
-  cacheKey: string,
-  useCache: boolean
-): Promise<QueryClassification | null> {
-  if (!useCache) {
-    return null;
-  }
-
-  return await cache.get(cacheKey);
-}
-
-/**
- * Creates classification result from GPT response
- */
-function createClassificationResult(
-  query: string,
-  gptResponse: any
-): QueryClassification {
-  return {
-    query,
-    type: gptResponse.type,
-    confidence: gptResponse.confidence,
-    weights: applySourceWeights(gptResponse.type),
-    reasoning: gptResponse.reasoning,
-    cached: false
-  };
-}
-
-/**
- * Creates fallback classification for errors
- */
-function createFallbackClassification(
-  query: string,
-  error: unknown
-): QueryClassification {
-  const classificationError = normalizeClassificationError(error);
-
+function createFallbackClassification(query: string, error: unknown): QueryClassification {
+  const message = error instanceof Error ? error.message : String(error);
   return {
     query,
     type: 'operational',
     confidence: 0.0,
     weights: DEFAULT_WEIGHTS,
-    reasoning: `Fallback classification due to error: ${classificationError.message}`,
+    reasoning: `Fallback due to error: ${message}`,
     cached: false
   };
 }
 
 /**
- * Main query classification function
+ * Classify a single query
  */
 export async function classifyQuery(
   query: string,
@@ -305,87 +116,84 @@ export async function classifyQuery(
 ): Promise<QueryClassification> {
   const { useCache = true, timeout = 5000, fallbackWeights = true } = options;
 
-  const trimmedQuery = validateAndNormalizeQuery(query);
-  const cacheKey = generateCacheKey(trimmedQuery);
+  // Use injected dependencies or defaults
+  const _generateObject = _deps?.generateObject || generateObject;
+  const _openai = _deps?.openai || openai;
 
-  const cached = await getCachedClassification(cacheKey, useCache);
-  if (cached) {
-    return cached;
+  const normalizedQuery = validateAndNormalizeQuery(query);
+  const cacheKey = generateCacheKey(normalizedQuery);
+
+  // Check cache first
+  if (useCache && _cache.has(cacheKey)) {
+    _cacheHits++;
+    const hit = _cache.get(cacheKey)!;
+    return { ...hit, cached: true, reasoning: 'Cached response' };
   }
 
-  try {
-    const gptResponse = await classifyWithGPT(trimmedQuery, timeout);
-    const classification = createClassificationResult(trimmedQuery, gptResponse);
+  _cacheMisses++;
 
-    if (useCache) {
-      await cache.set(cacheKey, classification);
+  try {
+    // Set up timeout
+    const controller = new AbortController();
+    const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : undefined;
+
+    // Call GPT for classification
+    const result = await _generateObject({
+      model: _openai('gpt-4o-mini'),
+      system: 'You are an expert at classifying user queries.',
+      prompt: `Classify this query: "${normalizedQuery}"`,
+      schema: ClassificationResponseSchema,
+      abortSignal: controller.signal
+    });
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    // Validate GPT response
+    const validTypes: QueryType[] = ['technical', 'business', 'operational'];
+    if (!validTypes.includes(result.object.type) ||
+        typeof result.object.confidence !== 'number' ||
+        result.object.confidence < 0 || result.object.confidence > 1) {
+      // Invalid response, use fallback
+      if (!fallbackWeights) {
+        throw new QueryClassificationError('Invalid classification response', 'INVALID_RESPONSE');
+      }
+      return createFallbackClassification(normalizedQuery, new Error('Invalid GPT response format'));
     }
+
+    const weights = getWeightsForType(result.object.type);
+    const classification: QueryClassification = {
+      query: normalizedQuery,
+      type: result.object.type,
+      confidence: result.object.confidence ?? 0.9,
+      weights: weights as Record<string, number> & SourceWeights,
+      reasoning: result.object.reasoning ?? 'Model classification',
+      cached: false
+    };
+
+    // Cache the result
+    _cache.set(cacheKey, classification);
 
     return classification;
-
   } catch (error) {
-    const classificationError = normalizeClassificationError(error, { timeout });
-
-    if (fallbackWeights) {
-      console.warn('Classification failed, using fallback weights:', classificationError);
-      return createFallbackClassification(trimmedQuery, classificationError);
+    if (!fallbackWeights) {
+      throw new QueryClassificationError('API Error', 'PROVIDER_ERROR', { originalError: error });
     }
-
-    throw classificationError;
+    return createFallbackClassification(normalizedQuery, error);
   }
 }
 
 /**
- * Batch classify multiple queries
+ * Classify multiple queries in parallel
  */
 export async function classifyQueries(
   queries: string[],
-  options: ClassificationOptions = {}
+  options?: ClassificationOptions
 ): Promise<QueryClassification[]> {
-  const promises = queries.map(query => classifyQuery(query, options));
-  return Promise.all(promises);
+  return Promise.all(queries.map(q => classifyQuery(q, options)));
 }
 
 /**
- * Get classification metrics
- */
-export function getClassificationMetrics(): {
-  cacheSize: number;
-  clearCache: () => Promise<void>;
-} {
-  return {
-    cacheSize: cache.size(),
-    clearCache: () => cache.clear()
-  };
-}
-
-/**
- * Validate classification result
- */
-export function validateClassification(
-  classification: QueryClassification
-): boolean {
-  try {
-    return (
-      typeof classification.query === 'string' &&
-      classification.query.trim().length > 0 &&
-      ['technical', 'business', 'operational'].includes(classification.type) &&
-      typeof classification.confidence === 'number' &&
-      classification.confidence >= 0 &&
-      classification.confidence <= 1 &&
-      typeof classification.weights === 'object' &&
-      typeof classification.weights.github === 'number' &&
-      typeof classification.weights.web === 'number' &&
-      classification.weights.github > 0 &&
-      classification.weights.web > 0
-    );
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Classify with enhanced error handling and telemetry
+ * Classify query with performance metrics
  */
 export async function classifyQueryWithMetrics(
   query: string,
@@ -395,43 +203,86 @@ export async function classifyQueryWithMetrics(
   metrics: ClassificationMetrics;
 }> {
   const startTime = Date.now();
-  let cacheHit = false;
-  let source: 'openai' | 'cache' | 'fallback' = 'openai';
 
   try {
     const classification = await classifyQuery(query, options);
+    const responseTime = Date.now() - startTime;
+    const fromCache = classification.cached === true && classification.reasoning === 'Cached response';
+    const isFallback = classification.confidence === 0.0 && (classification.reasoning?.includes('Fallback due to error') ?? false);
 
-    cacheHit = classification.cached || false;
-    source = cacheHit ? 'cache' : 'openai';
-
-    const metrics: ClassificationMetrics = {
-      responseTime: Date.now() - startTime,
-      cacheHit,
-      confidence: classification.confidence,
-      source
+    return {
+      classification,
+      metrics: {
+        responseTime,
+        cacheHit: fromCache,
+        source: isFallback ? 'fallback' : (fromCache ? 'cache' : 'openai'),
+        confidence: classification.confidence
+      }
     };
-
-    return { classification, metrics };
   } catch (error) {
-    const classificationError = normalizeClassificationError(error);
+    const responseTime = Date.now() - startTime;
+    const fallback = createFallbackClassification(validateAndNormalizeQuery(query), error);
 
-    // Fallback classification with metrics
-    const fallbackClassification: QueryClassification = {
-      query: query.trim(),
-      type: 'operational',
-      confidence: 0.0,
-      weights: DEFAULT_WEIGHTS,
-      reasoning: `Fallback due to error: ${classificationError.message}`,
-      cached: false
+    return {
+      classification: fallback,
+      metrics: {
+        responseTime,
+        cacheHit: false,
+        source: 'fallback',
+        confidence: 0.0
+      }
     };
-
-    const metrics: ClassificationMetrics = {
-      responseTime: Date.now() - startTime,
-      cacheHit: false,
-      confidence: 0.0,
-      source: 'fallback'
-    };
-
-    return { classification: fallbackClassification, metrics };
   }
+}
+
+/**
+ * Validate classification result
+ */
+export function validateClassification(
+  classification: QueryClassification
+): boolean {
+  try {
+    if (!classification) return false;
+    if (typeof classification.query !== 'string' || classification.query.trim().length === 0) return false;
+    if (!['technical', 'business', 'operational'].includes(classification.type)) return false;
+    if (typeof classification.confidence !== 'number') return false;
+    if (classification.confidence < 0 || classification.confidence > 1) return false;
+    if (typeof classification.reasoning !== 'string') return false;
+    if (!classification.weights || typeof classification.weights !== 'object') return false;
+
+    // Validate weight values are positive numbers
+    for (const key in classification.weights) {
+      const value = classification.weights[key];
+      if (typeof value !== 'number' || value <= 0 || !isFinite(value)) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get classification metrics and cache management
+ */
+export function getClassificationMetrics() {
+  return {
+    cacheSize: _cache.size,
+    cacheHits: _cacheHits,
+    cacheMisses: _cacheMisses,
+    hitRate: _cacheHits + _cacheMisses > 0
+      ? _cacheHits / (_cacheHits + _cacheMisses)
+      : 0,
+    clearCache: () => {
+      _cache.clear();
+      _cacheHits = 0;
+      _cacheMisses = 0;
+    },
+    getCacheEntry: (query: string) => {
+      const key = generateCacheKey(query);
+      return _cache.get(key) || null;
+    }
+  };
 }

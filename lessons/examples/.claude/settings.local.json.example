@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo view:*)",
+      "Bash(rm:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(npm run test-web-crawler:*)",
+      "Bash(env)",
+      "Bash(curl:*)",
+      "Bash(git commit:*)",
+      "SlashCommand(/tidyup)",
+      "Bash(npm run lint:*)",
+      "Bash(find:*)",
+      "Bash(kill:*)",
+      "Bash(vercel ls:*)",
+      "Bash(time curl:*)",
+      "Bash(git checkout:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(vercel env ls:*)",
+      "Bash(npm run test:ci:*)",
+      "Bash(npm run typecheck:*)",
+      "Read(//Users/alex/rag-data/speedboat/**)",
+      "WebFetch(domain:vercel.com)",
+      "Bash(gh pr checks:*)",
+      "Bash(npm run test:*)",
+      "Read(//Users/alex/Downloads/logs_46527608026/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,111 @@
+# Scratchpad - Quick Notes & Planning
+
+> **Purpose**: Temporary workspace for planning, debugging, and quick notes.
+> Clear this file when starting new issues to keep it focused.
+
+## Current Work: [Issue #N - Title]
+
+### Quick Context
+[1-2 sentences about what you're currently working on]
+
+### Today's Goals
+- [ ] [Goal 1]
+- [ ] [Goal 2]
+- [ ] [Goal 3]
+
+---
+
+## Planning Notes
+
+### Approach
+[Rough outline of how you plan to tackle the current issue]
+
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+### Key Questions
+- [ ] [Question 1 to resolve]
+- [ ] [Question 2 to resolve]
+
+### Dependencies
+- [Dependency 1]
+- [Dependency 2]
+
+---
+
+## Quick References
+
+### Relevant Files
+```
+[file/path]       # [Why it's relevant]
+[file/path]       # [Why it's relevant]
+[file/path]       # [Why it's relevant]
+```
+
+### Relevant Code Snippets
+```[language]
+// [Description of what this snippet shows]
+[code snippet for reference]
+```
+
+### API Endpoints
+- `[METHOD] /api/[path]` - [Purpose]
+- `[METHOD] /api/[path]` - [Purpose]
+
+---
+
+## Debugging Notes
+
+### Current Issue
+[Description of what's not working]
+
+### Things Tried
+1. [Attempt 1] - [Result]
+2. [Attempt 2] - [Result]
+3. [Attempt 3] - [Result]
+
+### Hypothesis
+[What you think might be causing the issue]
+
+### Next Steps
+- [ ] [Thing to try next]
+- [ ] [Another thing to try]
+
+---
+
+## Technical Debt / Future Improvements
+[Quick notes about things you notice that should be improved later]
+
+- [Item 1]
+- [Item 2]
+- [Item 3]
+
+---
+
+## Commands I'm Using
+```bash
+# [Category of commands]
+[command]                    # [What it does]
+[command]                    # [What it does]
+
+# [Another category]
+[command]                    # [What it does]
+```
+
+---
+
+## Random Thoughts / Ideas
+- [Thought 1]
+- [Idea for optimization]
+- [Question to ask teammate]
+
+---
+
+**Last Session**: [DATE]
+**Status**: [What state you left off in]
+
+---
+
+## Clear This Section When Starting New Issue
+Everything above should be cleared when you run `/work` on a new issue to keep this file focused and relevant.

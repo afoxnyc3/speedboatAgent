@@ -95,6 +95,9 @@ global.Headers = class Headers extends Map {
   }
 };
 
+// Mock fetch for Node.js environment - required for embedding service and OpenAI SDK
+global.fetch = jest.fn();
+
 // Mock crypto for Node.js environment
 global.crypto = require('crypto').webcrypto || {
   randomUUID: () => require('crypto').randomUUID(),

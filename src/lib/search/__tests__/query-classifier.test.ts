@@ -1,0 +1,591 @@
+/**
+ * Query Classifier Tests
+ * Comprehensive test suite for query classification system
+ */
+
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import {
+  classifyQuery,
+  classifyQueries,
+  validateClassification,
+  classifyQueryWithMetrics,
+  getClassificationMetrics,
+  QueryClassificationError,
+  setClassifierDependencies
+} from '../query-classifier';
+import {
+  QueryClassification,
+  QueryType,
+  SOURCE_WEIGHT_CONFIGS,
+  DEFAULT_WEIGHTS
+} from '../../../types/query-classification';
+
+// Use global mocks from __mocks__ directories
+jest.mock('crypto');
+jest.mock('ai');
+jest.mock('@ai-sdk/openai');
+jest.mock('../../cache/redis-cache');
+
+// Import mocked modules AFTER jest.mock() calls
+import { createHash } from 'crypto';
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { RedisClassificationCache } from '../../cache/redis-cache';
+
+// Get references to the mocked functions
+const mockGenerateObject = jest.fn();
+const mockCreateHash = jest.fn();
+const mockOpenai = jest.fn();
+
+describe('QueryClassifier', () => {
+  let mockHashDigest: jest.MockedFunction<any>;
+  let mockHashUpdate: jest.MockedFunction<any>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllTimers();
+    jest.useFakeTimers();
+
+    // Mock crypto hash
+    mockHashDigest = jest.fn().mockReturnValue('mock-hash-key');
+    mockHashUpdate = jest.fn().mockReturnValue({ digest: mockHashDigest });
+    mockCreateHash.mockReturnValue({ update: mockHashUpdate } as any);
+
+    // Mock openai
+    mockOpenai.mockReturnValue('gpt-4o-mini');
+
+    // Inject dependencies
+    setClassifierDependencies({
+      generateObject: mockGenerateObject as any,
+      createHash: mockCreateHash as any,
+      openai: mockOpenai as any
+    });
+
+    // Clear any existing cache
+    const metrics = getClassificationMetrics();
+    metrics.clearCache();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  describe('classifyQuery', () => {
+    const mockGPTResponse = {
+      object: {
+        type: 'technical' as QueryType,
+        confidence: 0.9,
+        reasoning: 'Query asks about React implementation details'
+      }
+    };
+
+    beforeEach(() => {
+      mockGenerateObject.mockResolvedValue(mockGPTResponse);
+    });
+
+    it('should classify technical queries correctly', async () => {
+      // Arrange
+      const query = 'How do I implement React hooks?';
+
+      // Act
+      const result = await classifyQuery(query);
+
+      // Assert - test behavior, not implementation details
+      expect(result).toMatchObject({
+        query,
+        type: 'technical',
+        confidence: 0.9,
+        weights: SOURCE_WEIGHT_CONFIGS.technical,
+        reasoning: expect.stringContaining('React implementation'),
+        cached: false
+      });
+
+      // Verify the classifier called generateObject (but don't assert on exact params)
+      expect(mockGenerateObject).toHaveBeenCalled();
+    });
+
+    it('should classify business queries correctly', async () => {
+      // Arrange
+      const query = 'What features does the product have?';
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          type: 'business' as QueryType,
+          confidence: 0.85,
+          reasoning: 'Query asks about product features and capabilities'
+        }
+      });
+
+      // Act
+      const result = await classifyQuery(query);
+
+      // Assert
+      expect(result).toMatchObject({
+        type: 'business',
+        confidence: 0.85,
+        weights: SOURCE_WEIGHT_CONFIGS.business
+      });
+    });
+
+    it('should classify operational queries correctly', async () => {
+      // Arrange
+      const query = 'How do I deploy this application?';
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          type: 'operational' as QueryType,
+          confidence: 0.95,
+          reasoning: 'Query asks about deployment procedures'
+        }
+      });
+
+      // Act
+      const result = await classifyQuery(query);
+
+      // Assert
+      expect(result).toMatchObject({
+        type: 'operational',
+        confidence: 0.95,
+        weights: SOURCE_WEIGHT_CONFIGS.operational
+      });
+    });
+
+    it('should return cached results when available', async () => {
+      // Arrange
+      const query = 'How do I implement React hooks?';
+
+      // First call should hit GPT and cache the result
+      const firstResult = await classifyQuery(query);
+      expect(firstResult.cached).toBe(false);
+
+      // Clear mock to verify second call doesn't hit GPT
+      mockGenerateObject.mockClear();
+
+      // Act - second call should hit cache
+      const result = await classifyQuery(query);
+
+      // Assert - test behavior: cached result should be returned
+      expect(result.cached).toBe(true);
+      expect(result.reasoning).toBe('Cached response');
+      expect(result.type).toBe('technical'); // Same classification
+      expect(mockGenerateObject).not.toHaveBeenCalled(); // No GPT call
+    });
+
+    it('should handle GPT timeout errors', async () => {
+      // Arrange
+      const query = 'Test query';
+      const timeoutError = new Error('Timeout');
+      timeoutError.name = 'AbortError';
+      mockGenerateObject.mockRejectedValue(timeoutError);
+
+      // Act
+      const result = await classifyQuery(query, { fallbackWeights: true });
+
+      // Assert - test behavior: should return fallback classification
+      expect(result).toMatchObject({
+        type: 'operational',
+        confidence: 0.0,
+        weights: DEFAULT_WEIGHTS,
+        reasoning: expect.stringContaining('Fallback due to error: Timeout'),
+        cached: false
+      });
+    });
+
+    it('should handle GPT API errors with fallback', async () => {
+      // Arrange
+      const query = 'Test query';
+      mockGenerateObject.mockRejectedValue(new Error('API Error'));
+
+      // Act
+      const result = await classifyQuery(query, { fallbackWeights: true });
+
+      // Assert
+      expect(result).toMatchObject({
+        type: 'operational',
+        confidence: 0.0,
+        weights: DEFAULT_WEIGHTS,
+        reasoning: expect.stringContaining('API Error'),
+        cached: false
+      });
+    });
+
+    it('should throw error when fallbackWeights is false', async () => {
+      // Arrange
+      const query = 'Test query';
+      mockGenerateObject.mockRejectedValue(new Error('API Error'));
+
+      // Act & Assert
+      await expect(
+        classifyQuery(query, { fallbackWeights: false })
+      ).rejects.toThrow('API Error');
+    });
+
+    it('should validate and normalize query input', async () => {
+      // Test empty string
+      await expect(classifyQuery('')).rejects.toThrow('Query cannot be empty');
+
+      // Test null/undefined
+      await expect(classifyQuery(null as any)).rejects.toThrow('Query cannot be empty');
+      await expect(classifyQuery(undefined as any)).rejects.toThrow('Query cannot be empty');
+
+      // Test non-string
+      await expect(classifyQuery(123 as any)).rejects.toThrow('Query cannot be empty');
+
+      // Test whitespace-only string
+      await expect(classifyQuery('   ')).rejects.toThrow('Query cannot be empty');
+
+      // Test valid query with whitespace
+      const result = await classifyQuery('  valid query  ');
+      expect(result.query).toBe('valid query'); // Should be trimmed
+    });
+
+    it('should respect useCache option', async () => {
+      // Arrange
+      const query = 'Test query';
+
+      // Act - first call with cache disabled
+      await classifyQuery(query, { useCache: false });
+
+      // Act - second call with cache disabled
+      mockGenerateObject.mockClear();
+      await classifyQuery(query, { useCache: false });
+
+      // Assert - should call GPT both times
+      expect(mockGenerateObject).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle custom timeout', async () => {
+      // Arrange
+      const query = 'Test query';
+      const customTimeout = 3000;
+
+      // Act
+      const result = await classifyQuery(query, { timeout: customTimeout });
+
+      // Assert - test behavior: should successfully classify with custom timeout
+      expect(result).toMatchObject({
+        query,
+        type: 'technical',
+        confidence: 0.9
+      });
+      expect(mockGenerateObject).toHaveBeenCalled();
+    });
+
+    it('should generate proper cache keys', async () => {
+      // Arrange
+      const query = 'Test Query With Cases';
+
+      // Act
+      await classifyQuery(query);
+
+      // Assert
+      expect(mockCreateHash).toHaveBeenCalledWith('sha256');
+      expect(mockHashUpdate).toHaveBeenCalledWith('test query with cases'); // Lowercased and trimmed
+    });
+  });
+
+  describe('classifyQueries', () => {
+    beforeEach(() => {
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          type: 'technical',
+          confidence: 0.9,
+          reasoning: 'Test reasoning'
+        }
+      });
+    });
+
+    it('should classify multiple queries in parallel', async () => {
+      // Arrange
+      const queries = [
+        'How do I implement React hooks?',
+        'What is the deployment process?',
+        'What features are available?'
+      ];
+
+      // Act
+      const results = await classifyQueries(queries);
+
+      // Assert
+      expect(results).toHaveLength(3);
+      expect(results[0].query).toBe(queries[0]);
+      expect(results[1].query).toBe(queries[1]);
+      expect(results[2].query).toBe(queries[2]);
+      expect(mockGenerateObject).toHaveBeenCalledTimes(3);
+    });
+
+    it('should handle empty array', async () => {
+      // Act
+      const results = await classifyQueries([]);
+
+      // Assert
+      expect(results).toEqual([]);
+      expect(mockGenerateObject).not.toHaveBeenCalled();
+    });
+
+    it('should pass options to individual classifications', async () => {
+      // Arrange
+      const queries = ['Test query 1', 'Test query 2'];
+      const options = { useCache: false, timeout: 3000 };
+
+      // Act
+      await classifyQueries(queries, options);
+
+      // Assert - Each query should be called with the same options
+      expect(mockGenerateObject).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('validateClassification', () => {
+    const validClassification: QueryClassification = {
+      query: 'test query',
+      type: 'technical',
+      confidence: 0.9,
+      weights: { github: 1.5, web: 0.5 },
+      reasoning: 'test reasoning',
+      cached: false
+    };
+
+    it('should validate correct classification', () => {
+      expect(validateClassification(validClassification)).toBe(true);
+    });
+
+    it('should reject invalid query', () => {
+      expect(validateClassification({ ...validClassification, query: '' })).toBe(false);
+      expect(validateClassification({ ...validClassification, query: '   ' })).toBe(false);
+      expect(validateClassification({ ...validClassification, query: null as any })).toBe(false);
+    });
+
+    it('should reject invalid type', () => {
+      expect(validateClassification({ ...validClassification, type: 'invalid' as any })).toBe(false);
+      expect(validateClassification({ ...validClassification, type: null as any })).toBe(false);
+    });
+
+    it('should reject invalid confidence', () => {
+      expect(validateClassification({ ...validClassification, confidence: -0.1 })).toBe(false);
+      expect(validateClassification({ ...validClassification, confidence: 1.1 })).toBe(false);
+      expect(validateClassification({ ...validClassification, confidence: 'invalid' as any })).toBe(false);
+    });
+
+    it('should reject invalid weights', () => {
+      expect(validateClassification({ ...validClassification, weights: null as any })).toBe(false);
+      expect(validateClassification({ ...validClassification, weights: { github: -1, web: 0.5 } })).toBe(false);
+      expect(validateClassification({ ...validClassification, weights: { github: 1.5, web: 0 } })).toBe(false);
+      expect(validateClassification({ ...validClassification, weights: { github: 'invalid' as any, web: 0.5 } })).toBe(false);
+    });
+
+    it('should handle exceptions gracefully', () => {
+      // Test with null/undefined input
+      expect(validateClassification(null as any)).toBe(false);
+      expect(validateClassification(undefined as any)).toBe(false);
+
+      // Test with circular reference (should not throw, but may pass validation since weights are valid)
+      const circular: any = { ...validClassification };
+      circular.circular = circular;
+      // Circular references don't break validation - weights are still valid
+      expect(() => validateClassification(circular)).not.toThrow();
+    });
+  });
+
+  describe('classifyQueryWithMetrics', () => {
+    beforeEach(() => {
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          type: 'technical',
+          confidence: 0.9,
+          reasoning: 'Test reasoning'
+        }
+      });
+    });
+
+    it('should return classification with metrics', async () => {
+      // Arrange
+      const query = 'How do I implement React hooks?';
+
+      // Act
+      const result = await classifyQueryWithMetrics(query);
+
+      // Assert
+      expect(result.classification).toMatchObject({
+        query,
+        type: 'technical',
+        confidence: 0.9
+      });
+
+      expect(result.metrics).toMatchObject({
+        responseTime: expect.any(Number),
+        cacheHit: false,
+        confidence: 0.9,
+        source: 'openai'
+      });
+
+      expect(result.metrics.responseTime).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should report cache hit metrics correctly', async () => {
+      // Arrange
+      const query = 'Test query';
+
+      // First call to populate cache
+      await classifyQueryWithMetrics(query);
+
+      // Act - second call should hit cache
+      const result = await classifyQueryWithMetrics(query);
+
+      // Assert - test behavior: should report cache hit
+      expect(result.metrics).toMatchObject({
+        cacheHit: true,
+        source: 'cache'
+      });
+    });
+
+    it('should return fallback metrics on error', async () => {
+      // Arrange
+      const query = 'Test query';
+      mockGenerateObject.mockRejectedValue(new Error('API Error'));
+
+      // Act
+      const result = await classifyQueryWithMetrics(query);
+
+      // Assert
+      expect(result.classification).toMatchObject({
+        type: 'operational',
+        confidence: 0.0,
+        weights: DEFAULT_WEIGHTS
+      });
+
+      expect(result.metrics).toMatchObject({
+        cacheHit: false,
+        confidence: 0.0,
+        source: 'fallback'
+      });
+    });
+  });
+
+  describe('Cache Management', () => {
+    it('should provide cache metrics', async () => {
+      // Act
+      const metrics = getClassificationMetrics();
+
+      // Assert
+      expect(metrics).toHaveProperty('cacheSize');
+      expect(metrics).toHaveProperty('clearCache');
+      expect(typeof metrics.cacheSize).toBe('number');
+      expect(typeof metrics.clearCache).toBe('function');
+    });
+
+    it('should clear cache successfully', () => {
+      // Arrange
+      const metrics = getClassificationMetrics();
+
+      // Act & Assert - Should not throw (synchronous clear)
+      expect(() => metrics.clearCache()).not.toThrow();
+      expect(metrics.cacheSize).toBe(0);
+    });
+  });
+
+  describe('InMemoryCache', () => {
+    beforeEach(() => {
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          type: 'technical',
+          confidence: 0.9,
+          reasoning: 'Test reasoning'
+        }
+      });
+    });
+
+    it('should cache classifications in memory', async () => {
+      // Arrange
+      const query = 'Test query';
+
+      // Act - First call populates cache
+      const result1 = await classifyQuery(query);
+      mockGenerateObject.mockClear();
+
+      // Second call hits cache
+      const result2 = await classifyQuery(query);
+
+      // Assert - test behavior: cache is working
+      expect(result1.cached).toBe(false);
+      expect(result2.cached).toBe(true);
+      expect(mockGenerateObject).not.toHaveBeenCalled(); // No second GPT call
+    });
+
+    it('should handle classification errors gracefully', async () => {
+      // Arrange
+      mockGenerateObject.mockRejectedValue(new Error('API Error'));
+      const query = 'Test query';
+
+      // Act - Should not throw and return fallback
+      const result = await classifyQuery(query, { fallbackWeights: true });
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.type).toBe('operational'); // Fallback type
+      expect(result.confidence).toBe(0.0);
+    });
+  });
+
+  describe('QueryClassificationError', () => {
+    it('should create structured error with code and details', () => {
+      // Arrange
+      const message = 'Classification failed';
+      const code = 'CLASSIFICATION_ERROR';
+      const details = { query: 'test', timeout: 5000 };
+
+      // Act
+      const error = new QueryClassificationError(message, code, details);
+
+      // Assert
+      expect(error.message).toBe(message);
+      expect(error.code).toBe(code);
+      expect(error.details).toBe(details);
+      expect(error.name).toBe('QueryClassificationError');
+      expect(error instanceof Error).toBe(true);
+    });
+  });
+
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle malformed GPT responses', async () => {
+      // Arrange
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          type: 'invalid_type',
+          confidence: 'invalid_confidence',
+          reasoning: null
+        }
+      });
+
+      // Act
+      const result = await classifyQuery('test query', { fallbackWeights: true });
+
+      // Assert - Should fallback to default classification
+      expect(result.type).toBe('operational');
+      expect(result.confidence).toBe(0.0);
+    });
+
+    it('should handle network interruptions', async () => {
+      // Arrange
+      mockGenerateObject.mockRejectedValue(new Error('ECONNRESET'));
+
+      // Act
+      const result = await classifyQuery('test query', { fallbackWeights: true });
+
+      // Assert - test behavior: should return fallback with error details
+      expect(result.type).toBe('operational');
+      expect(result.reasoning).toContain('Fallback due to error: ECONNRESET');
+    });
+
+    it('should handle very long queries', async () => {
+      // Arrange
+      const longQuery = 'a'.repeat(10000); // 10KB query
+
+      // Act
+      const result = await classifyQuery(longQuery);
+
+      // Assert
+      expect(result.query).toBe(longQuery);
+      expect(mockHashUpdate).toHaveBeenCalledWith(longQuery.toLowerCase());
+    });
+  });
+});

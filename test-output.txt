@@ -1,0 +1,127 @@
+
+> typescript-next-starter@0.1.0 test
+> jest --watch src/lib/search/__tests__/query-classifier.test.ts --testTimeout=10000
+
+FAIL src/lib/search/__tests__/query-classifier.test.ts
+  QueryClassifier
+    classifyQuery
+      ✓ should classify technical queries correctly (4 ms)
+      ✓ should classify business queries correctly
+      ✓ should classify operational queries correctly
+      ✓ should return cached results when available (1 ms)
+      ✓ should handle GPT timeout errors
+      ✓ should handle GPT API errors with fallback
+      ✓ should throw error when fallbackWeights is false (5 ms)
+      ✓ should validate and normalize query input (2 ms)
+      ✓ should respect useCache option
+      ✓ should handle custom timeout (1 ms)
+      ✓ should generate proper cache keys
+    classifyQueries
+      ✓ should classify multiple queries in parallel
+      ✓ should handle empty array (1 ms)
+      ✓ should pass options to individual classifications
+    validateClassification
+      ✓ should validate correct classification
+      ✓ should reject invalid query
+      ✓ should reject invalid type
+      ✓ should reject invalid confidence (1 ms)
+      ✓ should reject invalid weights
+      ✕ should handle exceptions gracefully (1 ms)
+    classifyQueryWithMetrics
+      ✓ should return classification with metrics
+      ✓ should report cache hit metrics correctly (1 ms)
+      ✕ should return fallback metrics on error (1 ms)
+    Cache Management
+      ✓ should provide cache metrics (1 ms)
+      ✓ should clear cache successfully
+    InMemoryCache
+      ✕ should cache classifications in memory
+      ✓ should handle classification errors gracefully
+    QueryClassificationError
+      ✓ should create structured error with code and details (1 ms)
+    Edge Cases and Error Handling
+      ✕ should handle malformed GPT responses
+      ✓ should handle network interruptions (1 ms)
+      ✓ should handle very long queries
+
+  ● QueryClassifier › validateClassification › should handle exceptions gracefully
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      382 |       const circular: any = { ...validClassification };
+      383 |       circular.circular = circular;
+    > 384 |       expect(validateClassification(circular)).toBe(false);
+          |                                                ^
+      385 |     });
+      386 |   });
+      387 |
+
+      at Object.toBe (src/lib/search/__tests__/query-classifier.test.ts:384:48)
+
+  ● QueryClassifier › classifyQueryWithMetrics › should return fallback metrics on error
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "cacheHit": false,
+        "confidence": 0,
+    -   "source": "fallback",
+    +   "source": "openai",
+      }
+
+      453 |       });
+      454 |
+    > 455 |       expect(result.metrics).toMatchObject({
+          |                              ^
+      456 |         cacheHit: false,
+      457 |         confidence: 0.0,
+      458 |         source: 'fallback'
+
+      at Object.toMatchObject (src/lib/search/__tests__/query-classifier.test.ts:455:30)
+
+  ● QueryClassifier › InMemoryCache › should cache classifications in memory
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      497 |       // Assert - test behavior: cache is working
+      498 |       expect(result1.cached).toBe(false);
+    > 499 |       expect(result2.cached).toBe(true);
+          |                              ^
+      500 |       expect(mockGenerateObject).not.toHaveBeenCalled(); // No second GPT call
+      501 |     });
+      502 |
+
+      at Object.toBe (src/lib/search/__tests__/query-classifier.test.ts:499:30)
+
+  ● QueryClassifier › Edge Cases and Error Handling › should handle malformed GPT responses
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "operational"
+    Received: "invalid_type"
+
+      550 |
+      551 |       // Assert - Should fallback to default classification
+    > 552 |       expect(result.type).toBe('operational');
+          |                           ^
+      553 |       expect(result.confidence).toBe(0.0);
+      554 |     });
+      555 |
+
+      at Object.toBe (src/lib/search/__tests__/query-classifier.test.ts:552:27)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 27 passed, 31 total
+Snapshots:   0 total
+Time:        0.65 s, estimated 1 s
+Ran all test suites matching /src\/lib\/search\/__tests__\/query-classifier.test.ts/i.
+
