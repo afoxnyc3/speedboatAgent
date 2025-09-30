@@ -132,7 +132,27 @@ describe('Query Classifier', () => {
         confidence: 0.0,
         weights: DEFAULT_WEIGHTS
       });
-      expect(result.reasoning).toContain('Fallback classification due to error');
+      expect(result.reasoning).toBe(
+        'Fallback classification due to error: Classification provider error: API Error'
+      );
+    });
+
+    it('should surface invalid JSON responses in fallback reasoning', async () => {
+      mockGenerateObject.mockRejectedValueOnce(new Error('Invalid JSON response'));
+
+      const result = await classifyQuery('Test query', { fallbackWeights: true });
+
+      expect(result.reasoning).toBe(
+        'Fallback classification due to error: Invalid JSON response from classification provider'
+      );
+    });
+
+    it('should throw QueryClassificationError when fallback is disabled', async () => {
+      mockGenerateObject.mockRejectedValueOnce(new Error('Invalid JSON response'));
+
+      await expect(
+        classifyQuery('Test query', { fallbackWeights: false })
+      ).rejects.toThrow(QueryClassificationError);
     });
 
     it('should respect timeout option', async () => {
@@ -259,6 +279,9 @@ describe('Query Classifier', () => {
 
       expect(classification.type).toBe('operational');
       expect(classification.confidence).toBe(0.0);
+      expect(classification.reasoning).toBe(
+        'Fallback due to error: Classification provider error: API Error'
+      );
       expect(metrics.source).toBe('fallback');
       expect(metrics.cacheHit).toBe(false);
     });
