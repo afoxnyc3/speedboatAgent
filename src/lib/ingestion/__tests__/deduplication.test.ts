@@ -26,7 +26,9 @@ import {
   getContentDeduplicator,
   DeduplicationConfigSchema,
   DeduplicationRequestSchema,
-  ContentDeduplicator
+  ContentDeduplicator,
+  setDeduplicatorDependencies,
+  resetDeduplicatorSingleton
 } from '../deduplication';
 
 // Get references to mocked functions
@@ -37,8 +39,9 @@ describe('Deduplication', () => {
   let mockQuery: any;
 
   beforeEach(() => {
-    // Reset all mocks
+    // Reset all mocks and singleton
     jest.clearAllMocks();
+    resetDeduplicatorSingleton();
 
     // Mock Weaviate client and query builder
     mockQuery = {
@@ -55,10 +58,15 @@ describe('Deduplication', () => {
       }
     };
 
-    // Configure weaviate client mock
+    // Configure weaviate client mock (legacy support)
     if (jest.isMockFunction(mockCreateWeaviateClient)) {
       mockCreateWeaviateClient.mockReturnValue(mockClient);
     }
+
+    // Inject mock client for dependency injection
+    setDeduplicatorDependencies({
+      weaviateClient: mockClient
+    });
   });
 
   afterEach(() => {

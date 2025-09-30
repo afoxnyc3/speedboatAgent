@@ -9,6 +9,27 @@ import { z } from 'zod';
 import { createWeaviateClient } from '../weaviate/client';
 import type { Document, DocumentSource } from '../../types/search';
 
+// Dependency injection for testing
+interface DeduplicatorDeps {
+  weaviateClient?: any; // Use any to support test mocks
+}
+
+let _deps: DeduplicatorDeps | undefined;
+
+/**
+ * Set dependencies for testing (call this in test setup)
+ */
+export function setDeduplicatorDependencies(deps?: DeduplicatorDeps) {
+  _deps = deps;
+}
+
+/**
+ * Reset singleton for testing (call this in test cleanup)
+ */
+export function resetDeduplicatorSingleton() {
+  _singleton = null;
+}
+
 // Deduplication configuration
 export interface DeduplicationConfig {
   readonly hashAlgorithm: 'sha256' | 'md5';
@@ -198,7 +219,7 @@ export class ContentDeduplicator {
    */
   async checkExistingDocument(doc: Document): Promise<Document | null> {
     const checksum = this.createContentHash(doc.content, doc.metadata?.url);
-    const client = createWeaviateClient();
+    const client = _deps?.weaviateClient || createWeaviateClient();
 
     try {
       const result = await client.graphql
