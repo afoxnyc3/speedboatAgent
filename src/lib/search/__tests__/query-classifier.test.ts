@@ -24,13 +24,15 @@ import {
 import { RedisClassificationCache } from '../../cache/redis-cache';
 
 // Mock dependencies
+// Create mock functions BEFORE jest.mock() to ensure they're available in factory
 const mockGenerateObjectFn = jest.fn();
+const mockCreateHashFn = jest.fn();
+const mockRedisClassificationCacheFn = jest.fn();
+
 jest.mock('@ai-sdk/openai');
 jest.mock('ai', () => ({
   generateObject: mockGenerateObjectFn
 }));
-const mockCreateHashFn = jest.fn();
-const mockRedisClassificationCacheFn = jest.fn();
 jest.mock('crypto', () => ({
   createHash: mockCreateHashFn
 }));
