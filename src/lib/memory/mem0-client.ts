@@ -1,8 +1,15 @@
 /**
- * Mem0 Memory Client
- * Production-ready memory layer for conversational AI with session management
+ * Memory Client Factory
+ * Switched from Mem0 to Redis for better performance and reliability
+ *
+ * Redis provides:
+ * - Local storage (no external API calls)
+ * - Fast access (<10ms vs 2-3s with Mem0)
+ * - Same MemoryClient interface
+ * - 24-hour TTL for conversations
  */
 
+import { createRedisMemoryClient } from './redis-memory-client';
 import type {
   MemoryClient,
   MemoryMessage,
@@ -189,11 +196,11 @@ export class Mem0Client implements MemoryClient {
   private async makeRequest(method: string, endpoint: string, data?: any) {
     let url = `${this.baseUrl}${endpoint}`;
 
-    // Mem0 uses X-API-Key header for authentication
+    // Mem0 uses "Authorization: Token" header for authentication
     const config: RequestInit = {
       method,
       headers: {
-        'X-API-Key': this.config.apiKey,
+        Authorization: `Token ${this.config.apiKey}`,
         'Content-Type': 'application/json',
       },
       signal: process.env.NODE_ENV === 'test' ? undefined : AbortSignal.timeout(this.config.timeout!),
@@ -296,27 +303,27 @@ let mem0Instance: MemoryClient | null = null;
 
 export const getMem0Client = (): MemoryClient => {
   if (!mem0Instance) {
-    // Check for benchmark configuration flags
-    if (process.env.USE_REDIS_MEMORY === 'true') {
-      // Use Redis-only memory implementation
-      const { createRedisMemoryClient } = require('./redis-memory-client');
-      mem0Instance = createRedisMemoryClient();
+    // Check for opt-in Mem0 usage
+    if (process.env.USE_MEM0 === 'true') {
+      // Opt-in to Mem0 with environment variable
+      const apiKey = process.env.MEM0_API_KEY;
+      if (!apiKey) {
+        console.warn('[Memory] Mem0 enabled but API key missing, falling back to Redis');
+        mem0Instance = createRedisMemoryClient();
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('[Memory] Using Mem0 with API key');
+        mem0Instance = createMem0Client(apiKey);
+      }
     } else if (process.env.USE_PG_MEMORY_MOCK === 'true') {
-      // Use PostgreSQL pattern mock
+      // Use PostgreSQL pattern mock for benchmarking
       const { createPostgreSQLMemoryClient } = require('./pg-memory-client');
       mem0Instance = createPostgreSQLMemoryClient();
     } else {
-      // Default behavior: check for Mem0 API key
-      const apiKey = process.env.MEM0_API_KEY;
-      if (!apiKey || process.env.DISABLE_MEM0 === 'true') {
-        // Use mock client when API key is not configured or Mem0 is disabled
-        console.log('[Mem0] Using mock client (API key issues or disabled)');
-        const { createMockMem0Client } = require('./mock-mem0-client');
-        mem0Instance = createMockMem0Client();
-      } else {
-        console.log('[Mem0] Initializing with API key');
-        mem0Instance = createMem0Client(apiKey);
-      }
+      // Default to Redis memory (fast, reliable, local)
+      // eslint-disable-next-line no-console
+      console.log('[Memory] Using Redis memory client (default)');
+      mem0Instance = createRedisMemoryClient();
     }
   }
   return mem0Instance!; // Non-null assertion - we always initialize it above

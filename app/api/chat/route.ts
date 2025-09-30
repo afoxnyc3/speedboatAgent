@@ -82,16 +82,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         };
 
         try {
+          console.log('[Mem0 Diagnostics] Starting memory retrieval:', {
+            conversationId,
+            sessionId,
+            timestamp: new Date().toISOString()
+          });
+
           const memoryPromise = memoryClient.getConversationContext(conversationId, sessionId);
           const memoryTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Memory timeout')), 3000) // Reduced to 3s for parallel execution
+            setTimeout(() => reject(new Error('Memory timeout')), 5000) // Increased to 5s for better diagnostics
           );
 
           const context = await Promise.race([memoryPromise, memoryTimeout]) as ConversationMemoryContext;
-          timings.memoryRetrieval = Date.now() - memoryStart;
+          const duration = Date.now() - memoryStart;
+          timings.memoryRetrieval = duration;
+
+          console.log('[Mem0 Diagnostics] Memory retrieval SUCCESS:', {
+            duration: `${duration}ms`,
+            memoriesFound: context.relevantMemories.length,
+            entities: context.entityMentions.length,
+            topics: context.topicContinuity.length
+          });
+
           return context;
-        } catch {
-          timings.memoryRetrieval = Date.now() - memoryStart;
+        } catch (error) {
+          const duration = Date.now() - memoryStart;
+          timings.memoryRetrieval = duration;
+
+          console.error('[Mem0 Diagnostics] Memory retrieval FAILED:', {
+            duration: `${duration}ms`,
+            error: error instanceof Error ? error.message : String(error),
+            errorType: error instanceof Error ? error.constructor.name : typeof error
+          });
+
           return emptyContext;
         }
       })(),
@@ -207,6 +230,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       timestamp: new Date(),
     };
 
+    console.log('[Mem0 Diagnostics] Storing messages to memory:', {
+      userId,
+      sessionId,
+      conversationId,
+      messageCount: 2
+    });
+
     // Fire and forget memory storage with timeout - don't wait for completion
     const memoryStorePromise = memoryClient.add([userMessage, assistantMessage], {
       userId,
@@ -219,14 +249,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         searchTime: finalSearchResults.metadata.searchTime,
         topics: extractTopics(validatedRequest.message),
       },
-    }).catch(() => {
+    }).then((result) => {
+      const duration = Date.now() - memoryStoreStart;
+      console.log('[Mem0 Diagnostics] Memory storage SUCCESS:', {
+        duration: `${duration}ms`,
+        memoryId: result.memoryId,
+        success: result.success
+      });
+      return result;
+    }).catch((error) => {
+      const duration = Date.now() - memoryStoreStart;
+      console.error('[Mem0 Diagnostics] Memory storage FAILED:', {
+        duration: `${duration}ms`,
+        error: error instanceof Error ? error.message : String(error)
+      });
       // Memory storage failed - continue silently
     });
 
-    // Wait max 500ms for memory storage
+    // Wait max 1000ms for memory storage (increased for diagnostics)
     await Promise.race([
       memoryStorePromise,
-      new Promise(resolve => setTimeout(resolve, 500))
+      new Promise(resolve => setTimeout(resolve, 1000))
     ]);
     timings.memoryStorage = Date.now() - memoryStoreStart;
 
@@ -259,15 +302,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Calculate total time
     timings.total = Date.now() - totalStart;
 
+    // Determine memory status for diagnostics
+    const memoryStatus = memoryContext.status === 'fulfilled' ? 'success' : 'failed';
+    const memoryUsed = memoryContext.status === 'fulfilled' &&
+                      memoryContext.value.relevantMemories.length > 0;
+
     // Performance metrics available for monitoring
+    console.log('[Mem0 Diagnostics] Request complete:', {
+      total: `${timings.total}ms`,
+      memoryRetrieval: `${timings.memoryRetrieval}ms`,
+      memoryStorage: `${timings.memoryStorage}ms`,
+      search: `${timings.ragSearch}ms`,
+      llm: `${timings.responseGeneration}ms`,
+      memoryStatus,
+      memoryUsed
+    });
 
     return NextResponse.json(chatResponse, {
       headers: {
         'X-Session-Id': sessionId,
         'X-Run-Id': runId,
         'X-Memory-Context': resolvedMemoryContext.relevantMemories.length.toString(),
+        'X-Memory-Status': memoryStatus,
+        'X-Memory-Used': memoryUsed.toString(),
         'X-Performance-Total': timings.total.toString(),
-        'X-Performance-Memory': (timings.memoryRetrieval + timings.memoryStorage).toString(),
+        'X-Performance-Memory-Retrieval': timings.memoryRetrieval.toString(),
+        'X-Performance-Memory-Storage': timings.memoryStorage.toString(),
         'X-Performance-Search': timings.ragSearch.toString(),
         'X-Performance-LLM': timings.responseGeneration.toString(),
         'X-Performance-Parallel': timings.parallelOperations.toString(),
