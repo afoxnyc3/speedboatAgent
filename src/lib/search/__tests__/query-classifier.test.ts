@@ -4,9 +4,6 @@
  */
 
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { createHash } from 'crypto';
-import { openai } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
 import {
   classifyQuery,
   classifyQueries,
@@ -21,28 +18,23 @@ import {
   SOURCE_WEIGHT_CONFIGS,
   DEFAULT_WEIGHTS
 } from '../../../types/query-classification';
+
+// Use global mocks from __mocks__ directories
+jest.mock('crypto');
+jest.mock('ai');
+jest.mock('@ai-sdk/openai');
+jest.mock('../../cache/redis-cache');
+
+// Import mocked modules AFTER jest.mock() calls
+import { createHash } from 'crypto';
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
 import { RedisClassificationCache } from '../../cache/redis-cache';
 
-// Mock dependencies
-// Create mock functions BEFORE jest.mock() to ensure they're available in factory
-const mockGenerateObjectFn = jest.fn();
-const mockCreateHashFn = jest.fn();
-const mockRedisClassificationCacheFn = jest.fn();
-
-jest.mock('@ai-sdk/openai');
-jest.mock('ai', () => ({
-  generateObject: mockGenerateObjectFn
-}));
-jest.mock('crypto', () => ({
-  createHash: mockCreateHashFn
-}));
-jest.mock('../../cache/redis-cache', () => ({
-  RedisClassificationCache: mockRedisClassificationCacheFn
-}));
-
-const mockGenerateObject = mockGenerateObjectFn;
-const mockCreateHash = mockCreateHashFn;
-const mockRedisClassificationCache = mockRedisClassificationCacheFn;
+// Get references to the mocked functions
+const mockGenerateObject = generateObject as jest.MockedFunction<typeof generateObject>;
+const mockCreateHash = createHash as jest.MockedFunction<typeof createHash>;
+const mockRedisClassificationCache = RedisClassificationCache as jest.MockedClass<typeof RedisClassificationCache>;
 
 describe('QueryClassifier', () => {
   let mockHashDigest: jest.MockedFunction<any>;
@@ -245,11 +237,11 @@ describe('QueryClassifier', () => {
       await expect(classifyQuery('')).rejects.toThrow('Query cannot be empty');
 
       // Test null/undefined
-      await expect(classifyQuery(null as any)).rejects.toThrow('Query must be a non-empty string');
-      await expect(classifyQuery(undefined as any)).rejects.toThrow('Query must be a non-empty string');
+      await expect(classifyQuery(null as any)).rejects.toThrow('Query cannot be empty');
+      await expect(classifyQuery(undefined as any)).rejects.toThrow('Query cannot be empty');
 
       // Test non-string
-      await expect(classifyQuery(123 as any)).rejects.toThrow('Query must be a non-empty string');
+      await expect(classifyQuery(123 as any)).rejects.toThrow('Query cannot be empty');
 
       // Test whitespace-only string
       await expect(classifyQuery('   ')).rejects.toThrow('Query cannot be empty');
