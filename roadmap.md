@@ -1,9 +1,9 @@
 # RAG Agent Development Roadmap - Production First
 
-## 🚀 Current Focus: CRITICAL PERFORMANCE & DATA FIXES
+## 🚀 Current Focus: MVP REFINEMENT & BUG FIXES
 
-**Status**: Production-Ready with Advanced Optimization ✅
-**Next Step**: Memory evaluation and infrastructure refinements (Phase 1)
+**Status**: Core Functionality Validated ✅
+**Next Step**: Fix identified bugs and refine user experience
 
 ## Success Metrics
 - ✅ 95% query coverage from hybrid sources
@@ -15,35 +15,56 @@
 - ✅ Chat response <3s (achieved 8-12s from 20s baseline, 60% improvement with parallel processing)
 - ⏳ Company content properly categorized (scripts ready, needs execution)
 
-## 🧪 Testing Strategy (Updated 2025-09-29)
+## 🎯 MVP Stories (Revised 2025-09-30)
 
-### Current Focus: Unit + Integration Testing
-**Rationale**: E2E tests temporarily paused to maximize development velocity while core APIs stabilize.
+**Philosophy**: Focus on making the app "simply work" - no over-engineering, just pragmatic fixes and refinements.
 
-### Testing Pyramid Implementation
-- **Unit Tests (70%)**: Core business logic, utilities, components
-- **Integration Tests (25%)**: API endpoints, service connections, database operations
-- **E2E Tests (5%)**: Critical user journeys - **PAUSED until re-enablement criteria met**
+**Status**: Core functionality validated ✅
+- Firecrawl web crawling: Working
+- Weaviate indexing: Working
+- Hybrid search: Working (GitHub + web results)
+- All integrations: Healthy
 
-### E2E Test Status
-- **Status**: Temporarily disabled in CI/CD (manual-only via workflow_dispatch)
-- **Infrastructure**: Playwright test suite preserved and ready
-- **Timeline**: 2-3 weeks pause (target re-enablement mid-October 2025)
-- **Completed**: Issues #85 (browser optimization - Firefox removed) ✅ and #86 (pause strategy - CI disabled) ✅
+**Remaining Open Issues**: 1 optional (#7 - GitHub Webhooks)
 
-### Re-enablement Criteria
-E2E tests will be restored to CI when:
-- ✅ Core APIs stable (no breaking changes for 1 week)
-- ⏳ Unit test coverage > 70% for critical paths
-- ⏳ Integration tests passing consistently
-- ⏳ No P0 issues remaining
-- ⏳ Performance baselines established
+### MVP Story List (7 Stories)
 
-### Quality Assurance During E2E Pause
-- Manual smoke tests before production deployments
-- Feature flags and staged rollouts
-- Enhanced monitoring with Sentry
-- Quick rollback procedures in place
+1. **Fix Redis Rate Limiter Bug** (2 hours) - P0
+   - Error: `ERR null args are not supported` in rate-limiter.ts:219
+   - Impact: Non-blocking but pollutes logs
+   - Fix: Handle null values in zremrangebyscore command
+
+2. **Optimize Chat Response Time** (2 hours) - P1
+   - Current: 8-12s, Target: <5s
+   - Already have: Streaming, parallel processing
+   - Needs: Token optimization, prompt compression
+
+3. **Web Crawl Scheduler** (2 hours) - P1
+   - Weekly auto-refresh of web-scraped content
+   - Simple cron job or Vercel cron API
+   - Start with docs.*.com domains
+
+4. **Better Error Handling & UX** (2 hours) - P1
+   - User-friendly error messages in UI
+   - Loading states for all API calls
+   - Graceful fallbacks when services fail
+
+5. **Basic Usage Analytics** (1 hour) - P2
+   - Track query counts, response times
+   - Simple /api/stats endpoint
+   - No complex dashboards needed
+
+6. **Production Smoke Tests** (1 hour) - P2
+   - Verify all endpoints work on production
+   - Health check validation
+   - Document expected behavior
+
+7. **Simple User Guide** (1 hour) - P2
+   - README: How to use the app
+   - Example queries that work well
+   - Troubleshooting common issues
+
+**Total Estimated Time**: 11 hours
 
 ---
 
@@ -207,7 +228,14 @@ E2E tests will be restored to CI when:
 
 ---
 
-## Completed Issues ✅ (35 total)
+## Closed Issues ✅
+
+### Closed as Over-Scoped (2025-09-30 - MVP Refinement)
+- ❌ **Issue #77**: Predictive Auto-Scaling - Requires ML models, 2-3 weeks work
+- ❌ **Issue #78**: Multi-modal RAG - Complex feature not needed for MVP
+- ❌ **Issue #79**: Intelligent Caching - Premature optimization (current 73% hit rate sufficient)
+- ❌ **Issue #54**: Documentation Consolidation - 8-12 hours, no user impact
+- ❌ **Issue #55**: Code Splitting - Premature optimization
 
 ### Recently Completed (2025-09-30 - Query Optimization)
 - ✅ **Issue #76**: Advanced Query Optimization with Confidence Scoring

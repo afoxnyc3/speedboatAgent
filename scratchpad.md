@@ -3,26 +3,42 @@
 *This file is for temporary planning notes and development ideas.*
 
 ## Current Focus
-**Ready for Next Priority** - Query optimization complete
+**MVP Validation Complete** - Focus on pragmatic refinements
 
-### Session Complete (2025-09-30 - Query Optimization)
-✅ Issue #76: Advanced Query Optimization complete
-✅ 22% token savings achieved (exceeds 20% target)
-✅ Confidence scoring + intelligent routing implemented
-✅ 19 comprehensive tests (100% passing)
-✅ PR #91 merged to main
-✅ Completed under estimate (5 hours vs 6 hours)
+### Session Complete (2025-09-30 - MVP Validation & Cleanup)
+✅ **Core Functionality Validated**
+- Firecrawl: Working (tested docs.github.com crawl)
+- Weaviate: Indexing correctly (web + GitHub sources)
+- Hybrid Search: Returning mixed results (local + web)
+- All Integrations: Healthy (OpenAI, Weaviate, Redis, Mem0)
 
-### Previous Session (2025-09-30 - Issue Cleanup)
-✅ Successfully closed 6 issues (#63, #64, #65, #85, #86, #56)
-✅ Added 75+ comprehensive test cases
-✅ CI/CD pipeline 100% stable
+✅ **Over-Architected Issues Closed**: 5 issues (#77, #78, #79, #54, #55)
+- Saved ~20-30 hours of unnecessary work
+- Roadmap refocused on pragmatic MVP stories
+
+✅ **New MVP Stories Defined**: 7 stories (11 hours total)
+1. Fix Redis rate limiter bug (P0)
+2. Optimize chat response time (P1)
+3. Web crawl scheduler (P1)
+4. Better error handling (P1)
+5. Basic usage analytics (P2)
+6. Production smoke tests (P2)
+7. Simple user guide (P2)
+
+### Bugs Identified
+1. **Redis Rate Limiter**: `ERR null args not supported` in rate-limiter.ts:219
+   - Non-blocking but pollutes logs
+   - zremrangebyscore command needs null handling
+
+### Previous Sessions
+- 2025-09-30: Query Optimization (#76) - 22% token savings
+- 2025-09-30: Issue Cleanup - Closed 6 issues, added 75+ tests
 
 ### Next Priority Tasks
-**Remaining Open Issues: 6**
-- **P1 (High)**: #77 (Auto-scaling)
-- **P2 (Medium)**: #54, #55, #78, #79
+**Remaining Open Issues: 1**
 - **P3 (Optional)**: #7 (GitHub Webhooks)
+
+**Next Steps**: Start MVP Story #1 (Fix Redis Rate Limiter Bug)
 
 ### Development Notes
 - Test coverage target (70%) achieved
