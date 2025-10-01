@@ -253,6 +253,23 @@ export async function POST(request: NextRequest): Promise<Response> {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
+        // Add global timeout for entire stream processing
+        const globalTimeoutMs = 60000; // 60 second total timeout
+        const globalTimeout = setTimeout(() => {
+          console.error('[Stream] Global timeout reached, terminating stream');
+          try {
+            const errorEvent = {
+              type: 'error' as const,
+              data: { error: 'Request timeout - the operation took too long to complete' }
+            };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorEvent)}\n\n`));
+          } catch (e) {
+            console.error('[Stream] Failed to send timeout error:', e);
+          } finally {
+            controller.close();
+          }
+        }, globalTimeoutMs);
+
         try {
           // Helper function to send events
           const sendEvent = (event: StreamEvent) => {
@@ -263,6 +280,7 @@ export async function POST(request: NextRequest): Promise<Response> {
           // Demo mode - simulate complete RAG flow with mock data
           if (isDemoMode) {
             await simulateDemoResponse(sendEvent, validatedRequest.message, conversationId);
+            clearTimeout(globalTimeout);
             controller.close();
             return;
           }
@@ -326,6 +344,7 @@ export async function POST(request: NextRequest): Promise<Response> {
             console.error('Search orchestrator failed, switching to demo mode:', searchError);
             // Fallback to demo mode for this request
             await simulateDemoResponse(sendEvent, validatedRequest.message, conversationId);
+            clearTimeout(globalTimeout);
             controller.close();
             return;
           }
@@ -411,12 +430,14 @@ export async function POST(request: NextRequest): Promise<Response> {
 
         } catch (error) {
           console.error('Streaming error:', error);
+          clearTimeout(globalTimeout);
           const errorData = `data: ${JSON.stringify({
             type: 'error',
             data: { error: error instanceof Error ? error.message : 'Unknown error' }
           })}\n\n`;
           controller.enqueue(encoder.encode(errorData));
         } finally {
+          clearTimeout(globalTimeout);
           controller.close();
         }
       }
@@ -495,17 +516,40 @@ Please provide a comprehensive answer with proper citations.`;
 
     let accumulatedContent = '';
 
-    const result = await streamText({
-      model: openai('gpt-4-turbo'),
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0.7,
-    });
+    // Wrap streamText with timeout protection to prevent infinite hangs
+    const streamWithTimeout = async () => {
+      const timeoutMs = 30000; // 30 second timeout
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('OpenAI streaming timeout after 30s')), timeoutMs);
+      });
 
-    for await (const delta of result.textStream) {
-      accumulatedContent += delta;
-      onToken(accumulatedContent, delta);
-    }
+      const streamPromise = (async () => {
+        const result = await streamText({
+          model: openai('gpt-4-turbo'),
+          system: systemPrompt,
+          prompt: userPrompt,
+          temperature: 0.7,
+        });
+
+        // Add timeout for stream initialization
+        const startTime = Date.now();
+        const maxStreamDuration = 45000; // 45 seconds total for streaming
+
+        for await (const delta of result.textStream) {
+          // Check if we've exceeded max streaming duration
+          if (Date.now() - startTime > maxStreamDuration) {
+            throw new Error('Stream duration exceeded maximum allowed time');
+          }
+
+          accumulatedContent += delta;
+          onToken(accumulatedContent, delta);
+        }
+      })();
+
+      return Promise.race([streamPromise, timeoutPromise]);
+    };
+
+    await streamWithTimeout();
 
     onStatusChange('formatting', 'Formatting citations...');
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -520,14 +564,52 @@ Please provide a comprehensive answer with proper citations.`;
       ],
     };
   } catch (error) {
-    console.error('OpenAI streaming error:', error);
+    console.error('[OpenAI Stream] Error occurred:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error
+    });
 
     // Check if this is a quota/auth error that requires demo mode
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const isTimeoutError = errorMessage.includes('timeout') || errorMessage.includes('exceeded maximum');
     const isQuotaError = errorMessage.includes('quota') || errorMessage.includes('exceeded') ||
                         errorMessage.includes('insufficient') || errorMessage.includes('billing');
     const isAuthError = errorMessage.includes('authentication') || errorMessage.includes('invalid') ||
                        errorMessage.includes('unauthorized');
+
+    if (isTimeoutError) {
+      console.warn('[OpenAI Stream] Timeout detected, providing fallback response');
+
+      // Generate contextual fallback for timeout
+      const contextSummary = searchResults.slice(0, 2)
+        .map(doc => doc.content.slice(0, 200))
+        .join(' ... ');
+
+      const timeoutFallback = `I found relevant information for your question about "${query}", but the AI response generation timed out. Here's what I found in the documentation:
+
+${contextSummary ? `**Key Information:**
+${contextSummary}...` : ''}
+
+**What happened?** The AI service took too long to respond. This can happen during high load or network issues.
+
+**What you can do:**
+- Try asking your question again
+- Simplify your query for faster processing
+- Check the source documents below for detailed information`;
+
+      onToken(timeoutFallback, timeoutFallback);
+
+      return {
+        content: timeoutFallback,
+        sources: buildCitationSources(searchResults),
+        suggestions: [
+          'Try asking again with a simpler question',
+          'Ask about specific implementation details',
+          'Request architecture explanations',
+        ],
+      };
+    }
 
     if (isQuotaError || isAuthError) {
       console.warn('OpenAI API failure detected, using fallback content generation');
