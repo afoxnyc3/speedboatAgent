@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Streaming API Timeout Protection** (2025-09-30)
+  - Added 30-second timeout protection to prevent streaming API hangs
+  - Implemented graceful error handling for timeout scenarios
+  - Improved user experience with clear timeout messaging
+
+- **Chat UI Stuttering Fixes** (2025-09-30)
+  - Eliminated streaming badge pulse animation causing layout shifts
+  - Embedded loader directly in message structure for stability
+  - Implemented manual scroll control during streaming
+  - Fixed chat scrolling stuttering during message generation
+  - Comprehensive E2E tests for layout shift prevention
+
+### Added
 - **PR #80**: Comprehensive TypeScript fixes and parallel processing optimizations
   - Resolved 46+ TypeScript compilation errors for CI/CD pipeline stability
   - Implemented parallel memory and search processing for 40% performance improvement
