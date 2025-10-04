@@ -58,6 +58,8 @@ export default function ChatInterface({
   const abortControllerRef = useRef<AbortController | null>(null);
   const scrollThrottleRef = useRef<NodeJS.Timeout | null>(null);
   const isUserScrollingRef = useRef(false);
+  const tokenBufferRef = useRef<string[]>([]);
+  const bufferProcessorRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if user is near bottom of scroll container
   const isUserAtBottom = useCallback(() => {
@@ -94,13 +96,13 @@ export default function ChatInterface({
       clearTimeout(scrollThrottleRef.current);
     }
 
-    // During streaming, throttle scroll updates to every 150ms
+    // During streaming, throttle scroll updates to every 50ms for smoother experience
     if (streamingState.isStreaming) {
       scrollThrottleRef.current = setTimeout(() => {
         requestAnimationFrame(() => {
           scrollToBottom();
         });
-      }, 150);
+      }, 50);
     } else {
       // When not streaming, scroll immediately
       requestAnimationFrame(() => {
@@ -150,6 +152,35 @@ export default function ChatInterface({
     throttledScrollToBottom
   ]);
 
+  // Token buffer processor - smooth out token delivery at 60fps
+  const processTokenBuffer = useCallback((streamingMessage: ChatMessage) => {
+    if (tokenBufferRef.current.length === 0) {
+      if (bufferProcessorRef.current) {
+        clearTimeout(bufferProcessorRef.current);
+        bufferProcessorRef.current = null;
+      }
+      return;
+    }
+
+    // Take next batch of characters (roughly 60fps = ~16ms per frame)
+    const charsPerFrame = 3; // Display ~3 characters per frame for smooth animation
+    const nextChars = tokenBufferRef.current.splice(0, charsPerFrame).join('');
+
+    if (nextChars) {
+      streamingMessage.content += nextChars;
+
+      setOptimisticMessages(prev => {
+        const filtered = prev.filter(m => m.id !== streamingMessage.id);
+        return [...filtered, { ...streamingMessage }];
+      });
+    }
+
+    // Schedule next frame
+    bufferProcessorRef.current = setTimeout(() => {
+      requestAnimationFrame(() => processTokenBuffer(streamingMessage));
+    }, 16); // 60fps
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -158,6 +189,9 @@ export default function ChatInterface({
       }
       if (scrollThrottleRef.current) {
         clearTimeout(scrollThrottleRef.current);
+      }
+      if (bufferProcessorRef.current) {
+        clearTimeout(bufferProcessorRef.current);
       }
     };
   }, []);
@@ -260,14 +294,31 @@ export default function ChatInterface({
                       streaming: true,
                     };
                   }
+
+                  // Add delta to buffer for smooth rendering
+                  const delta = event.data.delta || '';
+                  if (delta) {
+                    // Split delta into individual characters for smooth buffering
+                    tokenBufferRef.current.push(...delta.split(''));
+
+                    // Start buffer processor if not running
+                    if (!bufferProcessorRef.current) {
+                      processTokenBuffer(streamingMessage);
+                    }
+                  }
+
+                  // Keep accumulated content in sync (for completion event)
                   streamingMessage.content = event.data.token;
-                  setOptimisticMessages(prev => {
-                    const filtered = prev.filter(m => m.id !== streamingMessage?.id);
-                    return [...filtered, streamingMessage!];
-                  });
                   break;
 
                 case 'complete':
+                  // Clear buffer and stop processor
+                  tokenBufferRef.current = [];
+                  if (bufferProcessorRef.current) {
+                    clearTimeout(bufferProcessorRef.current);
+                    bufferProcessorRef.current = null;
+                  }
+
                   // Clear optimistic messages and notify parent with the completed message
                   setOptimisticMessages([]);
                   setStreamingState({ isStreaming: false });
@@ -404,7 +455,14 @@ export default function ChatInterface({
 
       {/* Messages Container */}
       <Conversation className="flex-1 overflow-hidden">
-        <div ref={scrollContainerRef} className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <div
+          ref={scrollContainerRef}
+          className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+          style={{
+            willChange: streamingState.isStreaming ? 'scroll-position' : 'auto',
+            contain: 'layout style paint'
+          }}
+        >
           <ConversationContent className="space-y-6 p-4">
           {allMessages.length === 0 && !streamingState.isStreaming ? (
             <ConversationEmptyState
@@ -414,10 +472,17 @@ export default function ChatInterface({
           ) : (
             <>
               {allMessages.map((message) => (
-                <div key={message.id} className={cn(
-                  "space-y-2 transition-all duration-300",
-                  message.id.startsWith('opt_') && "opacity-90 transform translate-y-1"
-                )}>
+                <div
+                  key={message.id}
+                  className={cn(
+                    "space-y-2 transition-all duration-300",
+                    message.id.startsWith('opt_') && "opacity-90 transform translate-y-1"
+                  )}
+                  style={{
+                    contain: 'layout',
+                    willChange: message.streaming ? 'contents' : 'auto'
+                  }}
+                >
                   <Message from={message.role}>
                     <div className="space-y-2">
                       {/* Message header with timestamp */}

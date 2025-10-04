@@ -518,9 +518,9 @@ Please provide a comprehensive answer with proper citations.`;
 
     // Wrap streamText with timeout protection to prevent infinite hangs
     const streamWithTimeout = async () => {
-      const timeoutMs = 30000; // 30 second timeout
+      const timeoutMs = 15000; // 15 second timeout (reduced from 30s for faster failure)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('OpenAI streaming timeout after 30s')), timeoutMs);
+        setTimeout(() => reject(new Error('OpenAI streaming timeout after 15s')), timeoutMs);
       });
 
       const streamPromise = (async () => {
@@ -531,16 +531,27 @@ Please provide a comprehensive answer with proper citations.`;
           temperature: 0.7,
         });
 
-        // Add timeout for stream initialization
+        // Add timeout for stream initialization and per-chunk timeout
         const startTime = Date.now();
-        const maxStreamDuration = 45000; // 45 seconds total for streaming
+        const maxStreamDuration = 30000; // 30 seconds total for streaming (reduced from 45s)
+        let lastChunkTime = Date.now();
+        const maxChunkGap = 5000; // 5 second max gap between chunks
 
         for await (const delta of result.textStream) {
+          const now = Date.now();
+
           // Check if we've exceeded max streaming duration
-          if (Date.now() - startTime > maxStreamDuration) {
+          if (now - startTime > maxStreamDuration) {
             throw new Error('Stream duration exceeded maximum allowed time');
           }
 
+          // Check if gap between chunks is too large (indicates hanging)
+          const chunkGap = now - lastChunkTime;
+          if (chunkGap > maxChunkGap && accumulatedContent.length > 0) {
+            console.warn(`[OpenAI Stream] Large chunk gap detected: ${chunkGap}ms`);
+          }
+
+          lastChunkTime = now;
           accumulatedContent += delta;
           onToken(accumulatedContent, delta);
         }
@@ -579,24 +590,31 @@ Please provide a comprehensive answer with proper citations.`;
                        errorMessage.includes('unauthorized');
 
     if (isTimeoutError) {
-      console.warn('[OpenAI Stream] Timeout detected, providing fallback response');
+      console.warn('[OpenAI Stream] Timeout detected after 15s, providing fallback response');
 
-      // Generate contextual fallback for timeout
-      const contextSummary = searchResults.slice(0, 2)
-        .map(doc => doc.content.slice(0, 200))
-        .join(' ... ');
+      // Generate contextual fallback for timeout with better UX
+      const contextSummary = searchResults.slice(0, 3)
+        .map((doc, i) => `${i + 1}. ${doc.content.slice(0, 300)}...`)
+        .join('\n\n');
 
-      const timeoutFallback = `I found relevant information for your question about "${query}", but the AI response generation timed out. Here's what I found in the documentation:
+      const timeoutFallback = `I found ${searchResults.length} relevant documents about "${query}", but the AI generation service is experiencing delays.
 
-${contextSummary ? `**Key Information:**
-${contextSummary}...` : ''}
+Here's what I found in the documentation:
 
-**What happened?** The AI service took too long to respond. This can happen during high load or network issues.
+${contextSummary}
 
-**What you can do:**
-- Try asking your question again
-- Simplify your query for faster processing
-- Check the source documents below for detailed information`;
+💡 **Quick Summary:**
+The search returned ${searchResults.length} relevant sources covering:
+${searchResults.slice(0, 3).map(doc => `• ${doc.filepath}`).join('\n')}
+
+⏱️ **Response Time Issue:** The AI service didn't respond within 15 seconds. This happens occasionally due to high load or network issues.
+
+✅ **What to do next:**
+1. **Retry**: Ask your question again - it usually works on second attempt
+2. **Simplify**: Break your question into smaller parts
+3. **Browse sources**: Check the source documents below for direct information
+
+The information you need is in the sources - I just couldn't generate a custom response in time.`;
 
       onToken(timeoutFallback, timeoutFallback);
 
@@ -604,9 +622,9 @@ ${contextSummary}...` : ''}
         content: timeoutFallback,
         sources: buildCitationSources(searchResults),
         suggestions: [
-          'Try asking again with a simpler question',
-          'Ask about specific implementation details',
-          'Request architecture explanations',
+          '🔄 Ask the same question again',
+          '📝 Break question into smaller parts',
+          '📚 Browse source documents directly',
         ],
       };
     }
