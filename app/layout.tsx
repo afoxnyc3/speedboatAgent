@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RAG Agent - Intelligent Code Assistant",
-  description: "AI-powered knowledge assistant for instant, accurate answers from GitHub repositories and documentation",
-  keywords: ["RAG", "AI", "assistant", "code", "documentation", "search"],
-  authors: [{ name: "Speedboat Agent Team" }],
+  title: "Chelsea Piers Digital Concierge",
+  description: "Your AI assistant for Chelsea Piers fitness classes, sports leagues, special events, and facilities in New York City",
+  keywords: ["Chelsea Piers", "fitness", "sports", "concierge", "NYC", "sports leagues", "fitness classes", "special events"],
+  authors: [{ name: "Chelsea Piers" }],
   openGraph: {
-    title: "RAG Agent - Intelligent Code Assistant",
-    description: "AI-powered knowledge assistant for developers",
+    title: "Chelsea Piers Digital Concierge",
+    description: "Your AI assistant for Chelsea Piers fitness classes, sports leagues, and special events",
     type: "website",
   },
 };

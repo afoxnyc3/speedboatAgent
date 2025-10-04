@@ -18,16 +18,23 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <div className="h-screen bg-background flex flex-col max-w-4xl mx-auto">
-        {/* Header with toolbar */}
-        <div className="border-b p-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">AI Chat Assistant</h1>
+        {/* Header with toolbar - Chelsea Piers Branding */}
+        <div className="border-b border-white/10 p-4 flex items-center justify-between bg-[#050B15]">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              Chelsea Piers
+            </h1>
+            <span className="text-white/70 text-sm font-light">
+              Digital Concierge
+            </span>
+          </div>
 
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleNewConversation}
-              className="flex items-center gap-2 min-h-[44px] min-w-[44px]"
+              className="flex items-center gap-2 min-h-[44px] min-w-[44px] border-white/20 text-white hover:bg-white/10 hover:border-white/30"
             >
               <PlusCircle className="h-4 w-4" />
               New Conversation
