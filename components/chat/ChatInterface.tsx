@@ -471,9 +471,9 @@ export default function ChatInterface({
     >
       {/* Error Alert */}
       {error && (
-        <div className="m-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4" />
-          <span>{error}</span>
+        <div className="m-4 p-4 bg-red-500/10 border border-red-400/30 rounded-lg text-red-300 flex items-center gap-3 backdrop-blur-sm">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
         </div>
       )}
 
@@ -549,8 +549,19 @@ export default function ChatInterface({
                 >
                   <Message from={message.role}>
                     <div className={cn(
-                      "space-y-2",
-                      message.role === 'assistant' && "bg-white rounded-lg p-4 shadow-sm"
+                      "space-y-3",
+                      message.role === 'assistant' && cn(
+                        "relative rounded-xl p-5",
+                        "bg-gradient-to-br from-white/[0.07] to-white/[0.03]",
+                        "border border-white/10",
+                        "backdrop-blur-sm",
+                        "shadow-lg shadow-black/5",
+                        "before:absolute before:inset-0 before:rounded-xl",
+                        "before:bg-gradient-to-br before:from-blue-400/10 before:to-transparent",
+                        "before:opacity-0 hover:before:opacity-100",
+                        "before:transition-opacity before:duration-300"
+                      ),
+                      message.role === 'user' && "rounded-lg px-4 py-2"
                     )}>
                       {/* Message header with timestamp */}
                       {showTimestamps && (
@@ -580,7 +591,8 @@ export default function ChatInterface({
 
                       {/* Message content */}
                       <MessageContent className={cn(
-                        message.role === 'assistant' && "text-[#0A1628]",
+                        "leading-relaxed",
+                        message.role === 'assistant' && "text-white/95 text-[15px]",
                         message.role === 'user' && "text-white/90",
                         message.error && "text-red-400",
                         message.id.startsWith('opt_') && "opacity-75"
@@ -595,14 +607,14 @@ export default function ChatInterface({
 
                       {/* Sources preview for streaming messages */}
                       {message.streaming && streamingState.sources && streamingState.sources.length > 0 && (
-                        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="flex items-center gap-2 text-sm text-blue-800 mb-2">
+                        <div className="relative mt-4 p-4 rounded-lg border border-blue-400/20 bg-blue-400/5 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-sm text-blue-300 mb-3">
                             <FileText className="w-4 h-4" />
-                            <span>Found {streamingState.sources.length} relevant sources</span>
+                            <span className="font-medium">Found {streamingState.sources.length} relevant sources</span>
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                             {streamingState.sources.slice(0, 2).map((source: any, index: number) => (
-                              <div key={index} className="text-xs text-blue-600 truncate">
+                              <div key={index} className="text-xs text-blue-200/80 truncate pl-3 border-l-2 border-blue-400/30">
                                 {source.metadata?.filepath || source.metadata?.url || 'Source'}
                               </div>
                             ))}
@@ -624,7 +636,7 @@ export default function ChatInterface({
 
                       {/* Feedback widget for assistant messages */}
                       {message.role === 'assistant' && !message.streaming && !message.id.startsWith('opt_') && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-white/10">
                           <FeedbackWidget
                             messageId={message.id as any}
                             conversationId={message.id as any}
@@ -648,13 +660,13 @@ export default function ChatInterface({
           {(isLoading || streamingState.isStreaming) && optimisticMessages.length === 0 && (
             <Message from="assistant">
               <MessageContent>
-                <div className="flex items-center gap-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.1s]" />
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.2s]" />
+                <div className="flex items-center gap-3 px-2">
+                  <div className="flex space-x-1.5">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.15s]" />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.3s]" />
                   </div>
-                  <span className="text-white/70">
+                  <span className="text-white/70 text-sm">
                     Finding your answer...
                   </span>
                 </div>
