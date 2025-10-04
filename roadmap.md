@@ -244,9 +244,11 @@
   - **Follow-ups Created**: #97, #98, #99
 
 ### Active UX Refinements
-- [ ] **Issue #97**: Fix sources dropdown visibility (P0 - 15 mins)
+- [x] **Issue #97**: Fix sources dropdown visibility (P0 - 15 mins) ✅
   - "Used 4 sources" button invisible on dark theme
-  - Change `text-primary text-xs` → `text-blue-300 text-sm font-medium`
+  - Changed `text-primary text-xs` → `text-blue-300 text-sm font-medium`
+  - Added hover states and increased icon size
+  - **Completed**: PR #100 merged 2025-10-04
 
 - [ ] **Issue #98**: Fix feedback widget visibility (P0 - 15 mins)
   - Thumbs up/down buttons invisible (gray colors on dark)

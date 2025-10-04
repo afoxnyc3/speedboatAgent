@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Sources Dropdown Visibility on Chelsea Piers Theme** (2025-10-04) - PR #100, Issue #97
+  - Fixed invisible "Used X sources" button on dark theme
+  - Updated Sources component: `text-primary` → `text-blue-300`, `text-xs` → `text-sm`
+  - Enhanced SourcesTrigger: added `font-medium`, `hover:text-blue-200`, `transition-colors`
+  - Increased ChevronDown icon size from `h-4 w-4` → `h-5 w-5` for better visibility
+  - **Impact**: Users can now see and interact with source citations on dark theme
+  - **Files Modified**: `components/ai-elements/sources.tsx` (lines 16, 32-34, 41)
+  - **Priority**: P0 - Critical UX bug fix
+
 ### Added
 - **Chelsea Piers Digital Concierge Theme** (2025-10-04) - PR #96
   - Complete brand transformation from "AI Chat Assistant" to "Chelsea Piers Digital Concierge"
