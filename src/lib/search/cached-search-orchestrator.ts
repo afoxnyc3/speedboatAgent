@@ -35,7 +35,7 @@ export interface CachedSearchExecutionParams {
   readonly includeEmbedding: boolean;
   readonly timeout: number;
   readonly filters?: SearchFilters;
-  readonly config?: SearchConfig;
+  readonly config?: Partial<SearchConfig>; // Allow partial config for easy overrides (e.g., just embeddingModel)
   readonly sessionId?: string;
   readonly userId?: string;
   readonly context?: string;
@@ -113,9 +113,16 @@ export class CachedSearchOrchestrator {
       });
 
       const sourceWeights = params.weights || classification.weights;
+
+      // Merge partial config with defaults (allows overriding specific fields like embeddingModel)
+      const mergedConfig: SearchConfig = {
+        ...DEFAULT_SEARCH_CONFIG,
+        ...params.config
+      };
+
       const { documents } = await _performHybridSearch({
         query: params.query,
-        config: params.config || DEFAULT_SEARCH_CONFIG,
+        config: mergedConfig,
         sourceWeights,
         limit: params.limit,
         offset: params.offset

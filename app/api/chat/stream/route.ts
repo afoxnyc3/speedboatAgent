@@ -285,7 +285,7 @@ export async function POST(request: NextRequest): Promise<Response> {
             return;
           }
 
-          // Step 1: Initialize clients and search
+          // Step 1: Initialize clients
           sendEvent({ type: 'status', data: { stage: 'searching', message: 'Searching knowledge base...' } });
 
           const clientStart = Date.now();
@@ -293,82 +293,102 @@ export async function POST(request: NextRequest): Promise<Response> {
           const searchOrchestrator = getSearchOrchestrator();
           timings.clientInit = Date.now() - clientStart;
 
-          // Step 2: Get memory context (with timeout)
-          const memoryStart = Date.now();
-          let memoryContext: ConversationMemoryContext;
-          try {
-            const memoryPromise = memoryClient.getConversationContext(conversationId, sessionId);
-            const memoryTimeout = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Memory retrieval timeout')), 1000)
-            );
-            memoryContext = await Promise.race([memoryPromise, memoryTimeout]) as ConversationMemoryContext;
-            timings.memoryRetrieval = Date.now() - memoryStart;
-          } catch {
-            // Memory retrieval failed, using empty context
-            timings.memoryRetrieval = Date.now() - memoryStart;
-            memoryContext = {
-              conversationId,
-              sessionId,
-              relevantMemories: [],
-              entityMentions: [],
-              topicContinuity: [],
-              userPreferences: {},
-              conversationStage: 'greeting',
-            };
-          }
-
-          // Step 3: Enhanced query and search with fallback
-          sendEvent({ type: 'status', data: { stage: 'analyzing', message: 'Analyzing sources...' } });
-
-          const enhanceStart = Date.now();
-          const enhancedQuery = buildContextualQuery(validatedRequest.message, memoryContext);
-          timings.queryEnhancement = Date.now() - enhanceStart;
-
-          // Detect query complexity for smart source limiting
+          // Detect query complexity for smart source limiting (before parallel ops)
           const complexity = detectQueryComplexity(validatedRequest.message);
           const smartSourceLimit = Math.min(complexity.sources, validatedRequest.maxSources);
 
-          let searchResults;
-          try {
-            const searchStart = Date.now();
-            searchResults = await searchOrchestrator.search({
-              query: enhancedQuery,
-              limit: smartSourceLimit, // Use smart limit instead of max
-              offset: 0,
-              includeContent: true,
-              includeEmbedding: false,
-              timeout: 3000,
-              sessionId,
-              userId,
-              context: `conversation:${conversationId}`,
-              filters: {},
-            });
-            timings.ragSearch = Date.now() - searchStart;
-          } catch (searchError) {
-            console.error('Search orchestrator failed, switching to demo mode:', searchError);
-            // Fallback to demo mode for this request
+          // Step 2: PARALLEL EXECUTION - Memory and Search run simultaneously (1000ms savings)
+          // Memory is only needed for response generation, NOT search
+          // This eliminates the sequential bottleneck
+          const parallelStart = Date.now();
+          const [memoryResult, searchResult] = await Promise.allSettled([
+            // Memory retrieval with timeout (non-blocking)
+            (async () => {
+              const memoryStart = Date.now();
+              try {
+                const memoryPromise = memoryClient.getConversationContext(conversationId, sessionId);
+                const memoryTimeout = new Promise((_, reject) =>
+                  setTimeout(() => reject(new Error('Memory retrieval timeout')), 1000)
+                );
+                const context = await Promise.race([memoryPromise, memoryTimeout]) as ConversationMemoryContext;
+                timings.memoryRetrieval = Date.now() - memoryStart;
+                return context;
+              } catch {
+                timings.memoryRetrieval = Date.now() - memoryStart;
+                return {
+                  conversationId,
+                  sessionId,
+                  relevantMemories: [],
+                  entityMentions: [],
+                  topicContinuity: [],
+                  userPreferences: {},
+                  conversationStage: 'greeting' as const,
+                };
+              }
+            })(),
+
+            // Search execution (parallel, uses original query)
+            (async () => {
+              const searchStart = Date.now();
+              try {
+                const results = await searchOrchestrator.search({
+                  query: validatedRequest.message, // Use original query (no memory dependency)
+                  limit: smartSourceLimit,
+                  offset: 0,
+                  includeContent: true,
+                  includeEmbedding: false,
+                  timeout: 3000,
+                  sessionId,
+                  userId,
+                  context: `conversation:${conversationId}`,
+                  filters: {},
+                  config: {
+                    embeddingModel: complexity.embeddingModel, // Smart embedding: small (fast) vs large (quality)
+                  },
+                });
+                timings.ragSearch = Date.now() - searchStart;
+                return results;
+              } catch (error) {
+                throw error; // Will be handled in allSettled
+              }
+            })()
+          ]);
+
+          timings.parallelExecution = Date.now() - parallelStart;
+
+          // Extract results from parallel execution
+          const memoryContext = memoryResult.status === 'fulfilled'
+            ? memoryResult.value
+            : {
+                conversationId,
+                sessionId,
+                relevantMemories: [],
+                entityMentions: [],
+                topicContinuity: [],
+                userPreferences: {},
+                conversationStage: 'greeting' as const,
+              };
+
+          if (searchResult.status === 'rejected') {
+            console.error('Search orchestrator failed, switching to demo mode:', searchResult.reason);
             await simulateDemoResponse(sendEvent, validatedRequest.message, conversationId);
             clearTimeout(globalTimeout);
             controller.close();
             return;
           }
 
-          // Send sources found
-          sendEvent({
-            type: 'sources',
-            data: {
-              sources: searchResults.results.slice(0, 3), // Preview first 3
-              count: searchResults.results.length
-            }
-          });
+          const searchResults = searchResult.value;
 
-          // Step 4: Generate streaming response
+          // Send sources found (lazy load - skip preview for faster perceived speed)
+          // Sources will be sent with completion event instead
+
+          // Step 3: Generate streaming response
           sendEvent({ type: 'status', data: { stage: 'generating', message: 'Generating response...' } });
 
           const responseStart = Date.now();
           const response = await generateStreamingResponse({
             query: validatedRequest.message,
-            searchResults: searchResults.results,
+            searchResults: [...searchResults.results], // Spread to convert readonly array to mutable
             memoryContext,
             conversationId,
             temperature: complexity.temperature, // Use smart temperature based on query complexity
@@ -571,8 +591,7 @@ Please provide a comprehensive answer with proper citations.`;
 
     await streamWithTimeout();
 
-    onStatusChange('formatting', 'Formatting citations...');
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Skip 'formatting' status - unnecessary UI update that adds overhead
 
     return {
       content: accumulatedContent,
@@ -724,7 +743,11 @@ function extractTopics(message: string): string[] {
 }
 
 // Detect query complexity for smart optimization
-function detectQueryComplexity(query: string): { sources: number; temperature: number } {
+function detectQueryComplexity(query: string): {
+  sources: number;
+  temperature: number;
+  embeddingModel: 'text-embedding-3-small' | 'text-embedding-3-large';
+} {
   const lowercaseQuery = query.toLowerCase();
 
   // Simple queries (factual lookups)
@@ -752,10 +775,22 @@ function detectQueryComplexity(query: string): { sources: number; temperature: n
   const isComplex = complexPatterns.some(pattern => pattern.test(query)) || query.length > 100;
 
   if (isSimple && !isComplex) {
-    return { sources: 3, temperature: 0.3 }; // Fast, factual
+    return {
+      sources: 3,
+      temperature: 0.3,
+      embeddingModel: 'text-embedding-3-small' // 2x faster, 62% cheaper for simple queries
+    };
   } else if (isComplex) {
-    return { sources: 5, temperature: 0.5 }; // Detailed, balanced
+    return {
+      sources: 5,
+      temperature: 0.5,
+      embeddingModel: 'text-embedding-3-large' // Full quality for complex queries
+    };
   } else {
-    return { sources: 4, temperature: 0.4 }; // Medium
+    return {
+      sources: 4,
+      temperature: 0.4,
+      embeddingModel: 'text-embedding-3-small' // Default to faster model
+    };
   }
 }

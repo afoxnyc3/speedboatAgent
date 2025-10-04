@@ -106,6 +106,7 @@ export interface SearchConfig {
   readonly timeout: number;
   readonly cacheEnabled: boolean;
   readonly cacheTtl: number;
+  readonly embeddingModel?: 'text-embedding-3-small' | 'text-embedding-3-large'; // Optional: smart model selection
 }
 
 // Search metadata
