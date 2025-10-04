@@ -60,6 +60,7 @@ export default function ChatInterface({
   const isUserScrollingRef = useRef(false);
   const tokenBufferRef = useRef<string[]>([]);
   const bufferProcessorRef = useRef<NodeJS.Timeout | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Check if user is near bottom of scroll container
   const isUserAtBottom = useCallback(() => {
@@ -183,6 +184,19 @@ export default function ChatInterface({
     }, 33); // 30fps
   }, []);
 
+  // Auto-expand textarea based on content (up to 300px)
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to recalculate
+    textarea.style.height = '60px'; // minimum height
+
+    // Calculate new height based on scrollHeight
+    const newHeight = Math.min(textarea.scrollHeight, 300);
+    textarea.style.height = `${newHeight}px`;
+  }, [inputValue]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -216,6 +230,14 @@ export default function ChatInterface({
       timestamp: new Date(),
     };
     setOptimisticMessages(prev => [...prev, optimisticUserMessage]);
+
+    // IMMEDIATE FEEDBACK: Set searching state instantly (<100ms)
+    // This eliminates the latency anxiety where users wonder if action registered
+    setStreamingState({
+      isStreaming: true,
+      stage: 'searching',
+      statusMessage: 'Processing your query...'
+    });
 
     if (enableStreaming) {
       await handleStreamingMessage(messageText);
@@ -467,10 +489,47 @@ export default function ChatInterface({
         >
           <ConversationContent className="space-y-6 p-4">
           {allMessages.length === 0 && !streamingState.isStreaming ? (
-            <ConversationEmptyState
-              title="RAG Assistant Ready"
-              description="Ask questions about the codebase and I'll provide detailed answers with source citations."
-            />
+            <div className="space-y-6">
+              <ConversationEmptyState
+                title="RAG Assistant Ready"
+                description="Ask questions about the codebase and I'll provide detailed answers with source citations."
+              />
+
+              {/* Example query chips for better onboarding */}
+              <div className="px-4">
+                <p className="text-sm text-muted-foreground mb-3">Try asking:</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Explain the hybrid search architecture",
+                    "How does query classification work?",
+                    "What's the caching strategy?",
+                    "Show me the vector embedding implementation",
+                    "How does memory management work?",
+                    "What APIs are available?"
+                  ].map((example, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setInputValue(example);
+                        // Focus textarea after setting value
+                        setTimeout(() => {
+                          document.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+                        }, 0);
+                      }}
+                      className={cn(
+                        "px-4 py-3 text-sm rounded-lg border border-gray-200",
+                        "hover:border-blue-300 hover:bg-blue-50",
+                        "transition-all duration-200",
+                        "focus:outline-none focus:ring-2 focus:ring-blue-200",
+                        "min-h-[44px]" // Mobile touch target minimum
+                      )}
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               {allMessages.map((message) => (
@@ -484,6 +543,9 @@ export default function ChatInterface({
                     contain: 'layout',
                     willChange: message.streaming ? 'contents' : 'auto'
                   }}
+                  role={message.role === 'assistant' ? 'article' : undefined}
+                  aria-live={message.streaming ? 'polite' : undefined}
+                  aria-atomic="true"
                 >
                   <Message from={message.role}>
                     <div className="space-y-2">
@@ -609,26 +671,31 @@ export default function ChatInterface({
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputBody>
             <PromptInputTextarea
+              ref={(el) => {
+                textareaRef.current = el;
+              }}
               placeholder={getSmartPlaceholder()}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
               disabled={isLoading || streamingState.isStreaming}
+              aria-label="Ask a question about the codebase"
+              aria-describedby="input-hint"
               className={cn(
-                "min-h-[60px] resize-none transition-all duration-200",
+                "min-h-[60px] max-h-[300px] resize-none transition-all duration-200",
                 isInputFocused && "ring-2 ring-blue-200"
               )}
             />
             <PromptInputToolbar>
-              <div className="text-xs text-muted-foreground">
+              <div id="input-hint" className="text-xs text-muted-foreground">
                 {streamingState.isStreaming ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" aria-live="polite">
                     {getStageIcon(streamingState.stage!)}
                     <span>{streamingState.statusMessage}</span>
                   </div>
                 ) : isLoading ? (
-                  'Processing...'
+                  <span aria-live="polite">Processing...</span>
                 ) : (
                   'Press Enter to send, Shift+Enter for new line'
                 )}

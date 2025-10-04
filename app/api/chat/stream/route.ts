@@ -379,8 +379,17 @@ export async function POST(request: NextRequest): Promise<Response> {
 
           const searchResults = searchResult.value;
 
-          // Send sources found (lazy load - skip preview for faster perceived speed)
-          // Sources will be sent with completion event instead
+          // Send sources found immediately for trust building (UX improvement)
+          // Users can see what sources were found while generation is happening
+          if (searchResults.results.length > 0) {
+            sendEvent({
+              type: 'sources',
+              data: {
+                sources: buildCitationSources([...searchResults.results]) as any,
+                count: searchResults.results.length
+              }
+            });
+          }
 
           // Step 3: Generate streaming response
           sendEvent({ type: 'status', data: { stage: 'generating', message: 'Generating response...' } });
@@ -512,7 +521,16 @@ async function generateStreamingResponse(params: {
   onStatusChange: (stage: 'generating' | 'formatting', message: string) => void;
 }): Promise<{
   content: string;
-  sources: Array<{ title: string; url: string; snippet: string }>;
+  sources: Array<{
+    filepath: string;
+    title: string;
+    url: string;
+    content: string;
+    score: number;
+    source: 'github' | 'web';
+    language?: string;
+    authority?: 'primary' | 'authoritative' | 'supplementary' | 'community';
+  }>;
   suggestions: string[];
 }> {
   const { query, searchResults, memoryContext, temperature = 0.5, onToken, onStatusChange } = params;
@@ -724,11 +742,30 @@ Provide accurate, contextual responses with proper source citations. Be conversa
 }
 
 // Citation source building
-function buildCitationSources(searchResults: Document[]): Array<{ title: string; url: string; snippet: string }> {
+function buildCitationSources(searchResults: Document[]): Array<{
+  filepath: string;
+  title: string;
+  url: string;
+  content: string;
+  score: number;
+  source: 'github' | 'web';
+  language?: string;
+  authority?: 'primary' | 'authoritative' | 'supplementary' | 'community';
+}> {
   return searchResults.slice(0, 5).map((doc, index) => ({
+    filepath: doc.filepath,
     title: doc.filepath,
     url: doc.metadata?.url || `/${doc.filepath}`,
-    snippet: doc.content.slice(0, 200) + '...',
+    content: doc.content.slice(0, 200) + '...',
+    score: doc.score || 0,
+    source: doc.source as 'github' | 'web',
+    language: doc.language as string | undefined,
+    // Determine authority based on score and source
+    authority: (
+      doc.score > 0.8 ? 'primary' :
+      doc.score > 0.6 ? 'authoritative' :
+      doc.source === 'github' ? 'authoritative' : 'supplementary'
+    ) as 'primary' | 'authoritative' | 'supplementary' | 'community'
   }));
 }
 
