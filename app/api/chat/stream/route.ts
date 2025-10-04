@@ -324,12 +324,16 @@ export async function POST(request: NextRequest): Promise<Response> {
           const enhancedQuery = buildContextualQuery(validatedRequest.message, memoryContext);
           timings.queryEnhancement = Date.now() - enhanceStart;
 
+          // Detect query complexity for smart source limiting
+          const complexity = detectQueryComplexity(validatedRequest.message);
+          const smartSourceLimit = Math.min(complexity.sources, validatedRequest.maxSources);
+
           let searchResults;
           try {
             const searchStart = Date.now();
             searchResults = await searchOrchestrator.search({
               query: enhancedQuery,
-              limit: validatedRequest.maxSources,
+              limit: smartSourceLimit, // Use smart limit instead of max
               offset: 0,
               includeContent: true,
               includeEmbedding: false,
@@ -367,6 +371,7 @@ export async function POST(request: NextRequest): Promise<Response> {
             searchResults: searchResults.results,
             memoryContext,
             conversationId,
+            temperature: complexity.temperature, // Use smart temperature based on query complexity
             onToken: (token: string, delta: string) => {
               sendEvent({ type: 'token', data: { token, delta } });
             },
@@ -482,6 +487,7 @@ async function generateStreamingResponse(params: {
   searchResults: Document[];
   memoryContext: ConversationMemoryContext;
   conversationId: ConversationId;
+  temperature?: number; // Optional smart temperature (defaults to 0.5)
   onToken: (token: string, delta: string) => void;
   onStatusChange: (stage: 'generating' | 'formatting', message: string) => void;
 }): Promise<{
@@ -489,23 +495,26 @@ async function generateStreamingResponse(params: {
   sources: Array<{ title: string; url: string; snippet: string }>;
   suggestions: string[];
 }> {
-  const { query, searchResults, memoryContext, onToken, onStatusChange } = params;
+  const { query, searchResults, memoryContext, temperature = 0.5, onToken, onStatusChange } = params;
 
-  // Build context from search results
+  // Build context from search results (reduced from 500 to 300 chars for faster processing)
   const searchContext = searchResults
-    .map((doc, index) => `[${index + 1}] ${doc.content.slice(0, 500)}...`)
+    .map((doc, index) => `[${index + 1}] ${doc.content.slice(0, 300)}...`)
     .join('\n\n');
 
   // Build system prompt
   const systemPrompt = buildSystemPrompt(memoryContext);
 
-  const userPrompt = `Based on the following context and our conversation history:
+  // Simplified memory context (extract only essentials, avoid JSON.stringify overhead)
+  const memoryHints = [
+    memoryContext.entityMentions.slice(0, 3).join(', '),
+    memoryContext.topicContinuity.slice(0, 2).join(', ')
+  ].filter(Boolean).join(' | ');
+
+  const userPrompt = `Based on the following context${memoryHints ? ` and conversation context (${memoryHints})` : ''}:
 
 SEARCH CONTEXT:
 ${searchContext}
-
-MEMORY CONTEXT:
-${JSON.stringify(memoryContext, null, 2)}
 
 QUESTION: ${query}
 
@@ -525,10 +534,10 @@ Please provide a comprehensive answer with proper citations.`;
 
       const streamPromise = (async () => {
         const result = await streamText({
-          model: openai('gpt-4-turbo'),
+          model: openai('gpt-4o'), // 6x faster than gpt-4-turbo, 50% cheaper
           system: systemPrompt,
           prompt: userPrompt,
-          temperature: 0.7,
+          temperature, // Smart temperature: 0.3 (simple), 0.4 (medium), 0.5 (complex)
         });
 
         // Add timeout for stream initialization and per-chunk timeout
@@ -712,4 +721,41 @@ function extractTopics(message: string): string[] {
   return words
     .filter(word => word.length > 3 && !stopWords.has(word))
     .slice(0, 5);
+}
+
+// Detect query complexity for smart optimization
+function detectQueryComplexity(query: string): { sources: number; temperature: number } {
+  const lowercaseQuery = query.toLowerCase();
+
+  // Simple queries (factual lookups)
+  const simplePatterns = [
+    /^what is /i,
+    /^who is /i,
+    /^where is /i,
+    /^when /i,
+    /^define /i,
+    /^explain /i,
+  ];
+
+  // Complex queries (requiring analysis)
+  const complexPatterns = [
+    /how does .* work/i,
+    /architecture/i,
+    /implementation/i,
+    /compare/i,
+    /difference between/i,
+    /in detail/i,
+    /comprehensive/i,
+  ];
+
+  const isSimple = simplePatterns.some(pattern => pattern.test(query));
+  const isComplex = complexPatterns.some(pattern => pattern.test(query)) || query.length > 100;
+
+  if (isSimple && !isComplex) {
+    return { sources: 3, temperature: 0.3 }; // Fast, factual
+  } else if (isComplex) {
+    return { sources: 5, temperature: 0.5 }; // Detailed, balanced
+  } else {
+    return { sources: 4, temperature: 0.4 }; // Medium
+  }
 }
