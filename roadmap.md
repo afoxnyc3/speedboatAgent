@@ -1,9 +1,9 @@
 # RAG Agent Development Roadmap - Production First
 
-## 🚀 Current Focus: MVP REFINEMENT & BUG FIXES
+## 🚀 Current Focus: CHELSEA PIERS THEME DEPLOYED + UX REFINEMENTS
 
-**Status**: Core Functionality Validated ✅
-**Next Step**: Fix identified bugs and refine user experience
+**Status**: Chelsea Piers Digital Concierge Theme Live in Production ✅
+**Next Step**: Fix visibility issues and optimize performance (#97, #98, #99)
 
 ## Success Metrics
 - ✅ 95% query coverage from hybrid sources
@@ -25,7 +25,9 @@
 - Hybrid search: Working (GitHub + web results)
 - All integrations: Healthy
 
-**Remaining Open Issues**: 1 optional (#7 - GitHub Webhooks)
+**Recent Completion**: PR #96 - Chelsea Piers Digital Concierge Theme ✅
+**Active Issues**: #97 (Sources Visibility), #98 (Feedback Widget), #99 (Performance)
+**Optional**: #7 (GitHub Webhooks)
 
 ### MVP Story List (7 Stories)
 
@@ -225,6 +227,35 @@
   - Real-time updates
   - Currently using local ingestion
   - **Priority**: P3 (Post-MVP)
+
+---
+
+## Recent Completions (2025-10-04)
+
+### Chelsea Piers Digital Concierge Theme ✅
+- ✅ **PR #96**: Complete brand transformation to Chelsea Piers
+  - Modern sleek dark theme with semi-transparent gradient cards
+  - Updated all branding: "AI Chat Assistant" → "Chelsea Piers Digital Concierge"
+  - Changed content focus from codebase/RAG to fitness, sports, events
+  - Implemented professional glass-morphism design
+  - Created responsive dark navy blue theme (#0A1628)
+  - **Time**: 4 hours total
+  - **Impact**: Complete visual transformation deployed to production
+  - **Follow-ups Created**: #97, #98, #99
+
+### Active UX Refinements
+- [ ] **Issue #97**: Fix sources dropdown visibility (P0 - 15 mins)
+  - "Used 4 sources" button invisible on dark theme
+  - Change `text-primary text-xs` → `text-blue-300 text-sm font-medium`
+
+- [ ] **Issue #98**: Fix feedback widget visibility (P0 - 15 mins)
+  - Thumbs up/down buttons invisible (gray colors on dark)
+  - Replace gray with white/transparency variants
+
+- [ ] **Issue #99**: Optimize slow retrieval time (P1 - investigation)
+  - Current: 23+ second SSE gaps
+  - Target: < 2s first token, < 8s total
+  - Requires profiling LLM vs vector search timing
 
 ---
 

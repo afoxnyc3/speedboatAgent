@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Chelsea Piers Digital Concierge Theme** (2025-10-04) - PR #96
+  - Complete brand transformation from "AI Chat Assistant" to "Chelsea Piers Digital Concierge"
+  - Modern sleek dark theme with semi-transparent gradient cards (glass-morphism design)
+  - Updated all content from codebase/RAG focus to fitness classes, sports leagues, and events
+  - Implemented responsive dark navy blue theme (#0A1628) with bright blue accents
+  - Response cards with gradient backgrounds (from-white/[0.07] to-white/[0.03])
+  - Subtle borders with blue accent glow on hover for depth and interactivity
+  - Improved typography with better hierarchy (15px refined text size)
+  - Professional spacing and padding refinements throughout
+  - Updated example queries to Chelsea Piers focused (fitness, sports, events)
+  - Changed placeholders to fitness/sports/events context
+  - Enhanced empty state with Chelsea Piers branding
+  - Modern blue accent loading indicators and error alerts
+  - **Impact**: Professional, sleek, clean design deployed to production
+  - **Files Modified**: `app/layout.tsx`, `app/globals.css`, `app/page.tsx`, `components/chat/ChatInterface.tsx`
+  - **Follow-ups Created**: Issues #97 (sources visibility), #98 (feedback widget visibility), #99 (performance optimization)
+
+### Added
 - **Streaming API Timeout Protection** (2025-09-30)
   - Added 30-second timeout protection to prevent streaming API hangs
   - Implemented graceful error handling for timeout scenarios
