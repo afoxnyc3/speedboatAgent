@@ -471,9 +471,9 @@ export default function ChatInterface({
     >
       {/* Error Alert */}
       {error && (
-        <div className="m-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4" />
-          <span>{error}</span>
+        <div className="m-4 p-4 bg-red-500/10 border border-red-400/30 rounded-lg text-red-300 flex items-center gap-3 backdrop-blur-sm">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <span className="text-sm">{error}</span>
         </div>
       )}
 
@@ -491,21 +491,21 @@ export default function ChatInterface({
           {allMessages.length === 0 && !streamingState.isStreaming ? (
             <div className="space-y-6">
               <ConversationEmptyState
-                title="RAG Assistant Ready"
-                description="Ask questions about the codebase and I'll provide detailed answers with source citations."
+                title="Chelsea Piers Digital Concierge"
+                description="Ask me about our fitness classes, sports leagues, special events, and facilities. I'm here to help you find the perfect activity!"
               />
 
-              {/* Example query chips for better onboarding */}
+              {/* Example query chips for Chelsea Piers onboarding */}
               <div className="px-4">
-                <p className="text-sm text-muted-foreground mb-3">Try asking:</p>
+                <p className="text-sm text-white/70 mb-3">Try asking:</p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    "Explain the hybrid search architecture",
-                    "How does query classification work?",
-                    "What's the caching strategy?",
-                    "Show me the vector embedding implementation",
-                    "How does memory management work?",
-                    "What APIs are available?"
+                    "What fitness classes do you offer?",
+                    "Tell me about youth sports leagues",
+                    "What special events are coming up?",
+                    "How do I book a golf lesson?",
+                    "What are your pool hours?",
+                    "Tell me about adult hockey leagues"
                   ].map((example, index) => (
                     <button
                       key={index}
@@ -517,10 +517,10 @@ export default function ChatInterface({
                         }, 0);
                       }}
                       className={cn(
-                        "px-4 py-3 text-sm rounded-lg border border-gray-200",
-                        "hover:border-blue-300 hover:bg-blue-50",
+                        "px-4 py-3 text-sm rounded-lg border border-white/20 text-white/90",
+                        "hover:border-blue-400/50 hover:bg-white/10",
                         "transition-all duration-200",
-                        "focus:outline-none focus:ring-2 focus:ring-blue-200",
+                        "focus:outline-none focus:ring-2 focus:ring-blue-400",
                         "min-h-[44px]" // Mobile touch target minimum
                       )}
                     >
@@ -548,7 +548,21 @@ export default function ChatInterface({
                   aria-atomic="true"
                 >
                   <Message from={message.role}>
-                    <div className="space-y-2">
+                    <div className={cn(
+                      "space-y-3",
+                      message.role === 'assistant' && cn(
+                        "relative rounded-xl p-5",
+                        "bg-gradient-to-br from-white/[0.07] to-white/[0.03]",
+                        "border border-white/10",
+                        "backdrop-blur-sm",
+                        "shadow-lg shadow-black/5",
+                        "before:absolute before:inset-0 before:rounded-xl",
+                        "before:bg-gradient-to-br before:from-blue-400/10 before:to-transparent",
+                        "before:opacity-0 hover:before:opacity-100",
+                        "before:transition-opacity before:duration-300"
+                      ),
+                      message.role === 'user' && "rounded-lg px-4 py-2"
+                    )}>
                       {/* Message header with timestamp */}
                       {showTimestamps && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -577,7 +591,10 @@ export default function ChatInterface({
 
                       {/* Message content */}
                       <MessageContent className={cn(
-                        message.error && "text-red-600",
+                        "leading-relaxed",
+                        message.role === 'assistant' && "text-white/95 text-[15px]",
+                        message.role === 'user' && "text-white/90",
+                        message.error && "text-red-400",
                         message.id.startsWith('opt_') && "opacity-75"
                       )}>
                         {/* Show progressive loader for streaming messages with stage but no content yet */}
@@ -590,14 +607,14 @@ export default function ChatInterface({
 
                       {/* Sources preview for streaming messages */}
                       {message.streaming && streamingState.sources && streamingState.sources.length > 0 && (
-                        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="flex items-center gap-2 text-sm text-blue-800 mb-2">
+                        <div className="relative mt-4 p-4 rounded-lg border border-blue-400/20 bg-blue-400/5 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 text-sm text-blue-300 mb-3">
                             <FileText className="w-4 h-4" />
-                            <span>Found {streamingState.sources.length} relevant sources</span>
+                            <span className="font-medium">Found {streamingState.sources.length} relevant sources</span>
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                             {streamingState.sources.slice(0, 2).map((source: any, index: number) => (
-                              <div key={index} className="text-xs text-blue-600 truncate">
+                              <div key={index} className="text-xs text-blue-200/80 truncate pl-3 border-l-2 border-blue-400/30">
                                 {source.metadata?.filepath || source.metadata?.url || 'Source'}
                               </div>
                             ))}
@@ -619,7 +636,7 @@ export default function ChatInterface({
 
                       {/* Feedback widget for assistant messages */}
                       {message.role === 'assistant' && !message.streaming && !message.id.startsWith('opt_') && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-white/10">
                           <FeedbackWidget
                             messageId={message.id as any}
                             conversationId={message.id as any}
@@ -643,14 +660,14 @@ export default function ChatInterface({
           {(isLoading || streamingState.isStreaming) && optimisticMessages.length === 0 && (
             <Message from="assistant">
               <MessageContent>
-                <div className="flex items-center gap-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.1s]" />
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce [animation-delay:0.2s]" />
+                <div className="flex items-center gap-3 px-2">
+                  <div className="flex space-x-1.5">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.15s]" />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.3s]" />
                   </div>
-                  <span className="text-muted-foreground">
-                    Searching knowledge base...
+                  <span className="text-white/70 text-sm">
+                    Finding your answer...
                   </span>
                 </div>
               </MessageContent>
@@ -662,10 +679,10 @@ export default function ChatInterface({
         </div>
       </Conversation>
 
-      {/* Input Area */}
+      {/* Input Area - Chelsea Piers Theme */}
       <div className={cn(
-        "border-t p-4 bg-background transition-all duration-200",
-        isInputFocused && "bg-blue-50/50 border-blue-200",
+        "border-t border-white/10 p-4 bg-[#0F1829] transition-all duration-200",
+        isInputFocused && "border-blue-400/50",
         (isLoading || streamingState.isStreaming) && "opacity-75"
       )}>
         <PromptInput onSubmit={handleSubmit}>
@@ -680,22 +697,24 @@ export default function ChatInterface({
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
               disabled={isLoading || streamingState.isStreaming}
-              aria-label="Ask a question about the codebase"
+              aria-label="Ask about Chelsea Piers fitness classes, sports leagues, and events"
               aria-describedby="input-hint"
               className={cn(
                 "min-h-[60px] max-h-[300px] resize-none transition-all duration-200",
-                isInputFocused && "ring-2 ring-blue-200"
+                "bg-[#0A1628] text-white border-white/20",
+                "placeholder:text-white/50",
+                isInputFocused && "ring-2 ring-blue-400 border-blue-400/50"
               )}
             />
             <PromptInputToolbar>
-              <div id="input-hint" className="text-xs text-muted-foreground">
+              <div id="input-hint" className="text-xs text-white/60">
                 {streamingState.isStreaming ? (
                   <div className="flex items-center gap-2" aria-live="polite">
                     {getStageIcon(streamingState.stage!)}
-                    <span>{streamingState.statusMessage}</span>
+                    <span className="text-white/70">{streamingState.statusMessage}</span>
                   </div>
                 ) : isLoading ? (
-                  <span aria-live="polite">Processing...</span>
+                  <span aria-live="polite" className="text-white/70">Processing...</span>
                 ) : (
                   'Press Enter to send, Shift+Enter for new line'
                 )}
@@ -713,11 +732,11 @@ export default function ChatInterface({
 
   function getSmartPlaceholder(): string {
     if (streamingState.isStreaming) {
-      return "Processing your request...";
+      return "Finding the perfect answer for you...";
     }
     if (allMessages.length === 0) {
-      return "Ask about the codebase, architecture, or specific functionality...";
+      return "Ask about our fitness classes, sports leagues, or special events...";
     }
-    return "Continue the conversation...";
+    return "What else can I help you with?";
   }
 }
