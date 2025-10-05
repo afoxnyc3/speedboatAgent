@@ -458,9 +458,42 @@ export async function POST(request: NextRequest): Promise<Response> {
             }
           });
 
-          // Log performance
+          // Log comprehensive performance metrics
           timings.total = Date.now() - totalStart;
-          // Performance metrics tracked in timings object
+
+          // Add LLM-specific timings from response
+          timings.llmFirstToken = response.timings?.llmFirstToken || 0;
+          timings.llmStreamTotal = response.timings?.llmStreamTotal || 0;
+
+          // Log detailed performance breakdown for analysis
+          console.log('[Performance Metrics]', JSON.stringify({
+            timestamp: new Date().toISOString(),
+            conversationId,
+            query: validatedRequest.message.slice(0, 100),
+            timings: {
+              requestParsing: timings.requestParsing,
+              clientInit: timings.clientInit,
+              memoryRetrieval: timings.memoryRetrieval || 0,
+              ragSearch: timings.ragSearch || 0,
+              parallelExecution: timings.parallelExecution || 0,
+              llmFirstToken: timings.llmFirstToken,
+              llmStreamTotal: timings.llmStreamTotal,
+              responseGeneration: timings.responseGeneration || 0,
+              memoryStorage: timings.memoryStorage || 0,
+              total: timings.total
+            },
+            breakdown: {
+              preProcessing: (timings.requestParsing || 0) + (timings.clientInit || 0),
+              dataRetrieval: timings.parallelExecution || 0,
+              llmGeneration: timings.llmStreamTotal || 0,
+              postProcessing: (timings.memoryStorage || 0)
+            },
+            performance: {
+              firstTokenLatency: timings.llmFirstToken,
+              totalLatency: timings.total,
+              isSlowRequest: timings.total > 10000
+            }
+          }, null, 2));
 
         } catch (error) {
           console.error('Streaming error:', error);
@@ -532,6 +565,10 @@ async function generateStreamingResponse(params: {
     authority?: 'primary' | 'authoritative' | 'supplementary' | 'community';
   }>;
   suggestions: string[];
+  timings?: {
+    llmFirstToken: number;
+    llmStreamTotal: number;
+  };
 }> {
   const { query, searchResults, memoryContext, temperature = 0.5, onToken, onStatusChange } = params;
 
@@ -563,6 +600,11 @@ Please provide a comprehensive answer with proper citations.`;
 
     let accumulatedContent = '';
 
+    // Performance tracking for LLM
+    const llmStart = Date.now();
+    let firstTokenTime: number | null = null;
+    let totalStreamTime = 0;
+
     // Wrap streamText with timeout protection to prevent infinite hangs
     const streamWithTimeout = async () => {
       const timeoutMs = 15000; // 15 second timeout (reduced from 30s for faster failure)
@@ -583,9 +625,17 @@ Please provide a comprehensive answer with proper citations.`;
         const maxStreamDuration = 30000; // 30 seconds total for streaming (reduced from 45s)
         let lastChunkTime = Date.now();
         const maxChunkGap = 5000; // 5 second max gap between chunks
+        let chunkCount = 0;
 
         for await (const delta of result.textStream) {
           const now = Date.now();
+          chunkCount++;
+
+          // Track first token timing (critical for perceived performance)
+          if (firstTokenTime === null) {
+            firstTokenTime = now - llmStart;
+            console.log(`[Performance] LLM first token: ${firstTokenTime}ms`);
+          }
 
           // Check if we've exceeded max streaming duration
           if (now - startTime > maxStreamDuration) {
@@ -602,6 +652,9 @@ Please provide a comprehensive answer with proper citations.`;
           accumulatedContent += delta;
           onToken(accumulatedContent, delta);
         }
+
+        totalStreamTime = Date.now() - startTime;
+        console.log(`[Performance] LLM streaming complete: ${totalStreamTime}ms (${chunkCount} chunks, avg ${Math.round(totalStreamTime / chunkCount)}ms/chunk)`);
       })();
 
       return Promise.race([streamPromise, timeoutPromise]);
@@ -619,6 +672,10 @@ Please provide a comprehensive answer with proper citations.`;
         'Can I help clarify any specific aspect?',
         'Are there related questions I can answer?',
       ],
+      timings: {
+        llmFirstToken: firstTokenTime || 0,
+        llmStreamTotal: totalStreamTime
+      }
     };
   } catch (error) {
     console.error('[OpenAI Stream] Error occurred:', {
