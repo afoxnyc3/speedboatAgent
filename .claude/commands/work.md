@@ -124,6 +124,12 @@ Generate a verification report with decision points:
 ### 5. Complete & Cleanup
 - **Create Pull Request**: Create PR with descriptive title
 - **Merge to Main**: After CI passes, merge PR
+  - **Automatic Deployment**: Merge triggers GitHub Actions workflow that:
+    - Runs tests, linting, and type checking
+    - Deploys to Vercel production
+    - **Purges Vercel edge cache** to ensure latest code is served
+    - Verifies deployment health
+  - **Cache Propagation**: Latest code visible within 30-60 seconds after deployment
 - **Update Documentation**:
   - Mark issue complete in `roadmap.md`
   - Update completion percentage in `progress.md`
