@@ -256,12 +256,18 @@
   - Updated comment modal styling for dark theme
   - **Completed**: PR #101 merged 2025-10-05
 
-- [x] **Issue #99**: Optimize slow retrieval time (P1 - investigation) 🔍
+- [x] **Issue #99**: Optimize slow retrieval time (P1 - Phase 1 monitoring deployed) 📊
   - **Investigation Complete**: Code is well-optimized (using GPT-4o, timeouts, smart caching)
   - **Finding**: 23s gaps likely due to infrastructure (Vercel cold starts, external APIs)
-  - **Recommendation**: Need production monitoring to identify exact bottleneck
-  - **Status**: Investigation complete, pending production profiling decision
-  - **Updated**: 2025-10-05 with comprehensive findings
+  - **Recommendation**: Implemented Phase 1 monitoring to collect production data
+  - **Status**: PR #102 merged - collecting performance metrics (24-48 hours)
+  - **Next Steps**: Analyze Vercel logs, identify bottleneck, make data-driven optimization
+  - **Data Collection Instructions**:
+    - View logs: `vercel logs --follow speedboat-agent` or Vercel Dashboard
+    - Look for: `[Performance Metrics]` JSON logs with timing breakdowns
+    - Key metrics: `llmFirstToken`, `llmStreamTotal`, `total`, `isSlowRequest: true`
+    - Expected patterns: Cold starts show higher `clientInit`, API delays in `llmFirstToken`
+  - **Updated**: 2025-10-05 with Phase 1 monitoring deployment
 
 ---
 
