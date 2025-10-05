@@ -250,9 +250,11 @@
   - Added hover states and increased icon size
   - **Completed**: PR #100 merged 2025-10-04
 
-- [ ] **Issue #98**: Fix feedback widget visibility (P0 - 15 mins)
+- [x] **Issue #98**: Fix feedback widget visibility (P0 - 15 mins) ✅
   - Thumbs up/down buttons invisible (gray colors on dark)
-  - Replace gray with white/transparency variants
+  - Replaced gray with white/transparency variants
+  - Updated comment modal styling for dark theme
+  - **Completed**: PR #101 merged 2025-10-05
 
 - [ ] **Issue #99**: Optimize slow retrieval time (P1 - investigation)
   - Current: 23+ second SSE gaps

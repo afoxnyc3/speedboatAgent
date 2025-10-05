@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Feedback Widget Visibility on Chelsea Piers Theme** (2025-10-05) - PR #101, Issue #98
+  - Fixed invisible thumbs up/down buttons and comment modal on dark theme
+  - Updated label: `text-gray-500` → `text-white/70`
+  - Updated default buttons: `text-gray-400` → `text-white/60`, hover: `hover:bg-gray-100` → `hover:bg-white/10`
+  - Updated active states: `bg-green-100 text-green-600` → `bg-green-400/20 text-green-300` (thumbs up)
+  - Updated active states: `bg-red-100 text-red-600` → `bg-red-400/20 text-red-300` (thumbs down)
+  - Updated comment modal: `bg-gray-50` → `bg-white/5` with `border-white/10`
+  - Updated form fields with white/transparency variants
+  - **Impact**: Users can now see and provide feedback on responses
+  - **Files Modified**: `components/chat/FeedbackWidget.tsx` (11 insertions, 11 deletions)
+  - **Priority**: P0 - Critical UX bug fix
+
 - **Sources Dropdown Visibility on Chelsea Piers Theme** (2025-10-04) - PR #100, Issue #97
   - Fixed invisible "Used X sources" button on dark theme
   - Updated Sources component: `text-primary` → `text-blue-300`, `text-xs` → `text-sm`
