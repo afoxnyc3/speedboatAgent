@@ -113,15 +113,15 @@ export function FeedbackWidget({
   return (
     <div className={`feedback-widget ${className}`}>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-500">Was this helpful?</span>
+        <span className="text-sm text-white/70">Was this helpful?</span>
 
         <button
           onClick={() => handleFeedback('thumbs_up')}
           disabled={isSubmitting}
           className={`p-1.5 rounded-md transition-all ${
             feedbackGiven === 'thumbs_up'
-              ? 'bg-green-100 text-green-600'
-              : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
+              ? 'bg-green-400/20 text-green-300'
+              : 'hover:bg-white/10 text-white/60 hover:text-white/90'
           } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           aria-label="Thumbs up"
         >
@@ -133,8 +133,8 @@ export function FeedbackWidget({
           disabled={isSubmitting}
           className={`p-1.5 rounded-md transition-all ${
             feedbackGiven === 'thumbs_down'
-              ? 'bg-red-100 text-red-600'
-              : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
+              ? 'bg-red-400/20 text-red-300'
+              : 'hover:bg-white/10 text-white/60 hover:text-white/90'
           } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           aria-label="Thumbs down"
         >
@@ -143,14 +143,14 @@ export function FeedbackWidget({
       </div>
 
       {showComment && feedbackGiven === 'thumbs_down' && (
-        <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+        <div className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-white/90">
               What could be better?
             </span>
             <button
               onClick={() => setShowComment(false)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-white/60 hover:text-white/90 transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -160,7 +160,7 @@ export function FeedbackWidget({
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
-            className="w-full mb-2 px-2 py-1 text-sm border border-gray-200 rounded"
+            className="w-full mb-2 px-2 py-1 text-sm border border-white/20 rounded bg-white/5 text-white/90"
           >
             <option value="relevance">Not relevant</option>
             <option value="accuracy">Inaccurate</option>
@@ -174,13 +174,13 @@ export function FeedbackWidget({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Optional: Tell us more..."
-            className="w-full px-2 py-1 text-sm border border-gray-200 rounded resize-none"
+            className="w-full px-2 py-1 text-sm border border-white/20 rounded resize-none bg-white/5 text-white/90 placeholder:text-white/40"
             rows={2}
             maxLength={1000}
           />
 
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-white/50">
               {comment.length}/1000
             </span>
             <button
